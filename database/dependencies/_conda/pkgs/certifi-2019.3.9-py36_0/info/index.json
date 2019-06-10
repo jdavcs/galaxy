@@ -1,0 +1,14 @@
+{
+  "arch": "x86_64",
+  "build": "py36_0",
+  "build_number": 0,
+  "depends": [
+    "python >=3.6,<3.7.0a0"
+  ],
+  "license": "ISC",
+  "name": "certifi",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1552136305989,
+  "version": "2019.3.9"
+}

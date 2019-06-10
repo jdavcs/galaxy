@@ -1,0 +1,6 @@
+#!/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/envs/__galaxy_sequence_utils@1.1.1/bin/python
+if __name__ == '__main__':
+    import sys
+    import galaxy_utils.sequence.scripts.fastq_groomer
+
+    sys.exit(galaxy_utils.sequence.scripts.fastq_groomer.main())

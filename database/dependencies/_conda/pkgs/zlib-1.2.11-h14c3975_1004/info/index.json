@@ -1,0 +1,15 @@
+{
+  "arch": "x86_64",
+  "build": "h14c3975_1004",
+  "build_number": 1004,
+  "depends": [
+    "libgcc-ng >=7.3.0"
+  ],
+  "license": "zlib",
+  "license_family": "Other",
+  "name": "zlib",
+  "platform": "linux",
+  "subdir": "linux-64",
+  "timestamp": 1546945412047,
+  "version": "1.2.11"
+}

@@ -1,0 +1,6 @@
+{
+  "c_compiler_version": "7",
+  "ncurses": "6.1",
+  "c_compiler": "gcc",
+  "readline": "7.0"
+}

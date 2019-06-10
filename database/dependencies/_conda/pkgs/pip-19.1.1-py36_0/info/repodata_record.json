@@ -1,0 +1,25 @@
+{
+  "arch": "x86_64",
+  "build": "py36_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "python >=3.6,<3.7.0a0",
+    "setuptools",
+    "wheel"
+  ],
+  "features": "",
+  "fn": "pip-19.1.1-py36_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "06bf2fe56c37ead96b4475c86ebf5ed1",
+  "name": "pip",
+  "platform": "linux",
+  "size": 1935227,
+  "subdir": "linux-64",
+  "timestamp": 1559658031712,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/pip-19.1.1-py36_0.tar.bz2",
+  "version": "19.1.1"
+}

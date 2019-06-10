@@ -1,0 +1,19 @@
+#
+# Author: Lasse Collin
+#
+# This file has been put into the public domain.
+# You can do whatever you want with this file.
+#
+
+prefix=/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/envs/__galaxy_sequence_utils@1.1.1
+exec_prefix=/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/envs/__galaxy_sequence_utils@1.1.1
+libdir=/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/envs/__galaxy_sequence_utils@1.1.1/lib
+includedir=/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/envs/__galaxy_sequence_utils@1.1.1/include
+
+Name: liblzma
+Description: General purpose data compression library
+URL: https://tukaani.org/xz/
+Version: 5.2.4
+Cflags: -I${includedir}
+Libs: -L${libdir} -llzma
+Libs.private: -pthread -lrt  

@@ -1,0 +1,22 @@
+{
+  "arch": "x86_64",
+  "build": "h14c3975_1001",
+  "build_number": 1001,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "libgcc-ng >=7.3.0"
+  ],
+  "features": "",
+  "fn": "xz-5.2.4-h14c3975_1001.tar.bz2",
+  "license": "LGPL-2.1 and GPL-2.0",
+  "md5": "a617e36d37a44931f273712a129afed4",
+  "name": "xz",
+  "platform": "linux",
+  "size": 374478,
+  "subdir": "linux-64",
+  "timestamp": 1536779057480,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/xz-5.2.4-h14c3975_1001.tar.bz2",
+  "version": "5.2.4"
+}

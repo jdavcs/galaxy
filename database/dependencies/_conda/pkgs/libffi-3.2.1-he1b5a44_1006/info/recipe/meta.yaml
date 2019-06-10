@@ -1,0 +1,68 @@
+# This file created by conda-build 3.17.8
+# meta.yaml template originally from:
+# /home/conda/recipe_root, last modified Tue Mar 19 19:03:51 2019
+# ------------------------------------------------
+
+package:
+    name: libffi
+    version: 3.2.1
+source:
+    patches:
+        - configure_includedir_option.patch
+    sha256: 96d08dee6f262beea1a18ac9a3801f64018dc4521895e9198d029d6850febe23
+    url: https://github.com/libffi/libffi/archive/v3.2.1.tar.gz
+build:
+    number: '1006'
+    run_exports:
+        - libffi >=3.2.1,<4.0a0
+    string: he1b5a44_1006
+requirements:
+    build:
+        - autoconf 2.69 pl526h14c3975_9
+        - automake 1.16.1 pl526_1003
+        - binutils_impl_linux-64 2.31.1 h6176602_1
+        - binutils_linux-64 2.31.1 h6176602_3
+        - gcc_impl_linux-64 7.3.0 habb00fd_1
+        - gcc_linux-64 7.3.0 h553295d_3
+        - gxx_impl_linux-64 7.3.0 hdf63c60_1
+        - gxx_linux-64 7.3.0 h553295d_3
+        - libgcc-ng 7.3.0 hdf63c60_0
+        - libstdcxx-ng 7.3.0 hdf63c60_0
+        - libtool 2.4.6 h14c3975_1002
+        - m4 1.4.18 h14c3975_1001
+        - make 4.2.1 h14c3975_2004
+        - patch 2.7.6 h14c3975_1001
+        - perl 5.26.2 h14c3975_1002
+        - texinfo 6.6 pl526hf8c457e_0
+    host:
+        - libgcc-ng 7.3.0 hdf63c60_0
+        - libstdcxx-ng 7.3.0 hdf63c60_0
+    run:
+        - libgcc-ng >=7.3.0
+        - libstdcxx-ng >=7.3.0
+test:
+    commands:
+        - test -e $PREFIX/lib/libffi${SHLIB_EXT}
+        - test -e $PREFIX/lib/libffi.a
+        - test -e $PREFIX/include/ffi.h
+        - test -e $PREFIX/include/ffitarget.h
+about:
+    description: 'The libffi library provides a portable, high level programming interface
+
+        to various calling conventions. This allows a programmer to call any
+
+        function specified by a call interface description at run-time.
+
+        '
+    dev_url: https://github.com/libffi/libffi
+    doc_url: https://sourceware.org/libffi/
+    home: https://sourceware.org/libffi/
+    license: Custom
+    license_file: LICENSE
+    summary: A Portable Foreign Function Interface Library.
+extra:
+    copy_test_source_files: true
+    final: true
+    recipe-maintainers:
+        - scopatz
+        - stefan-balke

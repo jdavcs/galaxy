@@ -1,0 +1,22 @@
+{
+  "arch": "x86_64",
+  "build": "py36_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/bioconda/linux-64",
+  "constrains": [],
+  "depends": [
+    "python 3.6*",
+    "six"
+  ],
+  "features": "",
+  "fn": "galaxy_sequence_utils-1.1.1-py36_0.tar.bz2",
+  "license": "Academic Free License version 3.0",
+  "md5": "032feb244d6d23149b69c80874336014",
+  "name": "galaxy_sequence_utils",
+  "platform": "linux",
+  "size": 48745,
+  "subdir": "linux-64",
+  "track_features": "",
+  "url": "https://conda.anaconda.org/bioconda/linux-64/galaxy_sequence_utils-1.1.1-py36_0.tar.bz2",
+  "version": "1.1.1"
+}

@@ -1,0 +1,24 @@
+{
+  "arch": "x86_64",
+  "build": "py36_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "certifi >=2016.09",
+    "python >=3.6,<3.7.0a0"
+  ],
+  "features": "",
+  "fn": "setuptools-41.0.1-py36_0.tar.bz2",
+  "license": "MIT",
+  "license_family": "MIT",
+  "md5": "bfd02f73bd2d35a6410bc09738dc1e20",
+  "name": "setuptools",
+  "platform": "linux",
+  "size": 626293,
+  "subdir": "linux-64",
+  "timestamp": 1555973498434,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/setuptools-41.0.1-py36_0.tar.bz2",
+  "version": "41.0.1"
+}

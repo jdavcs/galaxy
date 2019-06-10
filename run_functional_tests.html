@@ -1,0 +1,80 @@
+
+<html>
+<head>
+<style>
+
+body
+{
+  font: 12px verdana, "Bitstream Vera Sans", geneva, arial, helvetica, helve, sans-serif;
+  line-height: 160%;
+}
+
+div.test
+{
+  margin: 5px;
+  padding: 5px;
+  border: solid black 1px;
+  background: lightgray;
+}
+
+div.success
+{
+  background: #CCFFCC;
+  border: solid #66AA66 1px;
+}
+
+div.error, div.failure
+{
+  background: #FFCCCC;
+  border: solid #AA6666 1px;
+}
+
+span.label
+{
+  font-weight: bold;
+}
+
+pre
+{
+  background: white;
+  padding: 5px;
+  border:  solid black 1px;
+  display: block;
+  overflow: auto;
+}
+</style>
+
+<script>
+function toggle(name){
+    var elem = document.getElementById(name)
+    if (elem) {
+        if (elem.style.display=="none"){
+            elem.style.display="block"
+        } else {
+            elem.style.display="none"
+        }
+    }
+}
+</script>
+</head>
+<body>
+
+<div class='test error'>
+<div><span class='label'>ID:</span> functional.test_toolbox_pytest.test_tool</div>
+<div><span class='label'>Status:</span> error</div>
+<div><span class='label'>Exception:</span> <a href="javascript:toggle('exception_1')">...</a></div>
+<div id='exception_1' style='display: none'><pre class='exception'>Traceback (most recent call last):
+
+  File "/usr/lib/python2.7/unittest/case.py", line 329, in run
+    testMethod()
+
+  File "/home/sergey/0dev/galaxy/tooldev/galaxy/.venv/local/lib/python2.7/site-packages/nose/case.py", line 197, in runTest
+    self.test(*self.arg)
+
+TypeError: test_tool() takes exactly 2 arguments (0 given)
+</pre></div>
+</div>
+
+</body>
+</html>
+

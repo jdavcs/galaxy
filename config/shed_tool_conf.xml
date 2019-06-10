@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<toolbox tool_path="database/shed_tools">
+    <section id="fastq_toolshed" name="fastq toolshed" version="">
+        <tool file="toolshed.g2.bx.psu.edu/repos/devteam/fastq_groomer/71e5fa25b8a2/fastq_groomer/fastq_groomer.xml" guid="toolshed.g2.bx.psu.edu/repos/devteam/fastq_groomer/fastq_groomer/1.1.1">
+            <tool_shed>toolshed.g2.bx.psu.edu</tool_shed>
+            <repository_name>fastq_groomer</repository_name>
+            <repository_owner>devteam</repository_owner>
+            <installed_changeset_revision>71e5fa25b8a2</installed_changeset_revision>
+            <id>toolshed.g2.bx.psu.edu/repos/devteam/fastq_groomer/fastq_groomer/1.1.1</id>
+            <version>1.1.1</version>
+        </tool>
+    </section>
+</toolbox>

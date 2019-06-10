@@ -1,0 +1,574 @@
+{
+  "build": "py36_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/bioconda/linux-64",
+  "constrains": [],
+  "depends": [
+    "python 3.6*",
+    "six"
+  ],
+  "extracted_package_dir": "/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/pkgs/galaxy_sequence_utils-1.1.1-py36_0",
+  "features": "",
+  "files": [
+    "bin/gx-fastq-combiner",
+    "bin/gx-fastq-filter",
+    "bin/gx-fastq-groomer",
+    "bin/gx-fastq-manipulation",
+    "bin/gx-fastq-masker-by-quality",
+    "bin/gx-fastq-paired-end-deinterlacer",
+    "bin/gx-fastq-paired-end-interlacer",
+    "bin/gx-fastq-paired-end-joiner",
+    "bin/gx-fastq-paired-end-splitter",
+    "bin/gx-fastq-stats",
+    "bin/gx-fastq-to-fasta",
+    "bin/gx-fastq-to-tabular",
+    "bin/gx-fastq-trimmer",
+    "bin/gx-fastq-trimmer-by-quality",
+    "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/PKG-INFO",
+    "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/SOURCES.txt",
+    "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/dependency_links.txt",
+    "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/entry_points.txt",
+    "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/not-zip-safe",
+    "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/top_level.txt",
+    "lib/python3.6/site-packages/galaxy_utils/__init__.py",
+    "lib/python3.6/site-packages/galaxy_utils/__pycache__/__init__.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__init__.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/__init__.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/fasta.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/fastq.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/sequence.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/transform.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/vcf.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/fasta.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/fastq.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__init__.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/__init__.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_combiner.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_filter.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_groomer.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_manipulation.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_masker_by_quality.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_deinterlacer.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_interlacer.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_joiner.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_splitter.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_stats.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_to_fasta.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_to_tabular.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_trimmer.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_trimmer_by_quality.cpython-36.pyc",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_combiner.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_filter.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_groomer.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_manipulation.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_masker_by_quality.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_deinterlacer.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_interlacer.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_joiner.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_splitter.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_stats.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_to_fasta.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_to_tabular.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_trimmer.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_trimmer_by_quality.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/sequence.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/transform.py",
+    "lib/python3.6/site-packages/galaxy_utils/sequence/vcf.py"
+  ],
+  "fn": "galaxy_sequence_utils-1.1.1-py36_0.tar.bz2",
+  "license": "Academic Free License version 3.0",
+  "link": {
+    "source": "/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/pkgs/galaxy_sequence_utils-1.1.1-py36_0",
+    "type": 1
+  },
+  "md5": "032feb244d6d23149b69c80874336014",
+  "name": "galaxy_sequence_utils",
+  "package_tarball_full_path": "/home/sergey/0dev/galaxy/tooldev/galaxy/database/dependencies/_conda/pkgs/galaxy_sequence_utils-1.1.1-py36_0.tar.bz2",
+  "paths_data": {
+    "paths": [
+      {
+        "_path": "bin/gx-fastq-combiner",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "cd260f76c2b76c722dff21215080df5dcd7a7829245dd0003bf906322d31125d",
+        "sha256_in_prefix": "363d197beb5acbbb6ebc41155bca145cdaec30301d2de50db30665bbf1799a7b",
+        "size_in_bytes": 211
+      },
+      {
+        "_path": "bin/gx-fastq-filter",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "3d99a145d3afe20c6c5e4a101c00a1c2064a4e3ea3cccc4c75ae588fcc936869",
+        "sha256_in_prefix": "a0974c0a19921b30eba496a2ae4fc3876ccfa53f856e7e5181fad310a32baee4",
+        "size_in_bytes": 207
+      },
+      {
+        "_path": "bin/gx-fastq-groomer",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "ee239ec6294f431d1c1cf8df359775fbc57ac879a6f76dde721212959fe518ae",
+        "sha256_in_prefix": "400c1513dfdb1f88d7f463a8112784cd107c44ee41f4d0d8a8606e90c48e4be8",
+        "size_in_bytes": 209
+      },
+      {
+        "_path": "bin/gx-fastq-manipulation",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "3c4533c203dc1008929ac8112f9e486cd1c357005c79033621ef2fd3dcc42e15",
+        "sha256_in_prefix": "62f64cf370d2c47dea3a232091d0043cbaa84dadb8a4d295b0cacc3ce4d67c23",
+        "size_in_bytes": 219
+      },
+      {
+        "_path": "bin/gx-fastq-masker-by-quality",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "e5669ebe8553789b135555056518f486d6a41557aa8556af3f4bc5572c199835",
+        "sha256_in_prefix": "53d1611530c01ad3719521ef87889cacb8f61d53e5802ef7aed5ea2473817d80",
+        "size_in_bytes": 229
+      },
+      {
+        "_path": "bin/gx-fastq-paired-end-deinterlacer",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "c425a37e9b45925c4a8b92faec511c4f32247ecabb6c720695009d15515fade7",
+        "sha256_in_prefix": "8c7972ec46764b7b5a5219f85a1cacd7eb1c2d0a25d3c5552bbc0c755b779cdb",
+        "size_in_bytes": 241
+      },
+      {
+        "_path": "bin/gx-fastq-paired-end-interlacer",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "2daab0f1c6c5cd0a02486b2144513cb8125740690f1ba54bb7c6988602b3d187",
+        "sha256_in_prefix": "f0898f10433c0c735a780b9d7b1fbacdaf2a5d5cf049eab7fde081f7afa01f45",
+        "size_in_bytes": 237
+      },
+      {
+        "_path": "bin/gx-fastq-paired-end-joiner",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "93ba5e6d49a435cf4d2fe5ef95842a5f20d075b7b8c84e874e9e97bea94ecb0c",
+        "sha256_in_prefix": "53afb5b4f4ae4b899e738f2ba805d2a60fbba59e2ed570d2996a0d4dfe5d2c3e",
+        "size_in_bytes": 229
+      },
+      {
+        "_path": "bin/gx-fastq-paired-end-splitter",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "bbeb6f0905794c3b8640a842b1a1b270a4ec97ed97dabf3253a3f4db6d32ba93",
+        "sha256_in_prefix": "bb16d2f45d38d4d1f21c28b13a65acc6ef4b2ca1ec8635f3a25a79dacf823ebe",
+        "size_in_bytes": 233
+      },
+      {
+        "_path": "bin/gx-fastq-stats",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "b8798d6989228d5da8131fbe95345b3f9db7be8f80aff66e1cb490e4c063e822",
+        "sha256_in_prefix": "d75eed26958402da0c84422ef198b3c17aa83cad45fb341a0e091839af4abd86",
+        "size_in_bytes": 205
+      },
+      {
+        "_path": "bin/gx-fastq-to-fasta",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "b6dd6f699ac9450918b00deb973f786809aafd358b564b60b2a85276e0ea7fd1",
+        "sha256_in_prefix": "3f6dbf68a82fd137c5cf301727bd2e1db35e85c71e68053f663a1019deef15d9",
+        "size_in_bytes": 211
+      },
+      {
+        "_path": "bin/gx-fastq-to-tabular",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "b7c2b491e9d34281f619ee78b9c9be5dcd4474053c3ebe28bcc1ab7a58a20ac0",
+        "sha256_in_prefix": "c1bf460f72b5bcfb822bde4582f6b6caf81f5ef46b73a9a7b65d280ed0272d89",
+        "size_in_bytes": 215
+      },
+      {
+        "_path": "bin/gx-fastq-trimmer",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "48f5c26f5fa974d8448877053e2f83d11a1dadf334ef002a08c99ee65f924a99",
+        "sha256_in_prefix": "9b8a044dd024b0198645298a6ead28014ad7b1ff3cbdb447a5fdc2310dd012da",
+        "size_in_bytes": 209
+      },
+      {
+        "_path": "bin/gx-fastq-trimmer-by-quality",
+        "file_mode": "text",
+        "path_type": "hardlink",
+        "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+        "sha256": "5ac9cc931abb21f053f7941e9377c1366f41390f95bc4438f429fd39f8e8cf55",
+        "sha256_in_prefix": "3cf935b5105e08e2ab51756b7acf464270e084b0c448b383b7ed9dae26cc87f1",
+        "size_in_bytes": 231
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/PKG-INFO",
+        "path_type": "hardlink",
+        "sha256": "55c88ea5255c8675850457413d6202ef067e4458cf9f41355a0d185f805c72e3",
+        "sha256_in_prefix": "55c88ea5255c8675850457413d6202ef067e4458cf9f41355a0d185f805c72e3",
+        "size_in_bytes": 4284
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/SOURCES.txt",
+        "path_type": "hardlink",
+        "sha256": "1cb8ec9c09dd3e20bb74807e43d8849f3553a05e3bbb47b6f704db623739cebf",
+        "sha256_in_prefix": "1cb8ec9c09dd3e20bb74807e43d8849f3553a05e3bbb47b6f704db623739cebf",
+        "size_in_bytes": 1332
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/dependency_links.txt",
+        "path_type": "hardlink",
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "sha256_in_prefix": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "size_in_bytes": 1
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/entry_points.txt",
+        "path_type": "hardlink",
+        "sha256": "a72371f57b18f4aef2090c171b1d924ed8115ce85a374e19f9cee20b8ba17e99",
+        "sha256_in_prefix": "a72371f57b18f4aef2090c171b1d924ed8115ce85a374e19f9cee20b8ba17e99",
+        "size_in_bytes": 1223
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/not-zip-safe",
+        "path_type": "hardlink",
+        "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "sha256_in_prefix": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "size_in_bytes": 1
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_sequence_utils-1.1.1-py3.6.egg-info/top_level.txt",
+        "path_type": "hardlink",
+        "sha256": "6a322daa3b55abf6802e54cce615a4f8bd3a3c0f57275815994fcd2b95f067e9",
+        "sha256_in_prefix": "6a322daa3b55abf6802e54cce615a4f8bd3a3c0f57275815994fcd2b95f067e9",
+        "size_in_bytes": 13
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "ec47764b1c177da41cd30be25bb7a45949115e67204148e161093f511f63b1c1",
+        "sha256_in_prefix": "ec47764b1c177da41cd30be25bb7a45949115e67204148e161093f511f63b1c1",
+        "size_in_bytes": 321
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/__pycache__/__init__.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "62315ef489382fb29b802cbfae47eb775b8af1dbb6f1a10c3f0021863acf7235",
+        "sha256_in_prefix": "62315ef489382fb29b802cbfae47eb775b8af1dbb6f1a10c3f0021863acf7235",
+        "size_in_bytes": 450
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/__init__.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "02e7f73d49860e7cdcee6456f99554415c12dcfaaf395841fac28ff8aaaaee53",
+        "sha256_in_prefix": "02e7f73d49860e7cdcee6456f99554415c12dcfaaf395841fac28ff8aaaaee53",
+        "size_in_bytes": 144
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/fasta.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "dcdca50a1b10b798e2cfcf56cf52e53c7a800565e40ed3e3784751e6bc622f95",
+        "sha256_in_prefix": "dcdca50a1b10b798e2cfcf56cf52e53c7a800565e40ed3e3784751e6bc622f95",
+        "size_in_bytes": 4315
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/fastq.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "9d77ed7542afd13a8df181431637e482ff4f4e141cc74e6e137e1d9a0ffb793a",
+        "sha256_in_prefix": "9d77ed7542afd13a8df181431637e482ff4f4e141cc74e6e137e1d9a0ffb793a",
+        "size_in_bytes": 30131
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/sequence.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "f7dad1b8bd6d20bc334d19d8b0f323782023b87cb164916c72cfff2f1dbb8189",
+        "sha256_in_prefix": "f7dad1b8bd6d20bc334d19d8b0f323782023b87cb164916c72cfff2f1dbb8189",
+        "size_in_bytes": 2774
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/transform.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "be92963ef8fc7a322acf593ed0e44edb6e976fe9fb45aa5e657ee6d7c517df26",
+        "sha256_in_prefix": "be92963ef8fc7a322acf593ed0e44edb6e976fe9fb45aa5e657ee6d7c517df26",
+        "size_in_bytes": 3102
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/__pycache__/vcf.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "f9c029670f2483fd4841b43537ba3496c86f3ec67db4141b36b14c812a432903",
+        "sha256_in_prefix": "f9c029670f2483fd4841b43537ba3496c86f3ec67db4141b36b14c812a432903",
+        "size_in_bytes": 3843
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/fasta.py",
+        "path_type": "hardlink",
+        "sha256": "2d979b4fef2de219980e4e195d5fdfd84b82cf8e3cced07f548fef9dacbc0c8f",
+        "sha256_in_prefix": "2d979b4fef2de219980e4e195d5fdfd84b82cf8e3cced07f548fef9dacbc0c8f",
+        "size_in_bytes": 5106
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/fastq.py",
+        "path_type": "hardlink",
+        "sha256": "03adc3c06aa7bd80945a0924d9f280ec4035ee84fa7c729b4e28f12e4fbddd7f",
+        "sha256_in_prefix": "03adc3c06aa7bd80945a0924d9f280ec4035ee84fa7c729b4e28f12e4fbddd7f",
+        "size_in_bytes": 36540
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__init__.py",
+        "path_type": "hardlink",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sha256_in_prefix": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "size_in_bytes": 0
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/__init__.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "1478a1509d3fa40c601d29e49296589d00a461ace29f9fcfdbcd7a6af284d891",
+        "sha256_in_prefix": "1478a1509d3fa40c601d29e49296589d00a461ace29f9fcfdbcd7a6af284d891",
+        "size_in_bytes": 152
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_combiner.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "713e8c154e97177a5b23ac8acdb4b8c98ce2d114682407e2ad1230e3b23b0d04",
+        "sha256_in_prefix": "713e8c154e97177a5b23ac8acdb4b8c98ce2d114682407e2ad1230e3b23b0d04",
+        "size_in_bytes": 1587
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_filter.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "3b35d0531ece4aa199304afe937dc6552599140c1f83bd0194065878b09d7bee",
+        "sha256_in_prefix": "3b35d0531ece4aa199304afe937dc6552599140c1f83bd0194065878b09d7bee",
+        "size_in_bytes": 1376
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_groomer.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "6a6d39e11faeacb7aea9dbbb2cbce7817f77a696c3532a1e7882d3ec25b4af14",
+        "sha256_in_prefix": "6a6d39e11faeacb7aea9dbbb2cbce7817f77a696c3532a1e7882d3ec25b4af14",
+        "size_in_bytes": 1617
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_manipulation.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "b0c69deafb80d6f62f940611707a12cfcf7b19e89b8b2b5b14713b4109ce1125",
+        "sha256_in_prefix": "b0c69deafb80d6f62f940611707a12cfcf7b19e89b8b2b5b14713b4109ce1125",
+        "size_in_bytes": 1270
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_masker_by_quality.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "ef563af9d31e53daf72351817450c02b5c31adecfbedd962858a3d553b85e213",
+        "sha256_in_prefix": "ef563af9d31e53daf72351817450c02b5c31adecfbedd962858a3d553b85e213",
+        "size_in_bytes": 3460
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_deinterlacer.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "4e1f888cbb77aa2190d5fac057098024c4cbc816cfe0a29af008ceaf2dcf38da",
+        "sha256_in_prefix": "4e1f888cbb77aa2190d5fac057098024c4cbc816cfe0a29af008ceaf2dcf38da",
+        "size_in_bytes": 1534
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_interlacer.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "e823ea30b36d8befb2f1c7582e2e79dd8e0621140f9f54b7da79cc11c6472aaf",
+        "sha256_in_prefix": "e823ea30b36d8befb2f1c7582e2e79dd8e0621140f9f54b7da79cc11c6472aaf",
+        "size_in_bytes": 1545
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_joiner.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "edd6c96c13470a503ba41eae1f02da5840199acfbf415c2b0057ac37fb163eaf",
+        "sha256_in_prefix": "edd6c96c13470a503ba41eae1f02da5840199acfbf415c2b0057ac37fb163eaf",
+        "size_in_bytes": 5292
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_paired_end_splitter.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "5ef1f71fb4f34d85d2a0570275112857c0fc8684a59455373b6dddf1bad5c3d9",
+        "sha256_in_prefix": "5ef1f71fb4f34d85d2a0570275112857c0fc8684a59455373b6dddf1bad5c3d9",
+        "size_in_bytes": 1094
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_stats.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "4171ee8e5f21ea14c319fd792eaec95d62cb9b97171c1a5498890596beef9295",
+        "sha256_in_prefix": "4171ee8e5f21ea14c319fd792eaec95d62cb9b97171c1a5498890596beef9295",
+        "size_in_bytes": 2780
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_to_fasta.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "d991f910b28d87bf678a297345cf3220e0d21f7f3386bcd2597477009051a37a",
+        "sha256_in_prefix": "d991f910b28d87bf678a297345cf3220e0d21f7f3386bcd2597477009051a37a",
+        "size_in_bytes": 888
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_to_tabular.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "0ea4c224ac9d0231203014b528ee1f95fca0299ce397488697b2ccd5af063871",
+        "sha256_in_prefix": "0ea4c224ac9d0231203014b528ee1f95fca0299ce397488697b2ccd5af063871",
+        "size_in_bytes": 1476
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_trimmer.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "5a2c8f1e833e52a42ceaf6453e017c32e58bb9c0a8a5956a0189bb799c6a65c7",
+        "sha256_in_prefix": "5a2c8f1e833e52a42ceaf6453e017c32e58bb9c0a8a5956a0189bb799c6a65c7",
+        "size_in_bytes": 1342
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/__pycache__/fastq_trimmer_by_quality.cpython-36.pyc",
+        "path_type": "hardlink",
+        "sha256": "6001f6f11882e928e896ed561c132a52a1e33a1906de9ca76f6c51c5d07f0424",
+        "sha256_in_prefix": "6001f6f11882e928e896ed561c132a52a1e33a1906de9ca76f6c51c5d07f0424",
+        "size_in_bytes": 4396
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_combiner.py",
+        "path_type": "hardlink",
+        "sha256": "750cf261b2993da543ffd5b6bea43c9fb8ce71c2fba0703f615f1cc8ec29a156",
+        "sha256_in_prefix": "750cf261b2993da543ffd5b6bea43c9fb8ce71c2fba0703f615f1cc8ec29a156",
+        "size_in_bytes": 1960
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_filter.py",
+        "path_type": "hardlink",
+        "sha256": "c34ba33b54e0aeb1fb4c8909a3f1bb7c987efbfcca72ba13eb4a3c2f6554374e",
+        "sha256_in_prefix": "c34ba33b54e0aeb1fb4c8909a3f1bb7c987efbfcca72ba13eb4a3c2f6554374e",
+        "size_in_bytes": 1624
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_groomer.py",
+        "path_type": "hardlink",
+        "sha256": "5abd1d65cad24ca03329b8ec8c6f72a227df3e651eb5fd1faec725cc9b9fab90",
+        "sha256_in_prefix": "5abd1d65cad24ca03329b8ec8c6f72a227df3e651eb5fd1faec725cc9b9fab90",
+        "size_in_bytes": 2040
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_manipulation.py",
+        "path_type": "hardlink",
+        "sha256": "8f8ceb6cd6ffa0ae5d895358591ee72bec14cd88e7ec7df6228de3d609a2d93e",
+        "sha256_in_prefix": "8f8ceb6cd6ffa0ae5d895358591ee72bec14cd88e7ec7df6228de3d609a2d93e",
+        "size_in_bytes": 1401
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_masker_by_quality.py",
+        "path_type": "hardlink",
+        "sha256": "8d456b64c56ea1a710598ba6ac63fd5ebf8058e722c1ea0b28a302beba53e510",
+        "sha256_in_prefix": "8d456b64c56ea1a710598ba6ac63fd5ebf8058e722c1ea0b28a302beba53e510",
+        "size_in_bytes": 3361
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_deinterlacer.py",
+        "path_type": "hardlink",
+        "sha256": "e43841b624a3abf6cb662ff23fa16cad5123d0c6fe67b41c10e6a8cca8bf5967",
+        "sha256_in_prefix": "e43841b624a3abf6cb662ff23fa16cad5123d0c6fe67b41c10e6a8cca8bf5967",
+        "size_in_bytes": 2066
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_interlacer.py",
+        "path_type": "hardlink",
+        "sha256": "c22c95a432019b07d23f287d565f67c37601c0c318f898e81aae9acef1b833fd",
+        "sha256_in_prefix": "c22c95a432019b07d23f287d565f67c37601c0c318f898e81aae9acef1b833fd",
+        "size_in_bytes": 1992
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_joiner.py",
+        "path_type": "hardlink",
+        "sha256": "00c7f2a472aa599a498780ea5be56c07fffffaee6ecbd45430905b6c14c8fdc3",
+        "sha256_in_prefix": "00c7f2a472aa599a498780ea5be56c07fffffaee6ecbd45430905b6c14c8fdc3",
+        "size_in_bytes": 5762
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_paired_end_splitter.py",
+        "path_type": "hardlink",
+        "sha256": "b206d6ef73e61271e2b2ff08121a5f40ec8ed84c2b1daee5f0a44795e24426fc",
+        "sha256_in_prefix": "b206d6ef73e61271e2b2ff08121a5f40ec8ed84c2b1daee5f0a44795e24426fc",
+        "size_in_bytes": 1110
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_stats.py",
+        "path_type": "hardlink",
+        "sha256": "d82d9e82c01843a7341815e474b1de36b19b87929fce90638df0d0e244874f3e",
+        "sha256_in_prefix": "d82d9e82c01843a7341815e474b1de36b19b87929fce90638df0d0e244874f3e",
+        "size_in_bytes": 2844
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_to_fasta.py",
+        "path_type": "hardlink",
+        "sha256": "e07bcdcf88b7276373cc127563c677219793c9bb805727d55975357a083d7ab7",
+        "sha256_in_prefix": "e07bcdcf88b7276373cc127563c677219793c9bb805727d55975357a083d7ab7",
+        "size_in_bytes": 799
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_to_tabular.py",
+        "path_type": "hardlink",
+        "sha256": "5a7bb9d3898a5e3014893f7c7dd7fd9c9ce9a595001c1c0a521fb67ed562c9be",
+        "sha256_in_prefix": "5a7bb9d3898a5e3014893f7c7dd7fd9c9ce9a595001c1c0a521fb67ed562c9be",
+        "size_in_bytes": 1709
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_trimmer.py",
+        "path_type": "hardlink",
+        "sha256": "b1c48ea1667cd48e2f37eb4c54b19b8342f8bf8cd743f31cb191e2bb3e2d6395",
+        "sha256_in_prefix": "b1c48ea1667cd48e2f37eb4c54b19b8342f8bf8cd743f31cb191e2bb3e2d6395",
+        "size_in_bytes": 1671
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/scripts/fastq_trimmer_by_quality.py",
+        "path_type": "hardlink",
+        "sha256": "265a167ce91c61dd0146f834e627058332d62c32bf51f26ead65b1f2af2d61cb",
+        "sha256_in_prefix": "265a167ce91c61dd0146f834e627058332d62c32bf51f26ead65b1f2af2d61cb",
+        "size_in_bytes": 6783
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/sequence.py",
+        "path_type": "hardlink",
+        "sha256": "714a2df7faca7cc1b58d7ebac4df04bc0cf8fc5fc148be0b6e7e44a534f17b68",
+        "sha256_in_prefix": "714a2df7faca7cc1b58d7ebac4df04bc0cf8fc5fc148be0b6e7e44a534f17b68",
+        "size_in_bytes": 2311
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/transform.py",
+        "path_type": "hardlink",
+        "sha256": "2078c66e4df946ad823245ee759a299507fc0f13e14447e64f0395dd05e2397b",
+        "sha256_in_prefix": "2078c66e4df946ad823245ee759a299507fc0f13e14447e64f0395dd05e2397b",
+        "size_in_bytes": 4164
+      },
+      {
+        "_path": "lib/python3.6/site-packages/galaxy_utils/sequence/vcf.py",
+        "path_type": "hardlink",
+        "sha256": "567726373a55d30c78ddc158a77069549a5658472137593408f15f201fc98435",
+        "sha256_in_prefix": "567726373a55d30c78ddc158a77069549a5658472137593408f15f201fc98435",
+        "size_in_bytes": 4846
+      }
+    ],
+    "paths_version": 1
+  },
+  "requested_spec": "galaxy_sequence_utils=1.1.1",
+  "size": 48745,
+  "subdir": "linux-64",
+  "track_features": "",
+  "url": "https://conda.anaconda.org/bioconda/linux-64/galaxy_sequence_utils-1.1.1-py36_0.tar.bz2",
+  "version": "1.1.1"
+}

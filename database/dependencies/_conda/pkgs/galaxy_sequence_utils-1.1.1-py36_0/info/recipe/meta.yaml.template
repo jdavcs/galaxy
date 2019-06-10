@@ -1,0 +1,49 @@
+package:
+  name: galaxy_sequence_utils
+  version: "1.1.1"
+
+about:
+  home: https://github.com/galaxyproject/sequence_utils
+  license: Academic Free License version 3.0
+  summary: Sequence Utilities from the Galaxy project
+
+source:
+    url: https://pypi.python.org/packages/eb/23/01d0626c818d4d239306f9efcf97018bff7011c919c50c7932dce824956b/galaxy_sequence_utils-1.1.1.tar.gz
+    fn: galaxy_sequence_utils-1.1.1.tar.gz
+    md5: 44eb1c4245b87b7de91f1065ba290f81
+
+build:
+  number: 0
+  preserve_egg_dir: True
+  entry_points:
+    - gx-fastq-to-tabular=galaxy_utils.sequence.scripts.fastq_to_tabular:main
+    - gx-fastq-groomer=galaxy_utils.sequence.scripts.fastq_groomer:main
+    - gx-fastq-combiner=galaxy_utils.sequence.scripts.fastq_combiner:main
+    - gx-fastq-filter=galaxy_utils.sequence.scripts.fastq_filter:main
+    - gx-fastq-manipulation=galaxy_utils.sequence.scripts.fastq_manipulation:main
+    - gx-fastq-masker-by-quality=galaxy_utils.sequence.scripts.fastq_masker_by_quality:main
+    - gx-fastq-paired-end-deinterlacer=galaxy_utils.sequence.scripts.fastq_paired_end_deinterlacer:main
+    - gx-fastq-paired-end-interlacer=galaxy_utils.sequence.scripts.fastq_paired_end_interlacer:main
+    - gx-fastq-paired-end-joiner=galaxy_utils.sequence.scripts.fastq_paired_end_joiner:main
+    - gx-fastq-paired-end-splitter=galaxy_utils.sequence.scripts.fastq_paired_end_splitter:main
+    - gx-fastq-stats=galaxy_utils.sequence.scripts.fastq_stats:main
+    - gx-fastq-to-fasta=galaxy_utils.sequence.scripts.fastq_to_fasta:main
+    - gx-fastq-trimmer=galaxy_utils.sequence.scripts.fastq_trimmer:main
+    - gx-fastq-trimmer-by-quality=galaxy_utils.sequence.scripts.fastq_trimmer_by_quality:main
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - six
+
+  run:
+    - python
+    - six
+
+test:
+  imports:
+    - galaxy_utils
+  commands:
+    - gx-fastq-trimmer-by-quality --help
+    - gx-fastq-masker-by-quality --help

@@ -1,0 +1,14 @@
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-combiner
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-filter
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-groomer
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-manipulation
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-masker-by-quality
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-paired-end-deinterlacer
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-paired-end-interlacer
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-paired-end-joiner
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-paired-end-splitter
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-stats
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-to-fasta
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-to-tabular
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-trimmer
+/opt/anaconda1anaconda2anaconda3 text bin/gx-fastq-trimmer-by-quality

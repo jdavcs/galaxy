@@ -22,7 +22,7 @@ database/test_errors
 database/tmp
 database/*.sqlite
 database/openid_consumer_cache
-database/dependencies
+# database/dependencies
 
 # Python bytecode
 *.pyc
@@ -54,28 +54,28 @@ reports.ini
 tool_shed_wsgi.ini
 
 # Config files.
-datatypes_conf.xml
-tool_conf.xml
-external_service_types_conf.xml
-migrated_tools_conf.xml
-shed_tool_conf.xml
-tool_data_table_conf.xml
-tool_sheds_conf.xml
-integrated_tool_panel.xml
-openid_conf.xml
-shed_tool_data_table_conf.xml
-job_conf.xml
-data_manager_conf.xml
-shed_data_manager_conf.xml
-object_store_conf.xml
-job_metrics_conf.xml
-workflow_schedulers_conf.xml
-config/*
-config/plugins/interactive_environments/**/*.ini
-!config/plugins
-static/welcome.html.*
-static/welcome.html
-static/client_build_hash.txt
+# datatypes_conf.xml
+# tool_conf.xml
+# external_service_types_conf.xml
+# migrated_tools_conf.xml
+# shed_tool_conf.xml
+# tool_data_table_conf.xml
+# tool_sheds_conf.xml
+# integrated_tool_panel.xml
+# openid_conf.xml
+# shed_tool_data_table_conf.xml
+# job_conf.xml
+# data_manager_conf.xml
+# shed_data_manager_conf.xml
+# object_store_conf.xml
+# job_metrics_conf.xml
+# workflow_schedulers_conf.xml
+# config/*
+# config/plugins/interactive_environments/**/*.ini
+# !config/plugins
+# static/welcome.html.*
+# static/welcome.html
+# static/client_build_hash.txt
 
 # Tool data.
 tool-data/annotation_profiler_options.xml
@@ -101,25 +101,25 @@ tool-data/**/*.fa
 # Test output
 .pytest_cache/
 assets/
-test-data-cache
-run_framework_tests.html
-run_functional_tests.html
-run_integration_tests.html
-run_selenium_tests.html
-run_toolshed_tests.html
-run_api_tests.html
+# test-data-cache
+# run_framework_tests.html
+# run_functional_tests.html
+# run_integration_tests.html
+# run_selenium_tests.html
+# run_toolshed_tests.html
+# run_api_tests.html
 test/tool_shed/tmp/*
-.coverage
+# .coverage
 htmlcov
 run_unit_tests.html
 test/unit/**.log
-.tox
+# .tox
 
 # Project files
 *.kpf
 .idea
-.vscode
-client/**/jsconfig.json
+# .vscode
+# client/**/jsconfig.json
 
 
 # Chrom len files

@@ -1,0 +1,64 @@
+# This file created by conda-build 2.1.16
+# meta.yaml template originally from:
+# /opt/recipe, last modified Mon Sep 25 18:34:13 2017
+# ------------------------------------------------
+
+package:
+    name: galaxy_sequence_utils
+    version: 1.1.1
+source:
+    fn: galaxy_sequence_utils-1.1.1.tar.gz
+    md5: 44eb1c4245b87b7de91f1065ba290f81
+    url: https://pypi.python.org/packages/eb/23/01d0626c818d4d239306f9efcf97018bff7011c919c50c7932dce824956b/galaxy_sequence_utils-1.1.1.tar.gz
+build:
+    entry_points:
+        - gx-fastq-to-tabular=galaxy_utils.sequence.scripts.fastq_to_tabular:main
+        - gx-fastq-groomer=galaxy_utils.sequence.scripts.fastq_groomer:main
+        - gx-fastq-combiner=galaxy_utils.sequence.scripts.fastq_combiner:main
+        - gx-fastq-filter=galaxy_utils.sequence.scripts.fastq_filter:main
+        - gx-fastq-manipulation=galaxy_utils.sequence.scripts.fastq_manipulation:main
+        - gx-fastq-masker-by-quality=galaxy_utils.sequence.scripts.fastq_masker_by_quality:main
+        - gx-fastq-paired-end-deinterlacer=galaxy_utils.sequence.scripts.fastq_paired_end_deinterlacer:main
+        - gx-fastq-paired-end-interlacer=galaxy_utils.sequence.scripts.fastq_paired_end_interlacer:main
+        - gx-fastq-paired-end-joiner=galaxy_utils.sequence.scripts.fastq_paired_end_joiner:main
+        - gx-fastq-paired-end-splitter=galaxy_utils.sequence.scripts.fastq_paired_end_splitter:main
+        - gx-fastq-stats=galaxy_utils.sequence.scripts.fastq_stats:main
+        - gx-fastq-to-fasta=galaxy_utils.sequence.scripts.fastq_to_fasta:main
+        - gx-fastq-trimmer=galaxy_utils.sequence.scripts.fastq_trimmer:main
+        - gx-fastq-trimmer-by-quality=galaxy_utils.sequence.scripts.fastq_trimmer_by_quality:main
+    noarch: ''
+    noarch_python: false
+    number: '0'
+    preserve_egg_dir: 'True'
+    string: py36_0
+requirements:
+    build:
+        - wheel 0.30.0 py_1
+        - python 3.6.2 0
+        - six 1.11.0 py36_1
+        - tk 8.5.19 2
+        - ca-certificates 2017.7.27.1 0
+        - setuptools 36.3.0 py36_0
+        - certifi 2017.7.27.1 py36_0
+        - readline 6.2 0
+        - xz 5.2.3 0
+        - ncurses 5.9 10
+        - sqlite 3.13.0 1
+        - zlib 1.2.11 0
+        - pip 9.0.1 py36_0
+        - openssl 1.0.2l 0
+    run:
+        - python
+        - six
+test:
+    commands:
+        - gx-fastq-trimmer-by-quality --help
+        - gx-fastq-masker-by-quality --help
+    imports:
+        - galaxy_utils
+about:
+    home: https://github.com/galaxyproject/sequence_utils
+    license: Academic Free License version 3.0
+    summary: Sequence Utilities from the Galaxy project
+extra:
+    final: true

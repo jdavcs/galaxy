@@ -1,0 +1,13 @@
+<tool id="updater42" name="Updater-42" version="0.1.0">
+  <description>appends current time</description>
+    <requirements>
+      <requirement type="package" version="1.0.0">tmplib</requirement>
+    </requirements>
+  <command interpreter="python">updater42.py $input $output</command>
+  <inputs>
+    <param format="text" name="input" type="data" label="Source file"/>
+  </inputs>
+  <outputs>
+    <data format="text" name="output" />
+  </outputs>
+</tool>

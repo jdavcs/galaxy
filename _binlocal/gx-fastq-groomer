@@ -1,0 +1,7 @@
+#!/home/sergey/0dev/galaxy/tooldev/galaxy/.venv/bin/python
+
+if __name__ == '__main__':
+    import sys
+    import galaxy_utils.sequence.scripts.fastq_groomer
+
+    sys.exit(galaxy_utils.sequence.scripts.fastq_groomer.main())

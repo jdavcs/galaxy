@@ -1,0 +1,24 @@
+{
+  "arch": "x86_64",
+  "build": "h14c3975_1",
+  "build_number": 1,
+  "channel": "https://conda.anaconda.org/conda-forge/linux-64",
+  "constrains": [],
+  "depends": [
+    "ca-certificates",
+    "libgcc-ng >=7.3.0"
+  ],
+  "features": "",
+  "fn": "openssl-1.1.1b-h14c3975_1.tar.bz2",
+  "license": "OpenSSL",
+  "license_family": "Apache",
+  "md5": "724f4df911eb49fea73900efcd53868a",
+  "name": "openssl",
+  "platform": "linux",
+  "size": 4147434,
+  "subdir": "linux-64",
+  "timestamp": 1551976215546,
+  "track_features": "",
+  "url": "https://conda.anaconda.org/conda-forge/linux-64/openssl-1.1.1b-h14c3975_1.tar.bz2",
+  "version": "1.1.1b"
+}

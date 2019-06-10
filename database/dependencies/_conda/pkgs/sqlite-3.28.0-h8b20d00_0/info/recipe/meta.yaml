@@ -1,0 +1,65 @@
+# This file created by conda-build 3.17.8
+# meta.yaml template originally from:
+# /home/conda/recipe_root, last modified Thu May 23 12:47:46 2019
+# ------------------------------------------------
+
+package:
+    name: sqlite
+    version: 3.28.0
+source:
+    sha256: d61b5286f062adfce5125eaf544d495300656908e61fca143517afcc0a89b7c3
+    url: https://www.sqlite.org/2019/sqlite-autoconf-3280000.tar.gz
+build:
+    number: '0'
+    run_exports:
+        - sqlite >=3.28.0,<4.0a0
+    string: h8b20d00_0
+requirements:
+    build:
+        - binutils_impl_linux-64 2.31.1 h6176602_1
+        - binutils_linux-64 2.31.1 h6176602_7
+        - gcc_impl_linux-64 7.3.0 habb00fd_1
+        - gcc_linux-64 7.3.0 h553295d_7
+        - libgcc-ng 8.2.0 hdf63c60_1
+        - libstdcxx-ng 8.2.0 hdf63c60_1
+        - make 4.2.1 h14c3975_2004
+    host:
+        - libgcc-ng 8.2.0 hdf63c60_1
+        - libstdcxx-ng 8.2.0 hdf63c60_1
+        - ncurses 6.1 hf484d3e_1002
+        - readline 7.0 hf8c457e_1001
+    run:
+        - libgcc-ng >=7.3.0
+        - ncurses >=6.1,<6.2.0a0
+        - readline >=7.0,<8.0a0
+        - readline >=7.0,<8.0a0
+test:
+    commands:
+        - sqlite3 --version
+        - test -f $PREFIX/lib/libsqlite3${SHLIB_EXT}
+        - test -f $PREFIX/include/sqlite3.h
+about:
+    description: 'SQLite is a self-contained, high-reliability, embedded, full-featured,
+
+        public-domain, SQL database engine.It is the most used database engine
+
+        in the world.
+
+        '
+    dev_url: https://github.com/mackyle/sqlite
+    doc_source_url: https://github.com/mackyle/sqlite/tree/master/doc
+    doc_url: http://www.sqlite.org/docs.html
+    home: http://www.sqlite.org/
+    license: Public-Domain (http://www.sqlite.org/copyright.html)
+    license_url: http://www.sqlite.org/copyright.html
+    summary: Implements a self-contained, zero-configuration, SQL database engine
+extra:
+    copy_test_source_files: true
+    final: true
+    recipe-maintainers:
+        - jakirkham
+        - jjhelmus
+        - mingwandroid
+        - msarahan
+        - ocefpaf
+        - snorfalorpagus
