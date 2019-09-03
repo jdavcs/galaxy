@@ -193,12 +193,77 @@ class BaseAppConfiguration(object):
                     paths = listify(values[-1])
             setattr(self, var, [resolve_path(x, self.root) for x in paths])
 
+class Foo(): #TODO
+    pass
 
 class GalaxyAppConfiguration(BaseAppConfiguration):
     deprecated_options = ('database_file', 'track_jobs_in_database')
     default_config_file_name = 'galaxy.yml'
 
+
+    def _load_schema(self):
+        self.schema = AppSchema(GALAXY_CONFIG_SCHEMA_PATH, GALAXY_APP_NAME)
+
+
+    def _load_raw_properties(self): #TODO not needed: we already have appschema!
+        # maybe load defaults and then override from kwargs?
+
+        self.raw_properties = {}
+        for property, data in self.schema.properties.items():
+            default_val = data.get('default')
+            self.raw_properties[key] = default_val
+
+
+    def _load_properties(self):
+        """ 
+        Create attributes for all properties defined in the schema YAML file.
+        Attributes for nested properties have the form parent-name__child-name
+        (number of levels is arbitrary).
+        """
+
+        foo = Foo() #TODO REMOVE THIS
+        for property, data in self.schema.properties.items():
+            default_val = data.get('default')
+            #setattr(self, property, default_val)
+
+            setattr(foo, property, default_val)
+
+        # TODO process recursively
+        return foo
+
+
+    def _update_properties_from_kwargs(self, kwargs):
+        # TODO make this unit-testable.
+        for key, value in kwargs.items():
+            if key in self.schema.properties.keys():
+                setattr(self, key, value)
+
+
     def __init__(self, **kwargs):
+
+
+        self._load_schema()
+        f = self._load_properties()
+        #self._update_properties_from_kwargs(kwargs)
+
+
+
+        #print('000000000000000000000000000')
+        #print(self.__dict__)
+        #raise Exception('vvvvvvvvvvvvvvvvvv')
+
+        self.database_template = kwargs.get("database_template")
+
+        self.database_template = self.raw_properties['database_template']
+
+
+        #or: just loop over a list of property names?
+        for property in tomake:
+            name = get_name(property)
+            setattr(self, name, self.raw_properties[name])
+
+
+
         self.config_dict = kwargs
         self.root = find_root(kwargs)
 
@@ -799,6 +864,19 @@ class GalaxyAppConfiguration(BaseAppConfiguration):
                 'filename': kwargs['log_destination'],
                 'filters': ['stack']
             }
+
+
+        print('000000000000000000000000000000000000000000000000000000000')
+        for key, val in f.__dict__.items():
+            if key not in self.__dict__:
+                print(key, val)
+        print('111111111111111111111111111111111111111111111111111111111')
+
+        print(len(self.__dict__))
+        #print(self.__dict__)
+        raise Exception('vvvvvvvvvvvvvvvvvv')
+
+
 
     def _set_reloadable_properties(self, kwargs):
         reloadable_config_options = get_reloadable_config_options()

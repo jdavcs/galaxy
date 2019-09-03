@@ -26,6 +26,10 @@ class Schema(object):
         option.update(raw_option)
         return option
 
+    @property
+    def properties(self):
+        return self.app_schema
+
 
 class AppSchema(Schema):
 
