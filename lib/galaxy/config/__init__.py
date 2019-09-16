@@ -559,11 +559,9 @@ class GalaxyAppConfiguration(BaseAppConfiguration):
         # Statistics and profiling with statsd
         self.statsd_host = kwargs.get('statsd_host', '')
 
-        ie_dirs = kwargs.get('interactive_environment_plugins_directory', None)
+        ie_dirs = self.interactive_environment_plugins_directory
         self.gie_dirs = [d.strip() for d in (ie_dirs.split(",") if ie_dirs else [])]
-        if ie_dirs and not self.visualization_plugins_directory:
-            self.visualization_plugins_directory = ie_dirs
-        elif ie_dirs:
+        if ie_dirs:
             self.visualization_plugins_directory += ",%s" % ie_dirs
 
         self.gie_swarm_mode = string_as_bool(kwargs.get('interactive_environment_swarm_mode', False))
