@@ -185,12 +185,17 @@ class BaseAppConfiguration(object):
 class GalaxyAppConfiguration(BaseAppConfiguration):
     deprecated_options = ('database_file', 'track_jobs_in_database')
     default_config_file_name = 'galaxy.yml'
+    # {config option: deprecated directory name}
+    # - path separator is not allowed in values
+    # - values will be left-stripped from user-provided paths for matching keys
+    deprecated_relative_dirs = {'config_dir': 'config', 'data_dir': 'database'}
 
     def __init__(self, **kwargs):
         self._load_schema()  # Load schema from schema definition file
         self._load_config_from_schema()  # Load default propery values from schema
         self._update_raw_config_from_kwargs(kwargs)  # Overwrite default values passed as kwargs
         self._create_attributes_from_raw_config()  # Create attributes for LOADED properties
+        self._resolve_paths(kwargs)  # Overwrite attributes (not _raw_config) w/resolved paths
         self._process_config(kwargs)  # Finish processing configuration
 
     def _load_schema(self):
@@ -198,12 +203,15 @@ class GalaxyAppConfiguration(BaseAppConfiguration):
         self.appschema = self.schema.app_schema
 
     def _load_config_from_schema(self):
-        self._raw_config = {}  # keeps track of values provided to the app
-        self.reloadable_options = set()
+        self._raw_config = {}  # keeps track of startup values (kwargs or schema default)
+        self.reloadable_options = set()  # config options we can reload at runtime
+        self._paths_to_resolve = {}  # {config option: referenced config option}
         for key, data in self.appschema.items():
             self._raw_config[key] = data.get('default')
             if data.get('reloadable'):
                 self.reloadable_options.add(key)
+            if data.get('path_resolves_to'):
+                self._paths_to_resolve[key] = data.get('path_resolves_to')
 
     def _update_raw_config_from_kwargs(self, kwargs):
         type_converters = {
@@ -221,6 +229,27 @@ class GalaxyAppConfiguration(BaseAppConfiguration):
     def _create_attributes_from_raw_config(self):
         for key, value in self._raw_config.items():
             setattr(self, key, value)
+
+    def _resolve_paths(self, kwargs):
+        for key, resolve_to in self._paths_to_resolve.items():
+            path = getattr(self, key)  # path prior to being resolved
+            resolve_to_path = getattr(self, resolve_to)  # get path to resolve to
+            # Check if path was supplied by user + if that option has a deprecated dir
+            if key in kwargs and resolve_to in self.deprecated_relative_dirs:
+                path = self._strip_old_relative_dir(key, path, resolve_to, resolve_to_path)
+            resolved_path = os.path.join(resolve_to_path, path)
+            setattr(self, key, resolved_path)
+
+    def _strip_old_relative_dir(self, key, path, resolve_to, resolve_to_path):
+        dir = path.split(os.sep)[0]  # first dir in path
+        if dir == self.deprecated_relative_dirs[resolve_to]:
+            ignore = dir + os.sep
+            log.warning(
+                "Paths for the '%s' option are now relative to '%s', remove the leading '%s' "
+                "to suppress this warning: %s", key, resolve_to_path, ignore, path
+            )
+            path = path[len(ignore):]
+        return path
 
     def _process_config(self, kwargs):
         self.config_dict = kwargs
