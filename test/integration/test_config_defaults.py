@@ -7,9 +7,27 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
     """
     Test automatic creation of configuration properties and assignment of
     default values specified in the schema.
+
+    This test case should have tests for ALL properties listed in the main
+    schema file. Whenever the schema is modified, this test case must be
+    modified to reflect that change.  
+    If a default is set and not modified at
+    load time,...
+    If a default is set and modified at load time, ....
+    If a default is not set, the property should have the value null.
+
     """
     def get_default(self, key):
         return self._app.config.appschema[key]['default']
+
+    def test_config_dir(self):
+        pass # TODO can I test this?
+
+    def test_data_dir(self):
+        pass # TODO can I test this?
+
+    def test_default_database_connection(self):
+        assert self._app.config.database_connection is None
 
    # def test_default_database_engine_option_pool_size(self):
    #     expect = self.get_default('database_engine_option_pool_size')
@@ -31,6 +49,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    #     expect = self.get_default('database_query_profiling_proxy')
    #     assert expect == self._app.config.database_query_profiling_proxy
 
+    def test_default_database_template(self):
+        assert self._app.config.database_template is None
+
    #def test_default_slow_query_log_threshold(self):
    #    expect = self.get_default('slow_query_log_threshold')
    #    assert expect == self._app.config.slow_query_log_threshold
@@ -38,6 +59,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    #def test_default_enable_per_request_sql_debugging(self):
    #    expect = self.get_default('enable_per_request_sql_debugging')
    #    assert expect == self._app.config.enable_per_request_sql_debugging
+
+    def test_default_install_database_connection(self):
+        assert self._app.config.install_database_connection is None
 
    #def test_default_database_auto_migrate(self):
    #    expect = self.get_default('database_auto_migrate')
@@ -116,6 +140,12 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
 #        expect = self.get_default('dependency_resolvers_config_file')
 #        assert expect == os.path.basename(self._app.config.dependency_resolvers_config_file)
 
+    def test_default_conda_prefix(self):
+        assert self._app.config.conda_prefix is None
+
+    def test_default_conda_exec(self):
+        assert self._app.config.conda_exec is None
+
 #    def test_default_conda_debug(self):
 #        expect = self.get_default('conda_debug')
 #        assert expect == self._app.config.conda_debug
@@ -144,6 +174,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
 #        expect = self.get_default('use_cached_dependency_manager')
 #        assert expect == self._app.config.use_cached_dependency_manager
 
+    def test_default_tool_dependency_cache_dir(self):
+        assert self._app.config.tool_dependency_cache_dir is None
+
 #    def test_default_precache_dependencies(self):
 #        expect = self.get_default('precache_dependencies')
 #        assert expect == self._app.config.precache_dependencies
@@ -169,6 +202,12 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
     #def test_default_enable_mulled_containers(self):
     #    expect = self.get_default('enable_mulled_containers')
     #    assert expect == self._app.config.enable_mulled_containers
+
+    def test_default_containers_resolvers_config_file(self):
+        assert self._app.config.containers_resolvers_config_file is None
+
+    def test_default_involucro_path(self):
+        assert self._app.config.involucro_path is None
 
     #def test_default_involucro_auto_init(self):
     #    expect = self.get_default('involucro_auto_init')
@@ -200,6 +239,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    #     expect = self.get_default('tool_data_path')
    #     assert expect == os.path.basename(self._app.config.tool_data_path)
 
+    def test_default_shed_tool_data_path(self):
+        assert self._app.config.shed_tool_data_path is None
+
    # def test_default_watch_tool_data_dir(self):
    #     expect = self.get_default('watch_tool_data_dir')
    #     assert expect == self._app.config.watch_tool_data_dir
@@ -225,6 +267,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    # def test_default_visualization_plugins_directory(self):
    #     expect = self.get_default('visualization_plugins_directory')
    #     assert expect == self._app.config.visualization_plugins_directory
+
+    def test_default_interactive_environment_plugins_directory(self):
+        assert self._app.config.interactive_environment_plugins_directory is None
 
    # def test_default_tour_config_dir(self): # TODO fails
    #     expect = self.get_default('tour_config_dir')
@@ -282,10 +327,34 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    #     expect = self.get_default('object_store_store_by')
    #     assert expect == self._app.config.object_store_store_by
 #
+    def test_default_smtp_server(self):
+        assert self._app.config.smtp_server is None
+
+    def test_default_smtp_username(self):
+        assert self._app.config.smtp_username is None
+
+    def test_default_smtp_password(self):
+        assert self._app.config.smtp_password is None
+
 #    def test_default_smtp_ssl(self):
 #        expect = self.get_default('smtp_ssl')
 #        assert expect == self._app.config.smtp_ssl
-#
+
+    def test_default_mailing_join_addr(self):
+        assert self._app.config.mailing_join_addr is None
+
+    def test_default_error_email_to(self):
+        assert self._app.config.error_email_to is None
+
+    def test_default_email_from(self):
+        assert self._app.config.email_from is None
+        
+    def test_default_instance_resource_url(self):
+        assert self._app.config.instance_resource_url is None
+
+    def test_default_blacklist_file(self):
+        assert self._app.config.blacklist_file is None
+
 #    def test_default_registration_warning_message(self):
 #        expect = self.get_default('registration_warning_message')
 #        assert expect == self._app.config.registration_warning_message
@@ -310,6 +379,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
     #    expect = self.get_default('session_duration')
     #    assert expect == self._app.config.session_duration
 
+    def test_default_ga_code(self):
+        assert self._app.config.ga_code is None
+
     #def test_default_display_servers(self):
     #    expect = self.get_default('display_servers')
     #    assert expect == self._app.config.display_servers
@@ -330,9 +402,15 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
     #    expect = self.get_default('message_box_visible')
     #    assert expect == self._app.config.message_box_visible
 
+    def test_default_message_box_content(self):
+        assert self._app.config.message_box_content is None
+
     #def test_default_message_box_class(self):
     #    expect = self.get_default('message_box_class')
     #    assert expect == self._app.config.message_box_class
+
+    def test_default_brand(self):
+        assert self._app.config.brand is None
 
    # def test_default_pretty_datetime_format(self):  #TODO fails
    #     expect = self.get_default('pretty_datetime_format')
@@ -359,6 +437,9 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    # def test_default_logo_url(self):
    #     expect = self.get_default('logo_url')
    #     assert expect == self._app.config.logo_url
+
+    def test_default_helpsite_url(self):
+        assert self._app.config.helpsite_url is None
 
    # def test_default_wiki_url(self):
    #     expect = self.get_default('wiki_url')
@@ -387,6 +468,12 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    # def test_default_genomespace_ui_url(self):
    #     expect = self.get_default('genomespace_ui_url')
    #     assert expect == self._app.config.genomespace_ui_url
+
+    def test_default_terms_url(self):
+        assert self._app.config.terms_url is None
+
+    def test_default_qa_url(self):
+        assert self._app.config.qa_url is None
 
    # def test_default_static_enabled(self):
    #     expect = self.get_default('static_enabled')
@@ -420,111 +507,616 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
    #     expect = self.get_default('static_robots_txt')
    #     assert expect == self._app.config.static_robots_txt
 
+   # def test_default_display_chunk_size(self):
+   #     expect = self.get_default('display_chunk_size')
+   #     assert expect == self._app.config.display_chunk_size
 
-# TESTING THESE
+#    def test_default_apache_xsendfile(self):
+#        expect = self.get_default('apache_xsendfile')
+#        assert expect == self._app.config.apache_xsendfile
+#
+    def test_default_nginx_x_accel_redirect_base(self):
+        assert self._app.config.nginx_x_accel_redirect_base is None
 
+#    def test_default_upstream_gzip(self):
+#        expect = self.get_default('upstream_gzip')
+#        assert expect == self._app.config.upstream_gzip
+#
+#    def test_default_x_frame_options(self):
+#        expect = self.get_default('x_frame_options')
+#        assert expect == self._app.config.x_frame_options
+#
+    def test_default_nginx_upload_store(self):
+        assert self._app.config.nginx_upload_store is None
 
+    def test_default_nginx_upload_path(self):
+        assert self._app.config.nginx_upload_path is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_nginx_upload_job_files_store(self):
+        assert self._app.config.nginx_upload_job_files_store is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_nginx_upload_job_files_path(self):
+        assert self._app.config.nginx_upload_job_files_path is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#   # def test_default_chunk_upload_size(self):  # TODO fails
+#   #     expect = self.get_default('chunk_upload_size')
+#   #     assert expect == self._app.config.chunk_upload_size
+#
+#    def test_default_dynamic_proxy_manage(self):
+#        expect = self.get_default('dynamic_proxy_manage')
+#        assert expect == self._app.config.dynamic_proxy_manage
+#
+#    def test_default_dynamic_proxy(self):
+#        expect = self.get_default('dynamic_proxy')
+#        assert expect == self._app.config.dynamic_proxy
+#
+#    def test_default_dynamic_proxy_session_map(self):
+#        expect = self.get_default('dynamic_proxy_session_map')
+#        assert expect == self._app.config.dynamic_proxy_session_map
+#
+#    def test_default_dynamic_proxy_bind_port(self):
+#        expect = self.get_default('dynamic_proxy_bind_port')
+#        assert expect == self._app.config.dynamic_proxy_bind_port
+#
+#    def test_default_dynamic_proxy_bind_ip(self):
+#        expect = self.get_default('dynamic_proxy_bind_ip')
+#        assert expect == self._app.config.dynamic_proxy_bind_ip
+#
+#    def test_default_dynamic_proxy_debug(self):
+#        expect = self.get_default('dynamic_proxy_debug')
+#        assert expect == self._app.config.dynamic_proxy_debug
+#
+#    def test_default_dynamic_proxy_external_proxy(self):
+#        expect = self.get_default('dynamic_proxy_external_proxy')
+#        assert expect == self._app.config.dynamic_proxy_external_proxy
+#
+#    def test_default_dynamic_proxy_prefix(self):
+#        expect = self.get_default('dynamic_proxy_prefix')
+#        assert expect == self._app.config.dynamic_proxy_prefix
+#
+#    def test_default_dynamic_proxy_golang_noaccess(self):
+#        expect = self.get_default('dynamic_proxy_golang_noaccess')
+#        assert expect == self._app.config.dynamic_proxy_golang_noaccess
+#
+#    def test_default_dynamic_proxy_golang_clean_interval(self):
+#        expect = self.get_default('dynamic_proxy_golang_clean_interval')
+#        assert expect == self._app.config.dynamic_proxy_golang_clean_interval
+#
+#    def test_default_dynamic_proxy_golang_docker_address(self):
+#        expect = self.get_default('dynamic_proxy_golang_docker_address')
+#        assert expect == self._app.config.dynamic_proxy_golang_docker_address
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_dynamic_proxy_golang_api_key(self):
+        assert self._app.config.dynamic_proxy_golang_api_key is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_auto_configure_logging(self):
+#        expect = self.get_default('auto_configure_logging')
+#        assert expect == self._app.config.auto_configure_logging
+#
+#    def test_default_log_level(self):
+#        expect = self.get_default('log_level')
+#        assert expect == self._app.config.log_level
+#
+    def test_default_logging(self):
+        assert self._app.config.logging is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_database_engine_option_echo(self):
+#        expect = self.get_default('database_engine_option_echo')
+#        assert expect == self._app.config.database_engine_option_echo
+#
+#    def test_default_database_engine_option_echo_pool(self):
+#        expect = self.get_default('database_engine_option_echo_pool')
+#        assert expect == self._app.config.database_engine_option_echo_pool
+#
+#    def test_default_log_events(self):
+#        expect = self.get_default('log_events')
+#        assert expect == self._app.config.log_events
+#
+#    def test_default_log_actions(self):
+#        expect = self.get_default('log_actions')
+#        assert expect == self._app.config.log_actions
+#
+#    def test_default_fluent_log(self):
+#        expect = self.get_default('fluent_log')
+#        assert expect == self._app.config.fluent_log
+#
+#    def test_default_fluent_host(self):
+#        expect = self.get_default('fluent_host')
+#        assert expect == self._app.config.fluent_host
+#
+#    def test_default_fluent_port(self):
+#        expect = self.get_default('fluent_port')
+#        assert expect == self._app.config.fluent_port
+#
+#    def test_default_sanitize_all_html(self):
+#        expect = self.get_default('sanitize_all_html')
+#        assert expect == self._app.config.sanitize_all_html
+#
+#   # def test_default_sanitize_whitelist_file(self):  # TODO fails
+#   #     expect = self.get_default('sanitize_whitelist_file')
+#   #     assert expect == self._app.config.sanitize_whitelist_file
+#
+#    def test_default_serve_xss_vulnerable_mimetypes(self):
+#        expect = self.get_default('serve_xss_vulnerable_mimetypes')
+#        assert expect == self._app.config.serve_xss_vulnerable_mimetypes
+#
+    def test_default_allowed_origin_hostnames(self):
+        assert self._app.config.allowed_origin_hostnames is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_trust_jupyter_notebook_conversion(self):
+#        expect = self.get_default('trust_jupyter_notebook_conversion')
+#        assert expect == self._app.config.trust_jupyter_notebook_conversion
+#
+#    def test_default_debug(self):
+#        expect = self.get_default('debug')
+#        assert expect == self._app.config.debug
+#
+#    def test_default_use_lint(self):
+#        expect = self.get_default('use_lint')
+#        assert expect == self._app.config.use_lint
+#
+#    def test_default_use_profile(self):
+#        expect = self.get_default('use_profile')
+#        assert expect == self._app.config.use_profile
+#
+#    def test_default_use_printdebug(self):
+#        expect = self.get_default('use_printdebug')
+#        assert expect == self._app.config.use_printdebug
+#
+#    def test_default_use_interactive(self):
+#        expect = self.get_default('use_interactive')
+#        assert expect == self._app.config.use_interactive
+#
+#   # def test_default_monitor_thread_join_timeout(self):  # TODO fail
+#   #     expect = self.get_default('monitor_thread_join_timeout')
+#   #     assert expect == self._app.config.monitor_thread_join_timeout
+#
+#    def test_default_use_heartbeat(self):
+#        expect = self.get_default('use_heartbeat')
+#        assert expect == self._app.config.use_heartbeat
+#
+#    def test_default_heartbeat_interval(self):
+#        expect = self.get_default('heartbeat_interval')
+#        assert expect == self._app.config.heartbeat_interval
+#
+    def test_default_heartbeat_log(self):
+        assert self._app.config.heartbeat_log is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_sentry_dsn(self):
+        assert self._app.config.sentry_dsn is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_sentry_sloreq_threshold(self):
+#        expect = self.get_default('sentry_sloreq_threshold')
+#        assert expect == self._app.config.sentry_sloreq_threshold
+#
+    def test_default_statsd_host(self):
+        assert self._app.config.statsd_host is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_statsd_port(self):
+#        expect = self.get_default('statsd_port')
+#        assert expect == self._app.config.statsd_port
+#
+#    def test_default_statsd_prefix(self):
+#        expect = self.get_default('statsd_prefix')
+#        assert expect == self._app.config.statsd_prefix
+#
+#    def test_default_statsd_influxdb(self):
+#        expect = self.get_default('statsd_influxdb')
+#        assert expect == self._app.config.statsd_influxdb
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_library_import_dir(self):
+        assert self._app.config.library_import_dir is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_user_library_import_dir(self):
+        assert self._app.config.user_library_import_dir is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_user_library_import_dir_auto_creation(self):
+#        expect = self.get_default('user_library_import_dir_auto_creation')
+#        assert expect == self._app.config.user_library_import_dir_auto_creation
+#
+    def test_default_user_library_import_symlink_whitelist(self):
+        assert self._app.config.user_library_import_symlink_whitelist is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_user_library_import_check_permissions(self):
+#        expect = self.get_default('user_library_import_check_permissions')
+#        assert expect == self._app.config.user_library_import_check_permissions
+#
+#    def test_default_allow_path_paste(self):
+#        expect = self.get_default('allow_path_paste')
+#        assert expect == self._app.config.allow_path_paste
+#
+    def test_default_disable_library_comptypes(self):
+        assert self._app.config.disable_library_comptypes is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_transfer_manager_port(self):
+#        expect = self.get_default('transfer_manager_port')
+#        assert expect == self._app.config.transfer_manager_port
+#
+#    def test_default_tool_name_boost(self):
+#        expect = self.get_default('tool_name_boost')
+#        assert expect == self._app.config.tool_name_boost
+#
+#    def test_default_tool_section_boost(self):
+#        expect = self.get_default('tool_section_boost')
+#        assert expect == self._app.config.tool_section_boost
+#
+#    def test_default_tool_description_boost(self):
+#        expect = self.get_default('tool_description_boost')
+#        assert expect == self._app.config.tool_description_boost
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_tool_label_boost(self):
+#         expect = self.get_default('tool_label_boost')
+#         assert expect == self._app.config.tool_label_boost
+#
+#    def test_default_tool_stub_boost(self):
+#        expect = self.get_default('tool_stub_boost')
+#        assert expect == self._app.config.tool_stub_boost
+#
+#    def test_default_tool_help_boost(self):
+#        expect = self.get_default('tool_help_boost')
+#        assert expect == self._app.config.tool_help_boost
+#
+#    def test_default_tool_search_limit(self):
+#        expect = self.get_default('tool_search_limit')
+#        assert expect == self._app.config.tool_search_limit
+#
+#    def test_default_tool_enable_ngram_search(self):
+#        expect = self.get_default('tool_enable_ngram_search')
+#        assert expect == self._app.config.tool_enable_ngram_search
+#
+#    def test_default_tool_ngram_minsize(self):
+#        expect = self.get_default('tool_ngram_minsize')
+#        assert expect == self._app.config.tool_ngram_minsize
+#
+#    def test_default_tool_ngram_maxsize(self):
+#        expect = self.get_default('tool_ngram_maxsize')
+#        assert expect == self._app.config.tool_ngram_maxsize
+#
+#    #def test_default_tool_test_data_directories(self):  # TODO FAILS
+#    #    expect = self.get_default('tool_test_data_directories')
+#    #    assert expect == self._app.config.tool_test_data_directories
+#
+#    #def test_default_id_secret(self):  #TODO FAILSJK;
+#    #    expect = self.get_default('id_secret')
+#    #    assert expect == self._app.config.id_secret
+#
+##    def test_default_use_remote_user(self): # TODO FAILS
+##        expect = self.get_default('use_remote_user')
+##        assert expect == self._app.config.use_remote_user
+#
+    def test_default_remote_user_maildomain(self):
+        assert self._app.config.remote_user_maildomain is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_remote_user_header(self):
+#        expect = self.get_default('remote_user_header')
+#        assert expect == self._app.config.remote_user_header
+#
+#    def test_default_remote_user_secret(self):
+#        expect = self.get_default('remote_user_secret')
+#        assert expect == self._app.config.remote_user_secret
+#
+    def test_default_remote_user_logout_href(self):
+        assert self._app.config.remote_user_logout_href is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_normalize_remote_user_email(self):
+#        expect = self.get_default('normalize_remote_user_email')
+#        assert expect == self._app.config.normalize_remote_user_email
+#
+    def test_default_single_user(self):
+        assert self._app.config.single_user is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_admin_users(self):
+        assert self._app.config.admin_users is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_require_login(self):
+#        expect = self.get_default('require_login')
+#        assert expect == self._app.config.require_login
+#
+#    def test_default_show_welcome_with_login(self):
+#        expect = self.get_default('show_welcome_with_login')
+#        assert expect == self._app.config.show_welcome_with_login
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_allow_user_creation(self):
+#        expect = self.get_default('allow_user_creation')
+#        assert expect == self._app.config.allow_user_creation
+#
+#   # def test_default_allow_user_deletion(self): # TODO fail
+#   #     expect = self.get_default('allow_user_deletion')
+#   #     assert expect == self._app.config.allow_user_deletion
+#
+#    def test_default_allow_user_impersonation(self):
+#        expect = self.get_default('allow_user_impersonation')
+#        assert expect == self._app.config.allow_user_impersonation
+#
+#    def test_default_show_user_prepopulate_form(self):
+#        expect = self.get_default('show_user_prepopulate_form')
+#        assert expect == self._app.config.show_user_prepopulate_form
+#
+#    def test_default_allow_user_dataset_purge(self):
+#        expect = self.get_default('allow_user_dataset_purge')
+#        assert expect == self._app.config.allow_user_dataset_purge
+#
+#    def test_default_new_user_dataset_access_role_default_private(self):
+#        expect = self.get_default('new_user_dataset_access_role_default_private')
+#        assert expect == self._app.config.new_user_dataset_access_role_default_private
+#
+#    def test_default_expose_user_name(self):
+#        expect = self.get_default('expose_user_name')
+#        assert expect == self._app.config.expose_user_name
+#
+#    def test_default_expose_user_email(self):
+#        expect = self.get_default('expose_user_email')
+#        assert expect == self._app.config.expose_user_email
+#
+    def test_default_fetch_url_whitelist(self):
+        assert self._app.config.fetch_url_whitelist is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_enable_beta_gdpr(self):
+#        expect = self.get_default('enable_beta_gdpr')
+#        assert expect == self._app.config.enable_beta_gdpr
+#
+#    def test_default_enable_beta_containers_interface(self):
+#        expect = self.get_default('enable_beta_containers_interface')
+#        assert expect == self._app.config.enable_beta_containers_interface
+#
+#    def test_default_enable_beta_workflow_modules(self):
+#        expect = self.get_default('enable_beta_workflow_modules')
+#        assert expect == self._app.config.enable_beta_workflow_modules
+#
+#    def test_default_default_workflow_export_format(self):
+#        expect = self.get_default('default_workflow_export_format')
+#        assert expect == self._app.config.default_workflow_export_format
+#
+#    def test_default_force_beta_workflow_scheduled_min_steps(self):
+#        expect = self.get_default('force_beta_workflow_scheduled_min_steps')
+#        assert expect == self._app.config.force_beta_workflow_scheduled_min_steps
+#
+#    def test_default_force_beta_workflow_scheduled_for_collections(self):
+#        expect = self.get_default('force_beta_workflow_scheduled_for_collections')
+#        assert expect == self._app.config.force_beta_workflow_scheduled_for_collections
+#
+#    def test_default_parallelize_workflow_scheduling_within_histories(self):
+#        expect = self.get_default('parallelize_workflow_scheduling_within_histories')
+#        assert expect == self._app.config.parallelize_workflow_scheduling_within_histories
+#
+#    def test_default_maximum_workflow_invocation_duration(self):
+#        expect = self.get_default('maximum_workflow_invocation_duration')
+#        assert expect == self._app.config.maximum_workflow_invocation_duration
+#
+#    def test_default_maximum_workflow_jobs_per_scheduling_iteration(self):
+#        expect = self.get_default('maximum_workflow_jobs_per_scheduling_iteration')
+#        assert expect == self._app.config.maximum_workflow_jobs_per_scheduling_iteration
+#
+#    def test_default_history_local_serial_workflow_scheduling(self):
+#        expect = self.get_default('history_local_serial_workflow_scheduling')
+#        assert expect == self._app.config.history_local_serial_workflow_scheduling
+#
+#    def test_default_enable_oidc(self):
+#        expect = self.get_default('enable_oidc')
+#        assert expect == self._app.config.enable_oidc
+#
+#   # def test_default_oidc_config_file(self): # TODO FAIL
+#   #     expect = self.get_default('oidc_config_file')
+#   #     assert expect == self._app.config.oidc_config_file
+#
+#   # def test_default_oidc_backends_config_file(self): #TODO fail
+#   #     expect = self.get_default('oidc_backends_config_file')
+#   #     assert expect == self._app.config.oidc_backends_config_file
+#
+#   # def test_default_auth_config_file(self):  # TODO fail
+#   #     expect = self.get_default('auth_config_file')
+#   #     assert expect == self._app.config.auth_config_file
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_api_allow_run_as(self):
+        assert self._app.config.api_allow_run_as is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+    def test_default_master_api_key(self):
+        assert self._app.config.master_api_key is None
 
-   #def test_default_(self):
-   #    expect = self.get_default('')
-   #    assert expect == self._app.config.
+#    def test_default_enable_openid(self):
+#        expect = self.get_default('enable_openid')
+#        assert expect == self._app.config.enable_openid
+#
+#   # def test_default_openid_consumer_cache_path(self):# TODO fails
+#   #     expect = self.get_default('openid_consumer_cache_path')
+#   #     assert expect == self._app.config.openid_consumer_cache_path
+#
+#    def test_default_enable_tool_tags(self):
+#        expect = self.get_default('enable_tool_tags')
+#        assert expect == self._app.config.enable_tool_tags
+#
+#    def test_default_enable_unique_workflow_defaults(self):
+#        expect = self.get_default('enable_unique_workflow_defaults')
+#        assert expect == self._app.config.enable_unique_workflow_defaults
+#
+#    def test_default_myexperiment_url(self):
+#        expect = self.get_default('myexperiment_url')
+#        assert expect == self._app.config.myexperiment_url
+#
+    def test_default_ftp_upload_dir(self):
+        assert self._app.config.ftp_upload_dir is None
 
+    def test_default_ftp_upload_site(self):
+        assert self._app.config.ftp_upload_site is None
 
+#    def test_default_ftp_upload_dir_identifier(self):
+#        expect = self.get_default('ftp_upload_dir_identifier')
+#        assert expect == self._app.config.ftp_upload_dir_identifier
+#
+#    def test_default_ftp_upload_dir_template(self):
+#        expect = self.get_default('ftp_upload_dir_template')
+#        assert expect == self._app.config.ftp_upload_dir_template
+#
+#   # def test_default_ftp_upload_purge(self):# TODO fails
+#   #     expect = self.get_default('ftp_upload_purge')
+#   #     assert expect == self._app.config.ftp_upload_purge
+#
+#    def test_default_enable_quotas(self):
+#        expect = self.get_default('enable_quotas')
+#        assert expect == self._app.config.enable_quotas
+#
+#   # def test_default_expose_dataset_path(self):  # TODO fails
+#   #     expect = self.get_default('expose_dataset_path')
+#   #     assert expect == self._app.config.expose_dataset_path
 
+#    def test_default_expose_potentially_sensitive_job_metrics(self):
+#        expect = self.get_default('expose_potentially_sensitive_job_metrics')
+#        assert expect == self._app.config.expose_potentially_sensitive_job_metrics
+#
+#    def test_default_enable_legacy_sample_tracking_api(self):
+#        expect = self.get_default('enable_legacy_sample_tracking_api')
+#        assert expect == self._app.config.enable_legacy_sample_tracking_api
+#
+#    def test_default_enable_data_manager_user_view(self):
+#        expect = self.get_default('enable_data_manager_user_view')
+#        assert expect == self._app.config.enable_data_manager_user_view
+#
+#    #def test_default_data_manager_config_file(self): # TODO FAILS
+#    #    expect = self.get_default('data_manager_config_file')
+#    #    assert expect == self._app.config.data_manager_config_file
+#
+#   # def test_default_shed_data_manager_config_file(self): #TODO fails
+#   #     expect = self.get_default('shed_data_manager_config_file')
+#   #     assert expect == self._app.config.shed_data_manager_config_file
+#
+#   # def test_default_galaxy_data_manager_data_path(self): #TODO fails
+#   #     expect = self.get_default('galaxy_data_manager_data_path')
+#   #     assert expect == self._app.config.galaxy_data_manager_data_path
+#
+#   # def test_default_job_config_file(self): #TODO fails
+#   #     expect = self.get_default('job_config_file')
+#   #     assert expect == self._app.config.job_config_file
+#
+# how to test job_config????? #TODO
 
+    def test_default_dependency_resolvers(self):
+        assert self._app.config.dependency_resolvers is None
+
+# how to test dependency_resolution????? #TODO
+      
+    def test_default_default_job_resubmission_condition(self):
+        assert self._app.config.default_job_resubmission_condition is None
+
+#    def test_default_track_jobs_in_database(self):
+#        expect = self.get_default('track_jobs_in_database')
+#        assert expect == self._app.config.track_jobs_in_database
+#
+#   # def test_default_use_tasked_jobs(self): #TODO fails
+#   #     expect = self.get_default('use_tasked_jobs')
+#   #     assert expect == self._app.config.use_tasked_jobs
+#
+#    def test_default_local_task_queue_workers(self):
+#        expect = self.get_default('local_task_queue_workers')
+#        assert expect == self._app.config.local_task_queue_workers
+#
+#    def test_default_enable_job_recovery(self):
+#        expect = self.get_default('enable_job_recovery')
+#        assert expect == self._app.config.enable_job_recovery
+#
+#   # def test_default_retry_metadata_internally(self): #TODO fails
+#   #     expect = self.get_default('retry_metadata_internally')
+#   #     assert expect == self._app.config.retry_metadata_internally
+#
+#    def test_default_max_metadata_value_size(self):
+#        expect = self.get_default('max_metadata_value_size')
+#        assert expect == self._app.config.max_metadata_value_size
+#
+#    def test_default_outputs_to_working_directory(self):
+#        expect = self.get_default('outputs_to_working_directory')
+#        assert expect == self._app.config.outputs_to_working_directory
+
+#    def test_default_retry_job_output_collection(self):
+#        expect = self.get_default('retry_job_output_collection')
+#        assert expect == self._app.config.retry_job_output_collection
+
+   # def test_default_preserve_python_environment(self):
+   #     expect = self.get_default('preserve_python_environment')
+   #     assert expect == self._app.config.preserve_python_environment
+
+   # def test_default_cleanup_job(self): # TODO FAILS
+   #     expect = self.get_default('cleanup_job')
+   #     assert expect == self._app.config.cleanup_job
+
+    def test_default_drmaa_external_runjob_script(self):
+        assert self._app.config.drmaa_external_runjob_script is None
+
+    def test_default_drmaa_external_killjob_script(self):
+        assert self._app.config.drmaa_external_killjob_script is None
+
+    def test_default_external_chown_script(self):
+        assert self._app.config.external_chown_script is None
+
+   # def test_default_real_system_username(self):
+   #     expect = self.get_default('real_system_username')
+   #     assert expect == self._app.config.real_system_username
+
+    def test_default_environment_setup_file(self):
+        assert self._app.config.environment_setup_file is None
+
+   # def test_default_job_resource_params_file(self): #TODO FAIL
+   #     expect = self.get_default('job_resource_params_file')
+   #     assert expect == self._app.config.job_resource_params_file
+
+   # def test_default_workflow_resource_params_file(self): #TODO fail
+   #     expect = self.get_default('workflow_resource_params_file')
+   #     assert expect == self._app.config.workflow_resource_params_file
+
+   # def test_default_workflow_resource_params_mapper(self): #TODO failJKJ
+   #     expect = self.get_default('workflow_resource_params_mapper')
+   #     assert expect == self._app.config.workflow_resource_params_mapper
+
+   # def test_default_workflow_schedulers_config_file(self): #TODO fail
+   #     expect = self.get_default('workflow_schedulers_config_file')
+   #     assert expect == self._app.config.workflow_schedulers_config_file
+
+   # def test_default_cache_user_job_count(self):
+   #     expect = self.get_default('cache_user_job_count')
+   #     assert expect == self._app.config.cache_user_job_count
+
+    def test_default_tool_filters(self):
+        assert self._app.config.tool_filters is None
+
+    def test_default_tool_label_filters(self):
+        assert self._app.config.tool_label_filters is None
+
+    def test_default_tool_section_filters(self):
+        assert self._app.config.tool_section_filters is None
+
+   # def test_default_user_tool_filters(self): #TODO FAIL
+   #     expect = self.get_default('user_tool_filters')
+   #     assert expect == self._app.config.user_tool_filters
+
+   # def test_default_user_tool_section_filters(self): #TODO fail
+   #     expect = self.get_default('user_tool_section_filters')
+   #     assert expect == self._app.config.user_tool_section_filters
+
+   # def test_default_user_tool_label_filters(self): #TODO fail
+   #     expect = self.get_default('user_tool_label_filters')
+   #     assert expect == self._app.config.user_tool_label_filters
+
+   # def test_default_toolbox_filter_base_modules(self): #TODO FAIL
+   #     expect = self.get_default('toolbox_filter_base_modules')
+   #     assert expect == self._app.config.toolbox_filter_base_modules
+
+   #def test_default_amqp_internal_connection(self): #TODO
+   #    expect = self.get_default('amqp_internal_connection')
+   #    assert expect == self._app.config.amqp_internal_connection
+
+   # def test_default_enable_communication_server(self):
+   #     expect = self.get_default('enable_communication_server')
+   #     assert expect == self._app.config.enable_communication_server
+
+   # def test_default_communication_server_host(self):
+   #     expect = self.get_default('communication_server_host')
+   #     assert expect == self._app.config.communication_server_host
+
+   # def test_default_communication_server_port(self):
+   #     expect = self.get_default('communication_server_port')
+   #     assert expect == self._app.config.communication_server_port
+
+    def test_default_persistent_communication_rooms(self):
+        assert self._app.config.persistent_communication_rooms is None
+
+   # def test_default_use_pbkdf2(self):
+   #     expect = self.get_default('use_pbkdf2')
+   #     assert expect == self._app.config.use_pbkdf2
