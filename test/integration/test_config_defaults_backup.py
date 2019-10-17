@@ -73,6 +73,8 @@ class ConfigDefaultsTestCase(integration_util.IntegrationTestCase):
     def _resolve(self, parent, child):
         return os.path.join(parent, child) if child else parent
 
+
+
     # def test_default_database_connection(self):
     # TODO: untestable; refactor config/__init__ to test
 
