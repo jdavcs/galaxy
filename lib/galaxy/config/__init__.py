@@ -731,30 +731,17 @@ class GalaxyAppConfiguration(BaseAppConfiguration):
         Backwards compatibility for config files moved to the config/ dir.
         """
         defaults = dict(
-            auth_config_file=[self._in_config_dir('auth_conf.xml')],
             build_sites_config_file=[self._in_config_dir('build_sites.yml')],
             containers_config_file=[self._in_config_dir('containers_conf.yml')],
-            data_manager_config_file=[self._in_config_dir('data_manager_conf.xml')],
             datatypes_config_file=[self._in_config_dir('datatypes_conf.xml'), self._in_sample_dir('datatypes_conf.xml.sample')],
-            dependency_resolvers_config_file=[self._in_config_dir('dependency_resolvers_conf.xml')],
             error_report_file=[self._in_config_dir('error_report.yml')],
-            job_config_file=[self._in_config_dir('job_conf.xml')],
             job_metrics_config_file=[self._in_config_dir('job_metrics_conf.xml'), self._in_sample_dir('job_metrics_conf.xml.sample')],
-            job_resource_params_file=[self._in_config_dir('job_resource_params_conf.xml')],
             local_conda_mapping_file=[self._in_config_dir('local_conda_mapping.yml')],
-            migrated_tools_config=[self._in_config_dir('migrated_tools_conf.xml')],
             modules_mapping_files=[self._in_config_dir('environment_modules_mapping.yml')],
-            object_store_config_file=[self._in_config_dir('object_store_conf.xml')],
-            oidc_backends_config_file=[self._in_config_dir('oidc_backends_config.xml')],
-            oidc_config_file=[self._in_config_dir('oidc_config.xml')],
             shed_data_manager_config_file=[self._in_mutable_config_dir('shed_data_manager_conf.xml')],
             shed_tool_config_file=[self._in_mutable_config_dir('shed_tool_conf.xml')],
             shed_tool_data_table_config=[self._in_mutable_config_dir('shed_tool_data_table_conf.xml')],
             tool_destinations_config_file=[self._in_config_dir('tool_destinations.yml')],
-            tool_sheds_config_file=[self._in_config_dir('tool_sheds_conf.xml')],
-            user_preferences_extra_conf_path=[self._in_config_dir('user_preferences_extra_conf.yml')],
-            workflow_resource_params_file=[self._in_config_dir('workflow_resource_params_conf.xml')],
-            workflow_schedulers_config_file=[self._in_config_dir('workflow_schedulers_conf.xml')],
         )
         listify_defaults = {
             'tool_data_table_config_path': [
