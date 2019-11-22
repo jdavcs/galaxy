@@ -36,11 +36,8 @@ class ConfigWatchers(object):
             self.job_rule_watcher = get_watcher(app.config, 'watch_job_rules', monitor_what_str='job rules')
         else:
             self.job_rule_watcher = get_watcher(app.config, '__invalid__')
-        self.core_config_watcher = get_watcher(
-            app.config,
-            'watch_core_config',
-            monitor_what_str='core config file'
-        )
+        self.core_config_watcher = get_watcher(app.config, 'watch_core_config', monitor_what_str='core config file')
+        self.tour_watcher = get_watcher(app.config, 'watch_tours', monitor_what_str='tours')
 
     @property
     def watchers(self):
@@ -50,7 +47,8 @@ class ConfigWatchers(object):
                 self.tool_data_watcher,
                 self.tool_watcher,
                 self.job_rule_watcher,
-                self.core_config_watcher)
+                self.core_config_watcher,
+                self.tour_watcher)
 
     def change_state(self, active):
         if active:
@@ -81,6 +79,7 @@ class ConfigWatchers(object):
                 self.app.config.config_file,
                 callback=partial(reload_config_options, self.app.config)
             )
+        self.tour_watcher.watch_directory(self.app.config.tour_config_dir, callback=partial(load_tour, self.tours.ToursRegistry))
         self.active = True
 
     def shutdown(self):
