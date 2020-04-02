@@ -889,6 +889,29 @@ class TestDriver(object):
             self.tear_down()
 
 
+class GalaxyConfigTestDriver(TestDriver):
+    """
+    Minimal TestDriver intended for testing Galaxy's initial configuration state on startup.
+    Includes only the minimum setup necesary to start galaxy and load its initial configuration.
+    Does not launch a server.
+    """
+
+    def setup(self):
+        self._configure()
+        # if you need access to the temp dir or anything else, simply create instance variables here.
+
+    def _configure(self):
+        #self.galaxy_test_tmp_dir = self.mkdtemp()
+        #tempdir = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
+        tempdir = tempfile.mkdtemp(dir=self.mkdtemp())  # TODO do we need dir in dir???
+        galaxy_db_path = database_files_path(tempdir)
+        galaxy_db_path = os.path.realpath(galaxy_db_path)
+        if not os.path.exists(galaxy_db_path):
+            os.makedirs(galaxy_db_path)
+        galaxy_config = database_conf(galaxy_db_path, prefer_template_database=False)
+        self.app = build_galaxy_app(galaxy_config)
+
+
 class GalaxyTestDriver(TestDriver):
     """Instantial a Galaxy-style nose TestDriver for testing Galaxy."""
 
