@@ -905,7 +905,6 @@ class GalaxyConfigTestDriver(TestDriver):
         if not os.path.exists(galaxy_db_path):
             os.makedirs(galaxy_db_path)
         galaxy_config = database_conf(galaxy_db_path, prefer_template_database=False)
-        galaxy_config['database_connection'] = 'invalid'  # let's try to mock this out
         self.app = build_galaxy_app(galaxy_config)
 
 

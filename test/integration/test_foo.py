@@ -14,6 +14,5 @@ def get_config():
     return driver.app.config
 
 def test_one():
-#     config = get_config()
-# sanity check; must be triggered by keyword 'foo'
+    config = get_config()
     assert True
