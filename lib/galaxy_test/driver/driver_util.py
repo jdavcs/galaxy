@@ -984,21 +984,25 @@ class GalaxyConfigTestDriver3(TestDriver):
                 if hasattr(galaxy_config, '__call__'):
                     galaxy_config = galaxy_config()
                 if galaxy_config is None:
-                    setup_galaxy_config_kwds = dict(
-                        use_test_file_dir=not self.testing_shed_tools,
-                        default_install_db_merged=True,
-                        default_tool_conf=self.default_tool_conf,
-                        datatypes_conf=self.datatypes_conf_override,
-                        prefer_template_database=getattr(config_object, "prefer_template_database", False),
-                        log_format=self.log_format,
-                        conda_auto_init=getattr(config_object, "conda_auto_init", False),
-                        conda_auto_install=getattr(config_object, "conda_auto_install", False),
-                        use_shared_connection_for_amqp=getattr(config_object, "use_shared_connection_for_amqp", False)
-                    )
-                    galaxy_config = setup_galaxy_config(
-                        galaxy_db_path,
-                        **setup_galaxy_config_kwds
-                    )
+                    #setup_galaxy_config_kwds = dict(
+                    #    use_test_file_dir=not self.testing_shed_tools,
+                    #    default_install_db_merged=True,
+                    #    default_tool_conf=self.default_tool_conf,
+                    #    datatypes_conf=self.datatypes_conf_override,
+                    #    prefer_template_database=getattr(config_object, "prefer_template_database", False),
+                    #    log_format=self.log_format,
+                    #    conda_auto_init=getattr(config_object, "conda_auto_init", False),
+                    #    conda_auto_install=getattr(config_object, "conda_auto_install", False),
+                    #    use_shared_connection_for_amqp=getattr(config_object, "use_shared_connection_for_amqp", False)
+                    #)
+
+
+                    galaxy_config = setup_galaxy_config(galaxy_db_path)
+
+#                    galaxy_config = setup_galaxy_config(
+#                        galaxy_db_path,
+#                        **setup_galaxy_config_kwds
+#                    )
 
                     isolate_galaxy_config = getattr(config_object, "isolate_galaxy_config", False)
                     if isolate_galaxy_config:
