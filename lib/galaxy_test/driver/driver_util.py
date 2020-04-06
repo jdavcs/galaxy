@@ -910,7 +910,9 @@ class GalaxyConfigTestDriver(TestDriver):
         self.app = build_galaxy_app(galaxy_config)
 
 
-class GalaxyConfigTestDriver2(TestDriver):
+class GalaxyConfigTestDriver3(TestDriver):
+    """Instantial a Galaxy-style nose TestDriver for testing Galaxy."""
+
     testing_shed_tools = False
 
     def _configure(self, config_object=None):
@@ -1037,6 +1039,55 @@ class GalaxyConfigTestDriver2(TestDriver):
         if config_object is None:
             config_object = self
         return config_object
+
+    def setup_shed_tools(self, testing_migrated_tools=False, testing_installed_tools=True):
+        setup_shed_tools_for_test(
+            self.app,
+            self.galaxy_test_tmp_dir,
+            testing_migrated_tools,
+            testing_installed_tools
+        )
+
+    def build_tool_tests(self, testing_shed_tools=None, return_test_classes=False):
+        if self.app is None:
+            return
+
+        if testing_shed_tools is None:
+            testing_shed_tools = getattr(self, "testing_shed_tools", False)
+
+        # We must make sure that functional.test_toolbox is always imported after
+        # database_contexts.galaxy_content is set (which occurs in this method above).
+        # If functional.test_toolbox is imported before database_contexts.galaxy_content
+        # is set, sa_session will be None in all methods that use it.
+        import functional.test_toolbox
+        functional.test_toolbox.toolbox = self.app.toolbox
+        # When testing data managers, do not test toolbox.
+        test_classes = functional.test_toolbox.build_tests(
+            app=self.app,
+            testing_shed_tools=testing_shed_tools,
+            master_api_key=get_master_api_key(),
+            user_api_key=get_user_api_key(),
+        )
+        if return_test_classes:
+            return test_classes
+        return functional.test_toolbox
+
+    def run_tool_test(self, tool_id, index=0, resource_parameters={}):
+        host, port, url = target_url_parts()
+        galaxy_interactor_kwds = {
+            "galaxy_url": url,
+            "master_api_key": get_master_api_key(),
+            "api_key": get_user_api_key(),
+            "keep_outputs_dir": None,
+        }
+        galaxy_interactor = GalaxyInteractorApi(**galaxy_interactor_kwds)
+        verify_tool(
+            tool_id=tool_id,
+            test_index=index,
+            galaxy_interactor=galaxy_interactor,
+            resource_parameters=resource_parameters
+        )
+
 
 
 

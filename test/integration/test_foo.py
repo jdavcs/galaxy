@@ -5,8 +5,8 @@ from datetime import timedelta
 import pytest
 
 from galaxy.util import listify
-#from galaxy_test.driver.driver_util import GalaxyConfigTestDriver2 as Driver
-from galaxy_test.driver.driver_util import GalaxyTestDriver as Driver
+from galaxy_test.driver.driver_util import GalaxyConfigTestDriver3 as Driver
+#from galaxy_test.driver.driver_util import GalaxyTestDriver as Driver
 
 
 @pytest.fixture(scope='module')
