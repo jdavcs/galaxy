@@ -975,69 +975,24 @@ class GalaxyConfigTestDriver3(TestDriver):
                 galaxy_config = self._saved_galaxy_config
             else:
                 tempdir = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
-                # Configure the database path.
                 galaxy_db_path = database_files_path(tempdir)
-                # Allow config object to specify a config dict or a method to produce
-                # one - other just read the properties above and use the default
-                # implementation from this file.
                 galaxy_config = getattr(config_object, "galaxy_config", None)
                 if hasattr(galaxy_config, '__call__'):
                     galaxy_config = galaxy_config()
                 if galaxy_config is None:
-                    #setup_galaxy_config_kwds = dict(
-                    #    use_test_file_dir=not self.testing_shed_tools,
-                    #    default_install_db_merged=True,
-                    #    default_tool_conf=self.default_tool_conf,
-                    #    datatypes_conf=self.datatypes_conf_override,
-                    #    prefer_template_database=getattr(config_object, "prefer_template_database", False),
-                    #    log_format=self.log_format,
-                    #    conda_auto_init=getattr(config_object, "conda_auto_init", False),
-                    #    conda_auto_install=getattr(config_object, "conda_auto_install", False),
-                    #    use_shared_connection_for_amqp=getattr(config_object, "use_shared_connection_for_amqp", False)
-                    #)
-
-
+                
                     galaxy_config = setup_galaxy_config(galaxy_db_path)
 
-#                    galaxy_config = setup_galaxy_config(
-#                        galaxy_db_path,
-#                        **setup_galaxy_config_kwds
-#                    )
+        #            isolate_galaxy_config = getattr(config_object, "isolate_galaxy_config", False)
+        #            if isolate_galaxy_config:
+        #                galaxy_config["config_dir"] = tempdir
 
-                    isolate_galaxy_config = getattr(config_object, "isolate_galaxy_config", False)
-                    if isolate_galaxy_config:
-                        galaxy_config["config_dir"] = tempdir
-
-                    self._saved_galaxy_config = galaxy_config
+        #            self._saved_galaxy_config = galaxy_config
 
 
             self.app = build_galaxy_app(galaxy_config)  # can we stop here?
 
 
-            #if galaxy_config is not None:
-            #    handle_galaxy_config_kwds = handle_config or getattr(
-            #        config_object, "handle_galaxy_config_kwds", None
-            #    )
-            #    if handle_galaxy_config_kwds is not None:
-            #        handle_galaxy_config_kwds(galaxy_config)
-
-            #if self.use_uwsgi:
-            #    server_wrapper = launch_uwsgi(
-            #        galaxy_config,
-            #        tempdir=tempdir,
-            #        config_object=config_object,
-            #    )
-            #else:
-            #    # ---- Build Application --------------------------------------------------
-            #    self.app = build_galaxy_app(galaxy_config)
-            #    server_wrapper = launch_server(
-            #        self.app,
-            #        buildapp.app_factory,
-            #        galaxy_config,
-            #        config_object=config_object,
-            #    )
-            #    log.info("Functional tests will be run against external Galaxy server %s:%s" % (server_wrapper.host, server_wrapper.port))
-            #self.server_wrappers.append(server_wrapper)
         else:
             log.info("Functional tests will be run against test managed Galaxy server %s" % self.external_galaxy)
             # Ensure test file directory setup even though galaxy config isn't built.
