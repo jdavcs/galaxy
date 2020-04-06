@@ -905,7 +905,139 @@ class GalaxyConfigTestDriver(TestDriver):
         if not os.path.exists(galaxy_db_path):
             os.makedirs(galaxy_db_path)
         galaxy_config = database_conf(galaxy_db_path, prefer_template_database=False)
+
+
         self.app = build_galaxy_app(galaxy_config)
+
+
+class GalaxyConfigTestDriver2(TestDriver):
+    testing_shed_tools = False
+
+    def _configure(self, config_object=None):
+        """Setup various variables used to launch a Galaxy server."""
+        config_object = self._ensure_config_object(config_object)
+        self.external_galaxy = os.environ.get('GALAXY_TEST_EXTERNAL', None)
+
+        # Allow a particular test to force uwsgi or any test to use uwsgi with
+        # the GALAXY_TEST_UWSGI environment variable.
+        use_uwsgi = os.environ.get('GALAXY_TEST_UWSGI', None)
+        if not use_uwsgi:
+            if getattr(config_object, "require_uwsgi", None):
+                use_uwsgi = True
+        self.use_uwsgi = use_uwsgi
+
+        # Allow controlling the log format
+        log_format = os.environ.get('GALAXY_TEST_LOG_FORMAT', None)
+        if not log_format and use_uwsgi:
+            log_format = "%(name)s %(levelname)-5.5s %(asctime)s " \
+                         "[p:%(process)s,w:%(worker_id)s,m:%(mule_id)s] " \
+                         "[%(threadName)s] %(message)s"
+
+        self.log_format = log_format
+
+        self.galaxy_test_tmp_dir = get_galaxy_test_tmp_dir()
+        self.temp_directories.append(self.galaxy_test_tmp_dir)
+
+        self.testing_shed_tools = getattr(config_object, "testing_shed_tools", False)
+
+        if getattr(config_object, "framework_tool_and_types", False):
+            default_tool_conf = FRAMEWORK_SAMPLE_TOOLS_CONF
+            datatypes_conf_override = FRAMEWORK_DATATYPES_CONF
+        else:
+            default_tool_conf = getattr(config_object, "default_tool_conf", None)
+            datatypes_conf_override = getattr(config_object, "datatypes_conf_override", None)
+
+        self.default_tool_conf = default_tool_conf
+        self.datatypes_conf_override = datatypes_conf_override
+
+    def setup(self, config_object=None):
+        """Setup a Galaxy server for functional test (if needed).
+
+        Configuration options can be specified as attributes on the supplied
+        ```config_object``` (defaults to self).
+        """
+        self._saved_galaxy_config = None
+        self._configure(config_object)
+        self._register_and_run_servers(config_object)
+
+    def restart(self, config_object=None, handle_config=None):
+        self.stop_servers()
+        self._register_and_run_servers(config_object, handle_config=handle_config)
+
+    def _register_and_run_servers(self, config_object=None, handle_config=None):
+        config_object = self._ensure_config_object(config_object)
+        self.app = None
+
+        if self.external_galaxy is None:
+            if self._saved_galaxy_config is not None:
+                galaxy_config = self._saved_galaxy_config
+            else:
+                tempdir = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
+                # Configure the database path.
+                galaxy_db_path = database_files_path(tempdir)
+                # Allow config object to specify a config dict or a method to produce
+                # one - other just read the properties above and use the default
+                # implementation from this file.
+                galaxy_config = getattr(config_object, "galaxy_config", None)
+                if hasattr(galaxy_config, '__call__'):
+                    galaxy_config = galaxy_config()
+                if galaxy_config is None:
+                    setup_galaxy_config_kwds = dict(
+                        use_test_file_dir=not self.testing_shed_tools,
+                        default_install_db_merged=True,
+                        default_tool_conf=self.default_tool_conf,
+                        datatypes_conf=self.datatypes_conf_override,
+                        prefer_template_database=getattr(config_object, "prefer_template_database", False),
+                        log_format=self.log_format,
+                        conda_auto_init=getattr(config_object, "conda_auto_init", False),
+                        conda_auto_install=getattr(config_object, "conda_auto_install", False),
+                        use_shared_connection_for_amqp=getattr(config_object, "use_shared_connection_for_amqp", False)
+                    )
+                    galaxy_config = setup_galaxy_config(
+                        galaxy_db_path,
+                        **setup_galaxy_config_kwds
+                    )
+
+                    isolate_galaxy_config = getattr(config_object, "isolate_galaxy_config", False)
+                    if isolate_galaxy_config:
+                        galaxy_config["config_dir"] = tempdir
+
+                    self._saved_galaxy_config = galaxy_config
+
+            if galaxy_config is not None:
+                handle_galaxy_config_kwds = handle_config or getattr(
+                    config_object, "handle_galaxy_config_kwds", None
+                )
+                if handle_galaxy_config_kwds is not None:
+                    handle_galaxy_config_kwds(galaxy_config)
+
+            if self.use_uwsgi:
+                server_wrapper = launch_uwsgi(
+                    galaxy_config,
+                    tempdir=tempdir,
+                    config_object=config_object,
+                )
+            else:
+                # ---- Build Application --------------------------------------------------
+                self.app = build_galaxy_app(galaxy_config)
+                server_wrapper = launch_server(
+                    self.app,
+                    buildapp.app_factory,
+                    galaxy_config,
+                    config_object=config_object,
+                )
+                log.info("Functional tests will be run against external Galaxy server %s:%s" % (server_wrapper.host, server_wrapper.port))
+            self.server_wrappers.append(server_wrapper)
+        else:
+            log.info("Functional tests will be run against test managed Galaxy server %s" % self.external_galaxy)
+            # Ensure test file directory setup even though galaxy config isn't built.
+            ensure_test_file_dir_set()
+
+    def _ensure_config_object(self, config_object):
+        if config_object is None:
+            config_object = self
+        return config_object
+
 
 
 class GalaxyTestDriver(TestDriver):

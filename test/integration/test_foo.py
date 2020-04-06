@@ -5,14 +5,27 @@ from datetime import timedelta
 import pytest
 
 from galaxy.util import listify
-from galaxy_test.driver.driver_util import GalaxyConfigTestDriver
+from galaxy_test.driver.driver_util import GalaxyConfigTestDriver2 as Driver
 
 
-def get_config():
-    driver = GalaxyConfigTestDriver()
-    driver.setup()
-    return driver.app.config
+@pytest.fixture(scope='module')
+def driver(request):
+    request.addfinalizer(DRIVER.tear_down)
+    return DRIVER
 
-def test_one():
-    config = get_config()
+
+def create_driver():
+    global DRIVER
+    DRIVER = Driver()
+    DRIVER.setup()
+
+
+def get_config_data():
+    create_driver()
+    config = DRIVER.app.config
+    return [1]
+    
+
+@pytest.mark.parametrize('data', get_config_data())
+def test_one(data, driver):
     assert True
