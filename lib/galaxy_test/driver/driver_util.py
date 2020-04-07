@@ -1058,8 +1058,8 @@ def setup_galaxy_config3(   # TODO this is temporary
 
     shed_tool_data_table_config = default_shed_tool_data_table_config
 
-    config = dict(
-        admin_users='test@bx.psu.edu',
+#    config = dict(
+#        admin_users='test@bx.psu.edu',
 #        allow_library_path_paste=True,
 #        allow_user_creation=True,
 #        allow_user_deletion=True,
@@ -1072,7 +1072,7 @@ def setup_galaxy_config3(   # TODO this is temporary
 #        conda_auto_install=conda_auto_install,
 #        cleanup_job=cleanup_job,
 #        retry_metadata_internally=False,
-        data_dir=tmpdir,
+#        data_dir=tmpdir,
 #        data_manager_config_file=data_manager_config_file,
 #        enable_beta_tool_formats=True,
 #        expose_dataset_path=True,
@@ -1088,7 +1088,7 @@ def setup_galaxy_config3(   # TODO this is temporary
 #        master_api_key=master_api_key,
 #        running_functional_tests=True,
 #        shed_tool_data_table_config=shed_tool_data_table_config,
-        template_cache_path=template_cache_path,
+#        template_cache_path=template_cache_path,
 #        template_path='templates',
 #        tool_config_file=tool_conf,
 #        tool_data_table_config_path=tool_data_table_config_path,
@@ -1102,7 +1102,9 @@ def setup_galaxy_config3(   # TODO this is temporary
 #        logging=LOGGING_CONFIG_DEFAULT,
 #        monitor_thread_join_timeout=5,
 #        object_store_store_by="uuid",
-    )
+#    )
+
+    config = {}
     if not use_shared_connection_for_amqp:
         config["amqp_internal_connection"] = "sqlalchemy+sqlite:///%s?isolation_level=IMMEDIATE" % os.path.join(tmpdir, "control.sqlite")
 
