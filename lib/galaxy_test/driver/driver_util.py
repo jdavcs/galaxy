@@ -1108,47 +1108,47 @@ def setup_galaxy_config3(   # TODO this is temporary
 
     config.update(database_conf(tmpdir, prefer_template_database=prefer_template_database))
     config.update(install_database_conf(tmpdir, default_merged=default_install_db_merged))
-    if asbool(os.environ.get("GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE")):
-        object_store_config = os.path.join(tmpdir, "object_store_conf.yml")
-        with open(object_store_config, "w") as f:
-            contents = """
-type: hierarchical
-backends:
-   - id: files1
-     type: disk
-     weight: 1
-     files_dir: "${temp_directory}/files1"
-     extra_dirs:
-     - type: temp
-       path: "${temp_directory}/tmp1"
-     - type: job_work
-       path: "${temp_directory}/job_working_directory1"
-   - id: files2
-     type: disk
-     weight: 1
-     files_dir: "${temp_directory}/files2"
-     extra_dirs:
-     - type: temp
-       path: "${temp_directory}/tmp2"
-     - type: job_work
-       path: "${temp_directory}/job_working_directory2"
-"""
-            contents_template = string.Template(contents)
-            expanded_contents = contents_template.safe_substitute(temp_directory=tmpdir)
-            f.write(expanded_contents)
-        config["object_store_config_file"] = object_store_config
-
-    if datatypes_conf is not None:
-        config['datatypes_config_file'] = datatypes_conf
-    if enable_tool_shed_check:
-        config["enable_tool_shed_check"] = enable_tool_shed_check
-        config["hours_between_check"] = 0.001
-    tool_dependency_dir = os.environ.get('GALAXY_TOOL_DEPENDENCY_DIR')
-    if tool_dependency_dir:
-        config["tool_dependency_dir"] = tool_dependency_dir
-    # Used by shed's twill dependency stuff
-    # TODO: read from Galaxy's config API.
-    os.environ["GALAXY_TEST_TOOL_DEPENDENCY_DIR"] = tool_dependency_dir or os.path.join(tmpdir, 'dependencies')
+#    if asbool(os.environ.get("GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE")):
+#        object_store_config = os.path.join(tmpdir, "object_store_conf.yml")
+#        with open(object_store_config, "w") as f:
+#            contents = """
+#type: hierarchical
+#backends:
+#   - id: files1
+#     type: disk
+#     weight: 1
+#     files_dir: "${temp_directory}/files1"
+#     extra_dirs:
+#     - type: temp
+#       path: "${temp_directory}/tmp1"
+#     - type: job_work
+#       path: "${temp_directory}/job_working_directory1"
+#   - id: files2
+#     type: disk
+#     weight: 1
+#     files_dir: "${temp_directory}/files2"
+#     extra_dirs:
+#     - type: temp
+#       path: "${temp_directory}/tmp2"
+#     - type: job_work
+#       path: "${temp_directory}/job_working_directory2"
+#"""
+#            contents_template = string.Template(contents)
+#            expanded_contents = contents_template.safe_substitute(temp_directory=tmpdir)
+#            f.write(expanded_contents)
+#        config["object_store_config_file"] = object_store_config
+#
+#    if datatypes_conf is not None:
+#        config['datatypes_config_file'] = datatypes_conf
+#    if enable_tool_shed_check:
+#        config["enable_tool_shed_check"] = enable_tool_shed_check
+#        config["hours_between_check"] = 0.001
+#    tool_dependency_dir = os.environ.get('GALAXY_TOOL_DEPENDENCY_DIR')
+#    if tool_dependency_dir:
+#        config["tool_dependency_dir"] = tool_dependency_dir
+#    # Used by shed's twill dependency stuff
+#    # TODO: read from Galaxy's config API.
+#    os.environ["GALAXY_TEST_TOOL_DEPENDENCY_DIR"] = tool_dependency_dir or os.path.join(tmpdir, 'dependencies')
     return config
 
 
