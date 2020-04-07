@@ -1059,7 +1059,7 @@ def setup_galaxy_config3(   # TODO this is temporary
     shed_tool_data_table_config = default_shed_tool_data_table_config
 
     config = dict(
-#        admin_users='test@bx.psu.edu',
+        admin_users='test@bx.psu.edu',
 #        allow_library_path_paste=True,
 #        allow_user_creation=True,
 #        allow_user_deletion=True,
