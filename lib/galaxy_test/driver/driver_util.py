@@ -969,8 +969,16 @@ class GalaxyConfigTestDriver3(TestDriver):
     def _register_and_run_servers(self, config_object=None, handle_config=None):
         tempdir = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
         galaxy_db_path = database_files_path(tempdir)
-        galaxy_config = setup_galaxy_config3(galaxy_db_path)
-        self.app = build_galaxy_app(galaxy_config)
+
+        tmpdir = os.path.realpath(galaxy_db_path)
+        if not os.path.exists(tmpdir):
+            os.makedirs(tmpdir)
+
+        config = {}
+        config.update(database_conf(tmpdir, prefer_template_database=False))
+        config.update(install_database_conf(tmpdir, default_merged=True))
+        self.app = build_galaxy_app(config)
+
 
     def _ensure_config_object(self, config_object):
         if config_object is None:
@@ -979,87 +987,35 @@ class GalaxyConfigTestDriver3(TestDriver):
 
 
 
-def setup_galaxy_config3(   # TODO this is temporary
-    tmpdir,
-    use_test_file_dir=False,
-    default_install_db_merged=True,
-    default_tool_data_table_config_path=None,
-    default_shed_tool_data_table_config=None,
-    default_job_config_file=None,
-    enable_tool_shed_check=False,
-    default_tool_conf=None,
-    shed_tool_conf=None,
-    datatypes_conf=None,
-    update_integrated_tool_panel=False,
-    prefer_template_database=False,
-    log_format=None,
-    conda_auto_init=False,
-    conda_auto_install=False,
-    use_shared_connection_for_amqp=False,
-):
-    """Setup environment and build config for test Galaxy instance."""
-    # For certain docker operations this needs to be evaluated out - e.g. for cwltool.
-    tmpdir = os.path.realpath(tmpdir)
-    if not os.path.exists(tmpdir):
-        os.makedirs(tmpdir)
-    template_cache_path = tempfile.mkdtemp(prefix='compiled_templates_', dir=tmpdir)
-    new_file_path = tempfile.mkdtemp(prefix='new_files_path_', dir=tmpdir)
-    job_working_directory = tempfile.mkdtemp(prefix='job_working_directory_', dir=tmpdir)
-
-    if use_test_file_dir:
-        first_test_file_dir = ensure_test_file_dir_set()
-        if not os.path.isabs(first_test_file_dir):
-            first_test_file_dir = os.path.join(galaxy_root, first_test_file_dir)
-        library_import_dir = first_test_file_dir
-        import_dir = os.path.join(first_test_file_dir, 'users')
-        if os.path.exists(import_dir):
-            user_library_import_dir = import_dir
-        else:
-            user_library_import_dir = None
-    else:
-        user_library_import_dir = None
-        library_import_dir = None
-    job_config_file = os.environ.get('GALAXY_TEST_JOB_CONFIG_FILE', default_job_config_file)
-    tool_path = os.environ.get('GALAXY_TEST_TOOL_PATH', 'tools')
-    tool_data_table_config_path = _tool_data_table_config_path(default_tool_data_table_config_path)
-    default_data_manager_config = None
-    for data_manager_config in ['config/data_manager_conf.xml', 'data_manager_conf.xml']:
-        if os.path.exists(data_manager_config):
-            default_data_manager_config = data_manager_config
-    data_manager_config_file = "test/functional/tools/sample_data_manager_conf.xml"
-    if default_data_manager_config is not None:
-        data_manager_config_file = "%s,%s" % (default_data_manager_config, data_manager_config_file)
-    master_api_key = get_master_api_key()
-    cleanup_job = 'never' if ("GALAXY_TEST_NO_CLEANUP" in os.environ or
-                              "TOOL_SHED_TEST_NO_CLEANUP" in os.environ) else 'onsuccess'
-
-    # Data Manager testing temp path
-    # For storing Data Manager outputs and .loc files so that real ones don't get clobbered
-    galaxy_data_manager_data_path = tempfile.mkdtemp(prefix='data_manager_tool-data', dir=tmpdir)
-
-    tool_conf = os.environ.get('GALAXY_TEST_TOOL_CONF', default_tool_conf)
-    conda_auto_install = os.environ.get('GALAXY_TEST_CONDA_AUTO_INSTALL', conda_auto_install)
-    conda_auto_init = os.environ.get('GALAXY_TEST_CONDA_AUTO_INIT', conda_auto_init)
-    conda_prefix = os.environ.get('GALAXY_TEST_CONDA_PREFIX')
-    if tool_conf is None:
-        # As a fallback always at least allow upload.
-        tool_conf = FRAMEWORK_UPLOAD_TOOL_CONF
-
-    if shed_tool_conf is not None:
-        tool_conf = "%s,%s" % (tool_conf, shed_tool_conf)
-
-    shed_tool_data_table_config = default_shed_tool_data_table_config
-
-
-
-
-    config = {}
-#    if not use_shared_connection_for_amqp:
-#        config["amqp_internal_connection"] = "sqlalchemy+sqlite:///%s?isolation_level=IMMEDIATE" % os.path.join(tmpdir, "control.sqlite")
-
-    config.update(database_conf(tmpdir, prefer_template_database=prefer_template_database))
-    config.update(install_database_conf(tmpdir, default_merged=default_install_db_merged))
-    return config
+#def setup_galaxy_config3(   # TODO this is temporary
+#    tmpdir,
+#    use_test_file_dir=False,
+#    default_install_db_merged=True,
+#    default_tool_data_table_config_path=None,
+#    default_shed_tool_data_table_config=None,
+#    default_job_config_file=None,
+#    enable_tool_shed_check=False,
+#    default_tool_conf=None,
+#    shed_tool_conf=None,
+#    datatypes_conf=None,
+#    update_integrated_tool_panel=False,
+#    prefer_template_database=False,
+#    log_format=None,
+#    conda_auto_init=False,
+#    conda_auto_install=False,
+#    use_shared_connection_for_amqp=False,
+#):
+#
+#
+#    config = {}
+#
+#    tmpdir = os.path.realpath(tmpdir)
+#    if not os.path.exists(tmpdir):
+#        os.makedirs(tmpdir)
+#
+#    config.update(database_conf(tmpdir, prefer_template_database=prefer_template_database))
+#    config.update(install_database_conf(tmpdir, default_merged=default_install_db_merged))
+#    return config
 
 
 
