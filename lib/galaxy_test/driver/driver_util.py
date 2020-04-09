@@ -967,18 +967,10 @@ class GalaxyConfigTestDriver3(TestDriver):
         self._register_and_run_servers(config_object, handle_config=handle_config)
 
     def _register_and_run_servers(self, config_object=None, handle_config=None):
-        config_object = self._ensure_config_object(config_object)
-        self.app = None
-
-        if self.external_galaxy is None:
-            tempdir = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
-            galaxy_db_path = database_files_path(tempdir)
-            galaxy_config = setup_galaxy_config3(galaxy_db_path)
-            self.app = build_galaxy_app(galaxy_config)  # can we stop here?
-        else:
-            log.info("Functional tests will be run against test managed Galaxy server %s" % self.external_galaxy)
-            # Ensure test file directory setup even though galaxy config isn't built.
-            ensure_test_file_dir_set()
+        tempdir = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
+        galaxy_db_path = database_files_path(tempdir)
+        galaxy_config = setup_galaxy_config3(galaxy_db_path)
+        self.app = build_galaxy_app(galaxy_config)
 
     def _ensure_config_object(self, config_object):
         if config_object is None:
@@ -1058,99 +1050,12 @@ def setup_galaxy_config3(   # TODO this is temporary
 
     shed_tool_data_table_config = default_shed_tool_data_table_config
 
-#    config = dict(
-#        admin_users='test@bx.psu.edu',
-#        allow_library_path_paste=True,
-#        allow_user_creation=True,
-#        allow_user_deletion=True,
-#        api_allow_run_as='test@bx.psu.edu',
-#        auto_configure_logging=logging_config_file is None,
-#        check_migrate_tools=False,
-#        chunk_upload_size=100,
-#        conda_prefix=conda_prefix,
-#        conda_auto_init=conda_auto_init,
-#        conda_auto_install=conda_auto_install,
-#        cleanup_job=cleanup_job,
-#        retry_metadata_internally=False,
-#        data_dir=tmpdir,
-#        data_manager_config_file=data_manager_config_file,
-#        enable_beta_tool_formats=True,
-#        expose_dataset_path=True,
-#        ftp_upload_purge=False,
-#        galaxy_data_manager_data_path=galaxy_data_manager_data_path,
-#        id_secret='changethisinproductiontoo',
-#        job_config_file=job_config_file,
-#        job_working_directory=job_working_directory,
-#        library_import_dir=library_import_dir,
-#        log_destination="stdout",
-#        new_file_path=new_file_path,
-#        override_tempdir=False,
-#        master_api_key=master_api_key,
-#        running_functional_tests=True,
-#        shed_tool_data_table_config=shed_tool_data_table_config,
-#        template_cache_path=template_cache_path,
-#        template_path='templates',
-#        tool_config_file=tool_conf,
-#        tool_data_table_config_path=tool_data_table_config_path,
-#        tool_parse_help=False,
-#        tool_path=tool_path,
-#        update_integrated_tool_panel=update_integrated_tool_panel,
-#        use_tasked_jobs=True,
-#        use_heartbeat=False,
-#        user_library_import_dir=user_library_import_dir,
-#        webhooks_dir=TEST_WEBHOOKS_DIR,
-#        logging=LOGGING_CONFIG_DEFAULT,
-#        monitor_thread_join_timeout=5,
-#        object_store_store_by="uuid",
-#    )
-
     config = {}
     if not use_shared_connection_for_amqp:
         config["amqp_internal_connection"] = "sqlalchemy+sqlite:///%s?isolation_level=IMMEDIATE" % os.path.join(tmpdir, "control.sqlite")
 
     config.update(database_conf(tmpdir, prefer_template_database=prefer_template_database))
     config.update(install_database_conf(tmpdir, default_merged=default_install_db_merged))
-#    if asbool(os.environ.get("GALAXY_TEST_USE_HIERARCHICAL_OBJECT_STORE")):
-#        object_store_config = os.path.join(tmpdir, "object_store_conf.yml")
-#        with open(object_store_config, "w") as f:
-#            contents = """
-#type: hierarchical
-#backends:
-#   - id: files1
-#     type: disk
-#     weight: 1
-#     files_dir: "${temp_directory}/files1"
-#     extra_dirs:
-#     - type: temp
-#       path: "${temp_directory}/tmp1"
-#     - type: job_work
-#       path: "${temp_directory}/job_working_directory1"
-#   - id: files2
-#     type: disk
-#     weight: 1
-#     files_dir: "${temp_directory}/files2"
-#     extra_dirs:
-#     - type: temp
-#       path: "${temp_directory}/tmp2"
-#     - type: job_work
-#       path: "${temp_directory}/job_working_directory2"
-#"""
-#            contents_template = string.Template(contents)
-#            expanded_contents = contents_template.safe_substitute(temp_directory=tmpdir)
-#            f.write(expanded_contents)
-#        config["object_store_config_file"] = object_store_config
-#
-#    if datatypes_conf is not None:
-#        config['datatypes_config_file'] = datatypes_conf
-#    if enable_tool_shed_check:
-#        config["enable_tool_shed_check"] = enable_tool_shed_check
-#        config["hours_between_check"] = 0.001
-#    tool_dependency_dir = os.environ.get('GALAXY_TOOL_DEPENDENCY_DIR')
-#    if tool_dependency_dir:
-#        config["tool_dependency_dir"] = tool_dependency_dir
-#    # Used by shed's twill dependency stuff
-#    # TODO: read from Galaxy's config API.
-#    os.environ["GALAXY_TEST_TOOL_DEPENDENCY_DIR"] = tool_dependency_dir or os.path.join(tmpdir, 'dependencies')
     return config
 
 
