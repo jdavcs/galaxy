@@ -974,9 +974,11 @@ class GalaxyConfigTestDriver3(TestDriver):
         if not os.path.exists(tmpdir):
             os.makedirs(tmpdir)
 
-        config = {}
-        config.update(database_conf(tmpdir, prefer_template_database=False))
-        config.update(install_database_conf(tmpdir, default_merged=True))
+        #config = {}  # use a blank config and add only what's needed to build galaxy
+        #config.update(database_conf(tmpdir, prefer_template_database=False))
+        #config.update(install_database_conf(tmpdir, default_merged=True))
+
+        config = database_conf(tmpdir, prefer_template_database=False)
         self.app = build_galaxy_app(config)
 
 
