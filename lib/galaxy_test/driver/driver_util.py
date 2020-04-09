@@ -1050,9 +1050,12 @@ def setup_galaxy_config3(   # TODO this is temporary
 
     shed_tool_data_table_config = default_shed_tool_data_table_config
 
+
+
+
     config = {}
-    if not use_shared_connection_for_amqp:
-        config["amqp_internal_connection"] = "sqlalchemy+sqlite:///%s?isolation_level=IMMEDIATE" % os.path.join(tmpdir, "control.sqlite")
+#    if not use_shared_connection_for_amqp:
+#        config["amqp_internal_connection"] = "sqlalchemy+sqlite:///%s?isolation_level=IMMEDIATE" % os.path.join(tmpdir, "control.sqlite")
 
     config.update(database_conf(tmpdir, prefer_template_database=prefer_template_database))
     config.update(install_database_conf(tmpdir, default_merged=default_install_db_merged))
