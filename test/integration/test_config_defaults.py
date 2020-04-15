@@ -33,8 +33,8 @@ from datetime import timedelta
 import pytest
 
 from galaxy.util import listify
-#from galaxy_test.driver.driver_util import GalaxyTestDriver
-from galaxy_test.driver.driver_util import GalaxyConfigTestDriver
+from galaxy_test.driver.driver_util import GalaxyTestDriver
+#from galaxy_test.driver.driver_util import GalaxyConfigTestDriver
 
 OptionData = namedtuple('OptionData', ('key', 'expected', 'loaded'))
 
@@ -223,8 +223,8 @@ def create_driver():
     # but that's not compatible with the use use of pytest.mark.parametrize:
     # a fixture is not directly callable, so it cannot be used in place of get_config_data.
     global DRIVER
-    #DRIVER = GalaxyTestDriver()
-    DRIVER = GalaxyConfigTestDriver()
+    DRIVER = GalaxyTestDriver()
+    #DRIVER = GalaxyConfigTestDriver()
     DRIVER.setup()
 
 
