@@ -889,6 +889,137 @@ class TestDriver(object):
             self.tear_down()
 
 
+
+
+
+
+
+
+class GalaxyConfigTestDriver(TestDriver):
+    """Instantial a Galaxy-style nose TestDriver for testing Galaxy."""
+
+    testing_shed_tools = False
+
+    def _configure(self, config_object=None):
+        """Setup various variables used to launch a Galaxy server."""
+        config_object = self._ensure_config_object(config_object)
+        self.external_galaxy = os.environ.get('GALAXY_TEST_EXTERNAL', None)
+
+        # Allow a particular test to force uwsgi or any test to use uwsgi with
+        # the GALAXY_TEST_UWSGI environment variable.
+        use_uwsgi = os.environ.get('GALAXY_TEST_UWSGI', None)
+        if not use_uwsgi:
+            if getattr(config_object, "require_uwsgi", None):
+                use_uwsgi = True
+        self.use_uwsgi = use_uwsgi
+
+        # Allow controlling the log format
+        log_format = os.environ.get('GALAXY_TEST_LOG_FORMAT', None)
+        if not log_format and use_uwsgi:
+            log_format = "%(name)s %(levelname)-5.5s %(asctime)s " \
+                         "[p:%(process)s,w:%(worker_id)s,m:%(mule_id)s] " \
+                         "[%(threadName)s] %(message)s"
+
+        self.log_format = log_format
+
+        self.galaxy_test_tmp_dir = get_galaxy_test_tmp_dir()
+        self.temp_directories.append(self.galaxy_test_tmp_dir)
+
+        self.testing_shed_tools = getattr(config_object, "testing_shed_tools", False)
+
+        if getattr(config_object, "framework_tool_and_types", False):
+            default_tool_conf = FRAMEWORK_SAMPLE_TOOLS_CONF
+            datatypes_conf_override = FRAMEWORK_DATATYPES_CONF
+        else:
+            default_tool_conf = getattr(config_object, "default_tool_conf", None)
+            datatypes_conf_override = getattr(config_object, "datatypes_conf_override", None)
+
+        self.default_tool_conf = default_tool_conf
+        self.datatypes_conf_override = datatypes_conf_override
+
+    def setup(self, config_object=None):
+        """Setup a Galaxy server for functional test (if needed).
+
+        Configuration options can be specified as attributes on the supplied
+        ```config_object``` (defaults to self).
+        """
+        self._saved_galaxy_config = None
+        self._configure(config_object)
+        self._register_and_run_servers(config_object)
+
+    def restart(self, config_object=None, handle_config=None):
+        self.stop_servers()
+        self._register_and_run_servers(config_object, handle_config=handle_config)
+
+
+    def _register_and_run_servers(self, config_object=None, handle_config=None):
+        tmpdir0 = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
+        galaxy_db_path = database_files_path(tmpdir0)
+        tmpdir = os.path.realpath(galaxy_db_path)
+        if not os.path.exists(tmpdir):
+            os.makedirs(tmpdir)
+        config = database_conf(tmpdir, prefer_template_database=False)
+        self.app = build_galaxy_app(config)
+
+    def _ensure_config_object(self, config_object):
+        if config_object is None:
+            config_object = self
+        return config_object
+
+    def setup_shed_tools(self, testing_migrated_tools=False, testing_installed_tools=True):
+        setup_shed_tools_for_test(
+            self.app,
+            self.galaxy_test_tmp_dir,
+            testing_migrated_tools,
+            testing_installed_tools
+        )
+
+    def build_tool_tests(self, testing_shed_tools=None, return_test_classes=False):
+        if self.app is None:
+            return
+
+        if testing_shed_tools is None:
+            testing_shed_tools = getattr(self, "testing_shed_tools", False)
+
+        # We must make sure that functional.test_toolbox is always imported after
+        # database_contexts.galaxy_content is set (which occurs in this method above).
+        # If functional.test_toolbox is imported before database_contexts.galaxy_content
+        # is set, sa_session will be None in all methods that use it.
+        import functional.test_toolbox
+        functional.test_toolbox.toolbox = self.app.toolbox
+        # When testing data managers, do not test toolbox.
+        test_classes = functional.test_toolbox.build_tests(
+            app=self.app,
+            testing_shed_tools=testing_shed_tools,
+            master_api_key=get_master_api_key(),
+            user_api_key=get_user_api_key(),
+        )
+        if return_test_classes:
+            return test_classes
+        return functional.test_toolbox
+
+    def run_tool_test(self, tool_id, index=0, resource_parameters={}):
+        host, port, url = target_url_parts()
+        galaxy_interactor_kwds = {
+            "galaxy_url": url,
+            "master_api_key": get_master_api_key(),
+            "api_key": get_user_api_key(),
+            "keep_outputs_dir": None,
+        }
+        galaxy_interactor = GalaxyInteractorApi(**galaxy_interactor_kwds)
+        verify_tool(
+            tool_id=tool_id,
+            test_index=index,
+            galaxy_interactor=galaxy_interactor,
+            resource_parameters=resource_parameters
+        )
+
+
+
+
+
+
+
 class GalaxyTestDriver(TestDriver):
     """Instantial a Galaxy-style nose TestDriver for testing Galaxy."""
 
@@ -1068,20 +1199,20 @@ class GalaxyTestDriver(TestDriver):
         )
 
 
-class GalaxyConfigTestDriver(GalaxyTestDriver):
-    """
-    Minimal TestDriver intended for testing Galaxy's initial configuration state on startup.
-    Includes minimum setup necesary to build galaxy and load its initial configuration.
-    Does not launch a server.
-    """
-    def _register_and_run_servers(self, config_object=None, handle_config=None):
-        tmpdir0 = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
-        galaxy_db_path = database_files_path(tmpdir0)
-        tmpdir = os.path.realpath(galaxy_db_path)
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
-        config = database_conf(tmpdir, prefer_template_database=False)
-        self.app = build_galaxy_app(config)
+#class GalaxyConfigTestDriver(GalaxyTestDriver):
+#    """
+#    Minimal TestDriver intended for testing Galaxy's initial configuration state on startup.
+#    Includes minimum setup necesary to build galaxy and load its initial configuration.
+#    Does not launch a server.
+#    """
+#    def _register_and_run_servers(self, config_object=None, handle_config=None):
+#        tmpdir0 = tempfile.mkdtemp(dir=self.galaxy_test_tmp_dir)
+#        galaxy_db_path = database_files_path(tmpdir0)
+#        tmpdir = os.path.realpath(galaxy_db_path)
+#        if not os.path.exists(tmpdir):
+#            os.makedirs(tmpdir)
+#        config = database_conf(tmpdir, prefer_template_database=False)
+#        self.app = build_galaxy_app(config)
 
 
 def drive_test(test_driver_class):
