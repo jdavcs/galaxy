@@ -5,8 +5,8 @@ from datetime import timedelta
 import pytest
 
 from galaxy.util import listify
-from galaxy_test.driver.driver_util import GalaxyTestDriver
-#from galaxy_test.driver.driver_util import GalaxyConfigTestDriver
+#from galaxy_test.driver.driver_util import GalaxyTestDriver
+from galaxy_test.driver.driver_util import GalaxyConfigTestDriver
 
 OptionData = namedtuple('OptionData', ('key', 'expected', 'loaded'))
 
@@ -19,8 +19,8 @@ def driver(request):
 
 def create_driver():
     global DRIVER
-    DRIVER = GalaxyTestDriver()
-#    DRIVER = GalaxyConfigTestDriver()
+#    DRIVER = GalaxyTestDriver()
+    DRIVER = GalaxyConfigTestDriver()
     DRIVER.setup()
 
 
