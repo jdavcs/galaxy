@@ -961,6 +961,16 @@ class GalaxyConfigTestDriver(TestDriver):
         config = database_conf(tmpdir, prefer_template_database=False)
         self.app = build_galaxy_app(config)
 
+        server_wrapper = launch_server(
+                    self.app,
+                    buildapp.app_factory,
+                    config,
+                    config_object=config_object,
+                )
+        log.info("Functional tests will be run against external Galaxy server %s:%s" % (server_wrapper.host, server_wrapper.port))
+        self.server_wrappers.append(server_wrapper)
+
+
     def _ensure_config_object(self, config_object):
         if config_object is None:
             config_object = self
