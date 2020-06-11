@@ -53,6 +53,13 @@ def validate_publicname_str(publicname):
     return ''
 
 
+def extract_domain_from_email(email):
+    domain = email.split('@')[1]
+    if len(domain.split('.')) > 2:
+        domain = ('.').join(domain.split('.')[-2:])
+    return domain
+
+
 def validate_email(trans, email, user=None, check_dup=True, allow_empty=False):
     """
     Validates the email format, also checks whether the domain is blacklisted in the disposable domains configuration.
@@ -60,22 +67,17 @@ def validate_email(trans, email, user=None, check_dup=True, allow_empty=False):
     if (user and user.email == email) or (email == "" and allow_empty):
         return ''
     message = validate_email_str(email)
+    domain = extract_domain_from_email(email)
     if message:
         pass
     elif check_dup and trans.sa_session.query(trans.app.model.User).filter(func.lower(trans.app.model.User.table.c.email) == email.lower()).first():
         message = "User with email '%s' already exists." % email
     #  If the whitelist is not empty filter out any domain not in the list and ignore blacklist.
     elif trans.app.config.whitelist_content is not None:
-        domain = email.split('@')[1]
-        if len(domain.split('.')) > 2:
-            domain = ('.').join(domain.split('.')[-2:])
         if domain not in trans.app.config.whitelist_content:
             message = "Please enter an allowed domain email address for this server."
     #  If the blacklist is not empty filter out the disposable domains.
     elif trans.app.config.blacklist_content is not None:
-        domain = email.split('@')[1]
-        if len(domain.split('.')) > 2:
-            domain = ('.').join(domain.split('.')[-2:])
         if domain in trans.app.config.blacklist_content:
             message = "Please enter your permanent email address."
     return message
