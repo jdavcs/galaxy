@@ -13,7 +13,6 @@ TestData = namedtuple('TestData', ('key', 'expected', 'loaded'))
 
 # TODO
 DO_NOT_TEST = {
-    'build_sites_config_file',
     'builds_file_path',
     'data_manager_config_file',
     'datatypes_config_file',
@@ -147,11 +146,13 @@ class ExpectedValues:
         self._path_resolvers = {
             'admin_tool_recommendations_path': self._in_config_dir,
             'auth_config_file': self._in_config_dir,
+            'build_sites_config_file': self._in_sample_dir,
             'citation_cache_data_dir': self._in_data_dir,
             'citation_cache_lock_dir': self._in_data_dir,
             'cluster_files_directory': self._in_data_dir,
             'config_dir': self._get_or_set_config_dir,
             'data_dir': self._get_or_set_data_dir,
+            'datatypes_config_file': self._in_sample_dir,
             'dependency_resolvers_config_file': self._in_config_dir,
             'dynamic_proxy_session_map': self._in_data_dir,
             'file_path': self._in_data_dir,
@@ -221,6 +222,8 @@ class ExpectedValues:
         return self._in_dir(self._managed_config_dir, path)
 
     def _in_sample_dir(self, path=None):
+        if path:
+            path += '.sample'
         return self._in_dir(self._sample_config_dir, path)
 
     def _in_dir(self, _dir, path):
