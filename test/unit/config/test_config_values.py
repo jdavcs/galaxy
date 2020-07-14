@@ -93,6 +93,7 @@ class ExpectedValues:
 
     def _load_resolvers(self):
         self._resolvers = {
+            'allowed_origin_hostnames': config.GalaxyAppConfiguration._parse_allowed_origin_hostnames,
             'amqp_internal_connection': self.get_expected_amqp_internal_connection,
             'database_connection': self.get_expected_database_connection,
             'disable_library_comptypes': [''],  # TODO: we can do better
@@ -262,26 +263,25 @@ def test_set_config(test_data):
 # (i.e., a property is not correctly set). Ideally, none should be commented out.
 SET_CONFIG = {
     # 'admin_tool_recommendations_path': 'tool_recommendations_overwrite.yml',
-    # 'allowed_origin_hostnames': 'None',
     # 'amqp_internal_connection': 'sqlalchemy+sqlite:///./database/control.sqlite?isolation_level=IMMEDIATE',
-    # 'auth_config_file': 'auth_conf.xml',
-    # 'build_sites_config_file': 'build_sites.yml',
+    # 'auth_config_file': 'auth_conf.xml',  # cause: parse_config_file_options
+    # 'build_sites_config_file': 'build_sites.yml',  # cause: parse_config_file_options
     # 'builds_file_path': 'shared/ucsc/builds.txt',
     # 'citation_cache_data_dir': 'citations/data',
     # 'citation_cache_lock_dir': 'citations/locks',
     # 'cluster_files_directory': 'pbs',
-    # 'containers_resolvers_config_file': 'None',
+    # 'containers_resolvers_config_file': 'None',  # cause: parse_config_file_options
     # 'data_dir': 'data',
-    # 'data_manager_config_file': 'config/data_manager_conf.xml',
+    # 'data_manager_config_file': 'config/data_manager_conf.xml',  # cause: parse_config_file_options
     # 'database_connection': 'database_connection',
-    # 'datatypes_config_file': 'config/datatypes_conf.xml',
-    # 'dependency_resolvers_config_file': 'dependency_resolvers_conf.xml',
+    # 'datatypes_config_file': 'config/datatypes_conf.xml',  # cause: parse_config_file_options
+    # 'dependency_resolvers_config_file': 'dependency_resolvers_conf.xml',  # cause: parse_config_file_options
     # 'disable_library_comptypes': 'None',
     # 'dynamic_proxy_session_map': 'session_map.sqlite',
     # 'email_domain_allowlist_file': 'None',
     # 'email_domain_blocklist_file': 'None',
     # 'enable_beta_gdpr': True,
-    # 'file_path': 'objects',
+    # 'file_path': 'objects',  # cause: parse_config_file_options
     # 'ftp_upload_dir_template': 'None',
     # 'galaxy_data_manager_data_path': 'None',
     # 'integrated_tool_panel_config': 'integrated_tool_panel.xml',
@@ -289,28 +289,28 @@ SET_CONFIG = {
     # 'interactivetools_map': 'interactivetools_map.sqlite',
     # 'interactivetools_proxy_host': 'None',
     # 'involucro_path': 'involucro',
-    # 'job_config_file': 'config/job_conf.xml',
-    # 'job_metrics_config_file': 'job_metrics_conf.xml',
-    # 'job_resource_params_file': 'job_resource_params_conf.xml',
+    # 'job_config_file': 'config/job_conf.xml',  # cause: parse_config_file_options
+    # 'job_metrics_config_file': 'job_metrics_conf.xml',  # cause: parse_config_file_options
+    # 'job_resource_params_file': 'job_resource_params_conf.xml',  # cause: parse_config_file_options
     # 'len_file_path': 'shared/ucsc/chrom',
-    # 'markdown_export_css': 'markdown_export.css',
+    # 'markdown_export_css': 'markdown_export.css',  # cause: parse_config_file_options
     # 'markdown_export_css_invocation_reports': 'markdown_export_invocation_reports.css',
-    # 'markdown_export_css_pages': 'markdown_export_pages.css',
-    # 'migrated_tools_config': 'migrated_tools_conf.xml',
+    # 'markdown_export_css_pages': 'markdown_export_pages.css',  # cause: parse_config_file_options
+    # 'migrated_tools_config': 'migrated_tools_conf.xml',  # cause: parse_config_file_options
     # 'mulled_resolution_cache_data_dir': 'mulled/data',
     # 'mulled_resolution_cache_lock_dir': 'mulled/locks',
     # 'new_file_path': 'tmp',
     # 'nginx_upload_store': 'None',
-    # 'object_store_config_file': 'object_store_conf.xml',
+    # 'object_store_config_file': 'object_store_conf.xml',  # cause: parse_config_file_options
     # 'object_store_store_by': 'None',
-    # 'oidc_backends_config_file': 'oidc_backends_config.xml',
-    # 'oidc_config_file': 'oidc_config.xml',
+    # 'oidc_backends_config_file': 'oidc_backends_config.xml',  # cause: parse_config_file_options
+    # 'oidc_config_file': 'oidc_config.xml',  # cause: parse_config_file_options
     # 'openid_consumer_cache_path': 'openid_consumer_cache',
     # 'sanitize_allowlist_file': 'sanitize_allowlist.txt',
-    # 'shed_data_manager_config_file': 'shed_data_manager_conf.xml',
-    # 'shed_tool_config_file': 'shed_tool_conf.xml',
+    # 'shed_data_manager_config_file': 'shed_data_manager_conf.xml',  # cause: parse_config_file_options
+    # 'shed_tool_config_file': 'shed_tool_conf.xml',  # cause: parse_config_file_options
     # 'shed_tool_data_path': 'None',
-    # 'shed_tool_data_table_config': 'shed_tool_data_table_conf.xml',
+    # 'shed_tool_data_table_config': 'shed_tool_data_table_conf.xml',  # cause: parse_config_file_options
     # 'single_user': 'single_user_new',
     # 'statsd_host': 'None',
     # 'template_cache_path': 'compiled_templates',
@@ -320,14 +320,14 @@ SET_CONFIG = {
     # 'tool_data_table_config_path': 'config/tool_data_table_conf.xml',
     # 'tool_path': 'tools',
     # 'tool_search_index_dir': 'tool_search_index',
-    # 'tool_sheds_config_file': 'tool_sheds_conf.xml',
+    # 'tool_sheds_config_file': 'tool_sheds_conf.xml',  # cause: parse_config_file_options
     # 'tool_test_data_directories': 'test-data',
     # 'use_remote_user': True,
     # 'user_library_import_dir_auto_creation': True,
-    # 'user_preferences_extra_conf_path': 'user_preferences_extra_conf.yml',
-    # 'workflow_resource_params_file': 'workflow_resource_params_conf.xml',
+    # 'user_preferences_extra_conf_path': 'user_preferences_extra_conf.yml',  # cause: parse_config_file_options
+    # 'workflow_resource_params_file': 'workflow_resource_params_conf.xml',  # cause: parse_config_file_options
     # 'workflow_resource_params_mapper': 'None',
-    # 'workflow_schedulers_config_file': 'workflow_schedulers_conf.xml',
+    # 'workflow_schedulers_config_file': 'workflow_schedulers_conf.xml',  # cause: parse_config_file_options
     'activation_grace_period': 2,
     'admin_users': 'admin_users_new',
     'allow_path_paste': True,
@@ -335,6 +335,7 @@ SET_CONFIG = {
     'allow_user_dataset_purge': False,
     'allow_user_deletion': True,
     'allow_user_impersonation': True,
+    'allowed_origin_hostnames': 'allowed_origin_hostnames_new',
     'apache_xsendfile': True,
     'api_allow_run_as': 'api_allow_run_as_new',
     'auto_configure_logging': False,

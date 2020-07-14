@@ -540,7 +540,7 @@ class GalaxyAppConfiguration(BaseAppConfiguration, CommonConfigurationMixin):
                     break
         self.sanitize_allowlist_file = _sanitize_allowlist_path
 
-        self.allowed_origin_hostnames = self._parse_allowed_origin_hostnames(kwargs)
+        self.allowed_origin_hostnames = self._parse_allowed_origin_hostnames(self.allowed_origin_hostnames)
         if "trust_jupyter_notebook_conversion" not in kwargs:
             # if option not set, check IPython-named alternative, falling back to schema default if not set either
             _default = self.trust_jupyter_notebook_conversion
@@ -865,12 +865,12 @@ class GalaxyAppConfiguration(BaseAppConfiguration, CommonConfigurationMixin):
                 log.warning("Config option '%s' is deprecated and will be removed in a future release.  Please consult the latest version of the sample configuration file." % key)
 
     @staticmethod
-    def _parse_allowed_origin_hostnames(kwargs):
+    def _parse_allowed_origin_hostnames(allowed_origin_hostnames):
         """
         Parse a CSV list of strings/regexp of hostnames that should be allowed
         to use CORS and will be sent the Access-Control-Allow-Origin header.
         """
-        allowed_origin_hostnames = listify(kwargs.get('allowed_origin_hostnames'))
+        allowed_origin_hostnames = listify(allowed_origin_hostnames)
         if not allowed_origin_hostnames:
             return None
 
