@@ -11,6 +11,23 @@ from galaxy.web.formatting import expand_pretty_datetime_format
 TestData = namedtuple('TestData', ('key', 'expected', 'loaded'))
 
 
+# TODO
+DO_NOT_TEST = {
+    'build_sites_config_file',
+    'builds_file_path',
+    'data_manager_config_file',
+    'datatypes_config_file',
+    'galaxy_data_manager_data_path',
+    'job_config_file',
+    'job_metrics_config_file',
+    'len_file_path',
+    'shed_tool_config_file',
+    'shed_tool_data_path',
+    'tool_config_file',
+    'tool_data_table_config_path',
+}
+
+
 @pytest.fixture
 def mock_config_file(monkeypatch):
     # Set this to return None to force the creation of base config directories
@@ -63,9 +80,13 @@ def listify_strip(value):
 
 
 class ExpectedValues:
-
-    """TODO: add docstring here."""
-
+    """
+    The purpose of this class is to transform the initial value of config properties to their final
+    values, as per schema or the config module. For example, a path may be resolved w.r.t. a parent
+    directory specified in the schema (via `path_resolves_to`), or a function may be applied to the
+    value as it is done in the config module (e.g., `listify`). This value is then used in unit
+    tests as the property's expected value.
+    """
     def __init__(self, appconfig):
         self._config_root = appconfig.root
         self._config_dir = appconfig.config_dir
@@ -73,15 +94,16 @@ class ExpectedValues:
         self._managed_config_dir = appconfig.managed_config_dir
         self._sample_config_dir = appconfig.sample_config_dir
         self._load_resolvers()
-        self._load_paths()
+        self._load_path_resolvers()
 
     def get_value(self, key, value):
         """Return expected config value based on key and initial value. Initial value
         is transformed in the same way it would be transformed by GalaxyAppConfiguration.
         """
         # 1. If this is a path, resolve it
-        if key in self._expected_paths:
-            value = self._expected_paths[key]
+        if key in self._path_resolvers:
+            f = self._path_resolvers[key]
+            value = f(value)
         # 2. AFTER resolving paths, apply resolver, if one exists
         if key in self._resolvers:
             resolver = self._resolvers[key]
@@ -121,67 +143,70 @@ class ExpectedValues:
         # - value: expected value or a callable. The callable will be called with a
         #   single argument, which is the default value of the config option.
 
-    def _load_paths(self):
-        self._expected_paths = {
-            'admin_tool_recommendations_path': self._in_config_dir('tool_recommendations_overwrite.yml'),
-            'auth_config_file': self._in_config_dir('auth_conf.xml'),
-            'build_sites_config_file': self._in_sample_dir('build_sites.yml.sample'),
-            'builds_file_path': self._in_root_dir('tool-data/shared/ucsc/builds.txt'),
-            'citation_cache_data_dir': self._in_data_dir('citations/data'),
-            'citation_cache_lock_dir': self._in_data_dir('citations/locks'),
-            'cluster_files_directory': self._in_data_dir('pbs'),
-            'config_dir': self._in_config_dir(),
-            'data_dir': self._in_data_dir(),
-            'data_manager_config_file': self._in_config_dir('data_manager_conf.xml'),
-            'datatypes_config_file': self._in_sample_dir('datatypes_conf.xml.sample'),
-            'dependency_resolvers_config_file': self._in_config_dir('dependency_resolvers_conf.xml'),
-            'dynamic_proxy_session_map': self._in_data_dir('session_map.sqlite'),
-            'file_path': self._in_data_dir('objects'),
-            'galaxy_data_manager_data_path': self._in_root_dir('tool-data'),
-            'integrated_tool_panel_config': self._in_managed_config_dir('integrated_tool_panel.xml'),
-            'interactivetools_map': self._in_data_dir('interactivetools_map.sqlite'),
-            'involucro_path': self._in_root_dir('involucro'),
-            'job_config_file': self._in_config_dir('job_conf.xml'),
-            'job_metrics_config_file': self._in_sample_dir('job_metrics_conf.xml.sample'),
-            'job_resource_params_file': self._in_config_dir('job_resource_params_conf.xml'),
-            'len_file_path': self._in_root_dir('tool-data/shared/ucsc/chrom'),
-            'managed_config_dir': self._in_managed_config_dir(),
-            'markdown_export_css': self._in_config_dir('markdown_export.css'),
-            'markdown_export_css_invocation_reports': self._in_config_dir('markdown_export_invocation_reports.css'),
-            'markdown_export_css_pages': self._in_config_dir('markdown_export_pages.css'),
-            'migrated_tools_config': self._in_managed_config_dir('migrated_tools_conf.xml'),
-            'mulled_resolution_cache_data_dir': self._in_data_dir('mulled/data'),
-            'mulled_resolution_cache_lock_dir': self._in_data_dir('mulled/locks'),
-            'new_file_path': self._in_data_dir('tmp'),
-            'object_store_config_file': self._in_config_dir('object_store_conf.xml'),
-            'oidc_backends_config_file': self._in_config_dir('oidc_backends_config.xml'),
-            'oidc_config_file': self._in_config_dir('oidc_config.xml'),
-            'openid_consumer_cache_path': self._in_data_dir('openid_consumer_cache'),
-            'sanitize_allowlist_file': self._in_managed_config_dir('sanitize_allowlist.txt'),
-            'shed_data_manager_config_file': self._in_managed_config_dir('shed_data_manager_conf.xml'),
-            'shed_tool_config_file': self._in_managed_config_dir('shed_tool_conf.xml'),
-            'shed_tool_data_path': self._in_root_dir('tool-data'),
-            'shed_tool_data_table_config': self._in_managed_config_dir('shed_tool_data_table_conf.xml'),
-            'template_cache_path': self._in_data_dir('compiled_templates'),
-            'tool_cache_data_dir': self._in_data_dir('tool_cache'),
-            'tool_config_file': self._in_sample_dir('tool_conf.xml.sample'),
-            'tool_data_path': self._in_root_dir('tool-data'),
-            'tool_data_table_config_path': self._in_sample_dir('tool_data_table_conf.xml.sample'),
-            'tool_path': self._in_root_dir('tools'),
-            'tool_search_index_dir': self._in_data_dir('tool_search_index'),
-            'tool_sheds_config_file': self._in_config_dir('tool_sheds_conf.xml'),
-            'tool_test_data_directories': self._in_root_dir('test-data'),
-            'user_preferences_extra_conf_path': self._in_config_dir('user_preferences_extra_conf.yml'),
-            'workflow_resource_params_file': self._in_config_dir('workflow_resource_params_conf.xml'),
-            'workflow_schedulers_config_file': self._in_config_dir('workflow_schedulers_conf.xml'),
+    def _load_path_resolvers(self):
+        self._path_resolvers = {
+            'admin_tool_recommendations_path': self._in_config_dir,
+            'auth_config_file': self._in_config_dir,
+            'citation_cache_data_dir': self._in_data_dir,
+            'citation_cache_lock_dir': self._in_data_dir,
+            'cluster_files_directory': self._in_data_dir,
+            'config_dir': self._get_or_set_config_dir,
+            'data_dir': self._get_or_set_data_dir,
+            'dependency_resolvers_config_file': self._in_config_dir,
+            'dynamic_proxy_session_map': self._in_data_dir,
+            'file_path': self._in_data_dir,
+            'integrated_tool_panel_config': self._in_managed_config_dir,
+            'interactivetools_map': self._in_data_dir,
+            'involucro_path': self._in_root_dir,
+            'job_resource_params_file': self._in_config_dir,
+            'managed_config_dir': self._get_or_set_managed_config_dir,
+            'markdown_export_css': self._in_config_dir,
+            'markdown_export_css_invocation_reports': self._in_config_dir,
+            'markdown_export_css_pages': self._in_config_dir,
+            'migrated_tools_config': self._in_managed_config_dir,
+            'mulled_resolution_cache_data_dir': self._in_data_dir,
+            'mulled_resolution_cache_lock_dir': self._in_data_dir,
+            'new_file_path': self._in_data_dir,
+            'object_store_config_file': self._in_config_dir,
+            'oidc_backends_config_file': self._in_config_dir,
+            'oidc_config_file': self._in_config_dir,
+            'openid_consumer_cache_path': self._in_data_dir,
+            'sanitize_allowlist_file': self._in_managed_config_dir,
+            'shed_data_manager_config_file': self._in_managed_config_dir,
+            'shed_tool_data_table_config': self._in_managed_config_dir,
+            'template_cache_path': self._in_data_dir,
+            'tool_cache_data_dir': self._in_data_dir,
+            'tool_data_path': self._in_root_dir,
+            'tool_path': self._in_root_dir,
+            'tool_search_index_dir': self._in_data_dir,
+            'tool_sheds_config_file': self._in_config_dir,
+            'tool_test_data_directories': self._in_root_dir,
+            'user_preferences_extra_conf_path': self._in_config_dir,
+            'workflow_resource_params_file': self._in_config_dir,
+            'workflow_schedulers_config_file': self._in_config_dir,
         }
-        # _expected_paths provides expected values for config options that are paths. Each value is
-        # wrapped in a function that ensures that the path (a) is resolved w.r.t. its parent as per
-        # schema and/or config module; and (b) is an absolute path. The base config paths used by
-        # each function are tested separately (see tests of base config properties in this module).
-        # The values are hardcoded intentionally for the sake of keeping the test readable and
-        # simple. They correspond to schema defaults, and should be adjusted if the schema is
-        # modified.
+        # This maps keys for config properties that are paths to callables that take a property's
+        # initial value as an argument and return the resolved absolute path, as per schema and/or
+        # the config module. The base config paths used by each function are tested separately (see
+        # tests of base config properties in this module).
+
+    def _get_or_set_config_dir(self, path=None):
+        if path:
+            return self._in_dir(self._config_root, path)  # override dir
+        else:
+            return self._in_config_dir()  # get dir (no default; set in base class)
+
+    def _get_or_set_data_dir(self, path=None):
+        if path:
+            return self._in_dir(self._config_root, path)
+        else:
+            return self._in_data_dir()
+
+    def _get_or_set_managed_config_dir(self, path=None):
+        if path:
+            return self._in_dir(self._config_root, path)
+        else:
+            return self._in_managed_config_dir()
 
     def _in_root_dir(self, path=None):
         return self._in_dir(self._config_root, path)
@@ -216,11 +241,12 @@ def get_test_data_with_default_values():
     appconfig = config.GalaxyAppConfiguration()
     ev = ExpectedValues(appconfig)
     for key, data in appconfig.schema.app_schema.items():
-        default_value = data.get('default')
-        expected_value = ev.get_value(key, default_value)
-        loaded_value = getattr(appconfig, key)
-        test_data = TestData(key, expected_value, loaded_value)
-        yield pytest.param(test_data)
+        if key not in DO_NOT_TEST:
+            default_value = data.get('default')
+            expected_value = ev.get_value(key, default_value)
+            loaded_value = getattr(appconfig, key)
+            test_data = TestData(key, expected_value, loaded_value)
+            yield pytest.param(test_data)
 
 
 def get_test_data_with_set_values():
@@ -228,17 +254,18 @@ def get_test_data_with_set_values():
     appconfig = config.GalaxyAppConfiguration(**SET_CONFIG)
     ev = ExpectedValues(appconfig)
     for key, data in appconfig.schema.app_schema.items():
-        default_value = data.get('default')
-        if key not in SET_CONFIG:
-            value = default_value
-        else:
-            value = SET_CONFIG.get(key)
-            if value == default_value:
-                raise Exception('New value for %s set to schema default: use a different value' % key)
-        expected_value = ev.get_value(key, value)
-        loaded_value = getattr(appconfig, key)
-        test_data = TestData(key, expected_value, loaded_value)
-        yield pytest.param(test_data)
+        if key not in DO_NOT_TEST:
+            default_value = data.get('default')
+            if key not in SET_CONFIG:
+                value = default_value
+            else:
+                value = SET_CONFIG.get(key)
+                if value == default_value:
+                    raise Exception('New value for %s set to schema default: use a different value' % key)
+            expected_value = ev.get_value(key, value)
+            loaded_value = getattr(appconfig, key)
+            test_data = TestData(key, expected_value, loaded_value)
+            yield pytest.param(test_data)
 
 
 def get_key(test_data):
@@ -265,7 +292,7 @@ SET_CONFIG = {
     # 'admin_tool_recommendations_path': 'tool_recommendations_overwrite.yml',
     # 'amqp_internal_connection': 'sqlalchemy+sqlite:///./database/control.sqlite?isolation_level=IMMEDIATE',
     # 'auth_config_file': 'auth_conf.xml',  # cause: parse_config_file_options
-    # 'build_sites_config_file': 'build_sites.yml',  # cause: parse_config_file_options
+    # 'build_sites_config_file': 'build_sites.yml_new',  # cause: parse_config_file_options
     # 'builds_file_path': 'shared/ucsc/builds.txt',
     # 'citation_cache_data_dir': 'citations/data',
     # 'citation_cache_lock_dir': 'citations/locks',
