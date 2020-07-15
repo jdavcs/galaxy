@@ -11,7 +11,7 @@ from galaxy.web.formatting import expand_pretty_datetime_format
 TestData = namedtuple('TestData', ('key', 'expected', 'loaded'))
 
 
-# TODO
+# TODO: get rid of this
 DO_NOT_TEST = {
     'builds_file_path',
     'data_manager_config_file',
@@ -95,14 +95,18 @@ class ExpectedValues:
         self._load_resolvers()
         self._load_path_resolvers()
 
-    def get_value(self, key, value):
-        """Return expected config value based on key and initial value. Initial value
-        is transformed in the same way it would be transformed by GalaxyAppConfiguration.
+    def get_value(self, key, default_value, set_value=None):
+        """Return expected config value based on key, schema default and set value (if set).
+        Value is transformed in the same way it would be transformed by GalaxyAppConfiguration.
         """
-        # 1. If this is a path, resolve it
+        # 1. If this is a path, resolve it; otherwise use set_value if available, or default_value if not.
         if key in self._path_resolvers:
             f = self._path_resolvers[key]
-            value = f(value)
+            value = f(default_value, set_value)
+        else:
+            value = default_value
+            if set_value is not None:  # value can be falsy, so compare to None
+                value = set_value
         # 2. AFTER resolving paths, apply resolver, if one exists
         if key in self._resolvers:
             resolver = self._resolvers[key]
@@ -146,13 +150,13 @@ class ExpectedValues:
         self._path_resolvers = {
             'admin_tool_recommendations_path': self._in_config_dir,
             'auth_config_file': self._in_config_dir,
-            'build_sites_config_file': self._in_sample_dir,
+            'build_sites_config_file': self._in_config_or_sample_dir,
             'citation_cache_data_dir': self._in_data_dir,
             'citation_cache_lock_dir': self._in_data_dir,
             'cluster_files_directory': self._in_data_dir,
             'config_dir': self._get_or_set_config_dir,
             'data_dir': self._get_or_set_data_dir,
-            'datatypes_config_file': self._in_sample_dir,
+            'datatypes_config_file': self._in_config_or_sample_dir,
             'dependency_resolvers_config_file': self._in_config_dir,
             'dynamic_proxy_session_map': self._in_data_dir,
             'file_path': self._in_data_dir,
@@ -191,40 +195,49 @@ class ExpectedValues:
         # the config module. The base config paths used by each function are tested separately (see
         # tests of base config properties in this module).
 
-    def _get_or_set_config_dir(self, path=None):
-        if path:
-            return self._in_dir(self._config_root, path)  # override dir
+    def _get_or_set_config_dir(self, default_path=None, set_path=None):
+        """Return default (set in base class) or resolved `set_path`. Ignore `default_path`."""
+        if set_path:
+            return self._in_dir(self._config_root, set_path)
         else:
-            return self._in_config_dir()  # get dir (no default; set in base class)
+            return self._in_config_dir()
 
-    def _get_or_set_data_dir(self, path=None):
-        if path:
-            return self._in_dir(self._config_root, path)
+    def _get_or_set_data_dir(self, default_path=None, set_path=None):
+        """Return default (set in base class) or resolved `set_path`. Ignore `default_path`."""
+        if set_path:
+            return self._in_dir(self._config_root, set_path)
         else:
             return self._in_data_dir()
 
-    def _get_or_set_managed_config_dir(self, path=None):
-        if path:
-            return self._in_dir(self._config_root, path)
+    def _get_or_set_managed_config_dir(self, default_path=None, set_path=None):
+        """Return default (set in base class) or resolved `set_path`. Ignore `default_path`."""
+        if set_path:
+            return self._in_dir(self._config_root, set_path)
         else:
             return self._in_managed_config_dir()
 
-    def _in_root_dir(self, path=None):
+    def _in_root_dir(self, default_path=None, set_path=None):
+        path = set_path if set_path else default_path
         return self._in_dir(self._config_root, path)
 
-    def _in_config_dir(self, path=None):
+    def _in_config_dir(self, default_path=None, set_path=None):
+        path = set_path if set_path else default_path
         return self._in_dir(self._config_dir, path)
 
-    def _in_data_dir(self, path=None):
+    def _in_data_dir(self, default_path=None, set_path=None):
+        path = set_path if set_path else default_path
         return self._in_dir(self._data_dir, path)
 
-    def _in_managed_config_dir(self, path=None):
+    def _in_managed_config_dir(self, default_path=None, set_path=None):
+        path = set_path if set_path else default_path
         return self._in_dir(self._managed_config_dir, path)
 
-    def _in_sample_dir(self, path=None):
-        if path:
-            path += '.sample'
-        return self._in_dir(self._sample_config_dir, path)
+    def _in_config_or_sample_dir(self, default_path=None, set_path=None):
+        if set_path:
+            return self._in_dir(self._config_dir, set_path)
+        else:
+            path = '%s.sample' % default_path
+            return self._in_dir(self._sample_config_dir, path)
 
     def _in_dir(self, _dir, path):
         return os.path.join(_dir, path) if path else _dir
@@ -259,13 +272,15 @@ def get_test_data_with_set_values():
     for key, data in appconfig.schema.app_schema.items():
         if key not in DO_NOT_TEST:
             default_value = data.get('default')
+
             if key not in SET_CONFIG:
-                value = default_value
+                expected_value = ev.get_value(key, default_value)
             else:
-                value = SET_CONFIG.get(key)
-                if value == default_value:
+                set_value = SET_CONFIG.get(key)
+                if set_value == default_value:
                     raise Exception('New value for %s set to schema default: use a different value' % key)
-            expected_value = ev.get_value(key, value)
+                expected_value = ev.get_value(key, default_value, set_value)
+
             loaded_value = getattr(appconfig, key)
             test_data = TestData(key, expected_value, loaded_value)
             yield pytest.param(test_data)
@@ -304,7 +319,6 @@ SET_CONFIG = {
     # 'data_dir': 'data',
     # 'data_manager_config_file': 'config/data_manager_conf.xml',  # cause: parse_config_file_options
     # 'database_connection': 'database_connection',
-    # 'datatypes_config_file': 'config/datatypes_conf.xml',  # cause: parse_config_file_options
     # 'dependency_resolvers_config_file': 'dependency_resolvers_conf.xml',  # cause: parse_config_file_options
     # 'disable_library_comptypes': 'None',
     # 'dynamic_proxy_session_map': 'session_map.sqlite',
@@ -405,6 +419,7 @@ SET_CONFIG = {
     'database_wait': True,
     'database_wait_attempts': 61,
     'database_wait_sleep': 1.1,
+    'datatypes_config_file': 'datatypes_conf.xml_new',  # cause: parse_config_file_options
     'datatypes_disable_auto': True,
     'debug': True,
     'default_job_resubmission_condition': 'default_job_resubmission_condition_new',
