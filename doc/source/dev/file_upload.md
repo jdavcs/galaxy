@@ -1,8 +1,8 @@
-# Uploading a file to Galaxy
+# Uploading file to Galaxy
 
 ## What happens when you upload a file to Galaxy?
 
-When you upload a file to Galaxy, a worker thread creates a job and enqueues it to do the upload. The following call graph documents what the worker thread actually does to create and enqueue the file upload job. All the files are in ./galaxy/lib. An irods object store is used in this instnce of Galaxy.
+When you upload a file to Galaxy, a worker thread creates a job and enqueues it to do the upload. The following call graph documents what the worker thread actually does to create and enqueue the file upload job. All the files are in ./galaxy/lib.
 
 * In galaxy/web/framework/middleware/batch.py -> BatchMiddleware.__call__() -> self.application()
   * In galaxy/web/framework/middleware/request_id.py -> RequestIDMiddleware.__call__() -> self.app()
@@ -15,16 +15,6 @@ When you upload a file to Galaxy, a worker thread creates a job and enqueues it 
                 * In galaxy/tools/__init__.py -> handle_input() -> execute_job()
                   * In galaxy/tools/execute.py -> execute() -> execute_single_job() -> tool.handle_single_execution()
                     * In galaxy/tools/__init__.py -> handle_single_execution() -> self.execute() -> self.tool_action_execute()  
-              * In galaxy/webapps/galaxy/api/tools.py -> ToolsController.create() -> self._create(), HistoryDatasetAssociation's to_dict() is called for each output dataset
-                * to_dict() calls HistoryDatasetAssociations's get_size()
-                  * get_size indirectly calls DataSet's _calculate_size()  
-                    * _calculate_size() calls ObjectStore's size()
-                      * size() indirectly calls irod's _size()
-                        * _size() calls _construct_path() in irods
-                        * _size() calls _in_cache() in irods
-                        * _size() calls _get_cache_path() in irods
-                        * _size() calls _exists() in irods
-                        * _size() calls _get_size_in_irods() 
 
 In order to avoid excessive indentation, self.tool_action_execute() call graph is documented separately.  
 
