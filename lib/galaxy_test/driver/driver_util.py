@@ -314,7 +314,11 @@ def _tool_data_table_config_path(default_tool_data_table_config_path=None):
         for tool_data_config in ['config/tool_data_table_conf.xml', 'tool_data_table_conf.xml']:
             if os.path.exists(tool_data_config):
                 default_tool_data_config = tool_data_config
-        tool_data_table_config_path = '%s,test/functional/tool-data/sample_tool_data_tables.xml' % default_tool_data_config
+        # Before passing these paths to Galaxy's config module, make them absolute. Otherwise they will be resolved
+        # w.r.t. the parent dir of tool_data_table_config_path, as per schema.
+        default_tool_data_config = os.path.abspath(default_tool_data_config)
+        test_tool_data_config = os.path.abspath('test/functional/tool-data/sample_tool_data_tables.xml')
+        tool_data_table_config_path = '%s,%s' % (default_tool_data_config, test_tool_data_config)
     return tool_data_table_config_path
 
 

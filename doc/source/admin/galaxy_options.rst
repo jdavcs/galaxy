@@ -267,7 +267,7 @@
     config/tool_conf.xml does not exist). Can be a single file, a list
     of files, or (for backwards compatibility) a comma-separated list
     of files.
-:Default: ``config/tool_conf.xml``
+:Default: ``tool_conf.xml``
 :Type: any
 
 
@@ -745,7 +745,7 @@
     XML config file that contains data table entries for the
     ToolDataTableManager.  This file is manually # maintained by the
     Galaxy administrator (.sample used if default does not exist).
-:Default: ``config/tool_data_table_conf.xml``
+:Default: ``tool_data_table_conf.xml``
 :Type: str
 
 
@@ -826,8 +826,6 @@
 :Description:
     File that defines the builds (dbkeys) available at sites used by
     display applications and the URL to those sites.
-    The value of this option will be resolved with respect to
-    <config_dir>.
 :Default: ``build_sites.yml``
 :Type: str
 
@@ -867,7 +865,7 @@
     If a datatype appears in multiple files, the last definition is
     used (though the first sniffer is used so limit sniffer
     definitions to one file).
-:Default: ``config/datatypes_conf.xml``
+:Default: ``datatypes_conf.xml``
 :Type: str
 
 
@@ -3458,8 +3456,6 @@
 :Description:
     XML config file that contains the job metric collection
     configuration.
-    The value of this option will be resolved with respect to
-    <config_dir>.
 :Default: ``job_metrics_conf.xml``
 :Type: str
 

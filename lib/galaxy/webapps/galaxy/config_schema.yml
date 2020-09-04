@@ -208,7 +208,8 @@ mapping:
 
       tool_config_file:
         type: any
-        default: config/tool_conf.xml
+        default: tool_conf.xml
+        path_resolves_to: config_dir
         required: false
         desc: |
           Tool config files, defines what tools are available in Galaxy.
@@ -561,7 +562,8 @@ mapping:
 
       tool_data_table_config_path:
         type: str
-        default: config/tool_data_table_conf.xml
+        default: tool_data_table_conf.xml
+        path_resolves_to: config_dir
         required: false
         desc: |
           XML config file that contains data table entries for the
@@ -619,12 +621,11 @@ mapping:
       build_sites_config_file:
         type: str
         default: build_sites.yml
+        path_resolves_to: config_dir
         required: false
         desc: |
           File that defines the builds (dbkeys) available at sites used by display applications
           and the URL to those sites.
-
-          The value of this option will be resolved with respect to <config_dir>.
 
       builds_file_path:
         type: str
@@ -646,7 +647,8 @@ mapping:
 
       datatypes_config_file:
         type: str
-        default: config/datatypes_conf.xml
+        default: datatypes_conf.xml
+        path_resolves_to: config_dir
         required: false
         desc: |
           Datatypes config file(s), defines what data (file) types are available in
@@ -2559,11 +2561,10 @@ mapping:
       job_metrics_config_file:
         type: str
         default: job_metrics_conf.xml
+        path_resolves_to: config_dir
         required: false
         desc: |
           XML config file that contains the job metric collection configuration.
-
-          The value of this option will be resolved with respect to <config_dir>.
 
       expose_potentially_sensitive_job_metrics:
         type: bool
