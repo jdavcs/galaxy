@@ -127,6 +127,8 @@ class BaseAppConfiguration:
         self._resolve_paths()  # Overwrite attribute values with resolved paths
         self._postprocess_paths_to_resolve()  # Any steps that need to happen after paths are resolved
 
+        #import pdb; pdb.set_trace()
+
     def _process_renamed_options(self, kwargs):
         """Update kwargs to set any unset renamed options to values of old-named options, if set.
 

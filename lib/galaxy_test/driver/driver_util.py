@@ -187,7 +187,8 @@ def setup_galaxy_config(
         if os.path.exists(data_manager_config):
             default_data_manager_config = data_manager_config
     # Make this abspath: otherwise config will resolve it w.r.t. config_dir)
-    data_manager_config_file = os.path.abspath("test/functional/tools/sample_data_manager_conf.xml")
+    #data_manager_config_file = os.path.abspath("test/functional/tools/sample_data_manager_conf.xml")
+    data_manager_config_file = "test/functional/tools/sample_data_manager_conf.xml"
     if default_data_manager_config is not None:
         data_manager_config_file = "{},{}".format(default_data_manager_config, data_manager_config_file)
     master_api_key = get_master_api_key()
@@ -208,6 +209,14 @@ def setup_galaxy_config(
 
     if shed_tool_conf is not None:
         tool_conf = "{},{}".format(tool_conf, shed_tool_conf)
+
+    
+    # Resolve these paths w.r.t. galaxy root; otherwise galaxy's config system will resolve them w.r.t.
+    # their parent directories, as per schema.
+    data_manager_config_file = _resolve_relative_config_paths(data_manager_config_file)
+    tool_config_file = _resolve_relative_config_paths(tool_conf)
+    tool_data_table_config_path = _resolve_relative_config_paths(tool_data_table_config_path)
+
 
     config = dict(
         admin_users='test@bx.psu.edu',
@@ -305,6 +314,15 @@ backends:
     return config
 
 
+def _resolve_relative_config_paths(config_option):
+    # If option is not None, split into paths, resolve each w.r.t. root, then rebuild as csv string.
+    if config_option is not None:
+        resolved = []
+        for path in config_option.split(','):
+            resolved.append(os.path.join(galaxy_root, path.strip()))
+        return ','.join(resolved)
+
+
 def _tool_data_table_config_path(default_tool_data_table_config_path=None):
     tool_data_table_config_path = os.environ.get('GALAXY_TEST_TOOL_DATA_TABLE_CONF', default_tool_data_table_config_path)
     if tool_data_table_config_path is None:
@@ -315,10 +333,11 @@ def _tool_data_table_config_path(default_tool_data_table_config_path=None):
             if os.path.exists(tool_data_config):
                 default_tool_data_config = tool_data_config
 
-        # Before passing these paths to Galaxy's config module, make them absolute. Otherwise they will be resolved
-        # w.r.t. the parent dir of tool_data_table_config_path, as per schema.
-        default_tool_data_config = os.path.join(galaxy_root, default_tool_data_config)
-        test_tool_data_config = os.path.join(galaxy_root, 'test/functional/tool-data/sample_tool_data_tables.xml')
+#        # Before passing these paths to Galaxy's config module, make them absolute. Otherwise they will be resolved
+#        # w.r.t. the parent dir of tool_data_table_config_path, as per schema.
+#        default_tool_data_config = os.path.join(galaxy_root, default_tool_data_config)
+#        test_tool_data_config = os.path.join(galaxy_root, 'test/functional/tool-data/sample_tool_data_tables.xml')
+        test_tool_data_config = 'test/functional/tool-data/sample_tool_data_tables.xml'
         tool_data_table_config_path = '%s,%s' % (default_tool_data_config, test_tool_data_config)
     return tool_data_table_config_path
 
