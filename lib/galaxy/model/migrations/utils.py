@@ -71,10 +71,12 @@ class DBManager:
         self.alembic_cfg.set_main_option('script_location', alembic_dir)
         self.alembic_cfg.set_main_option('sqlalchemy.url', self.url)
 
-    #def _alembic_dir(self):
-    #    return 'lib/galaxy/model/migrations/alembic'  # TODO  (need this for testing)
-
+    def alembic_upgrade():  # TODO this should work, but we also need to upgrade/downgrade to a version
+        # maybe better use the alembic main() script?
+        log.info('Upgrading database / alembic head')
+        command.upgrade(self.alembic_cfg, 'head')
     
+
 def get_metadata_tables(metadata):
     return [table for table in metadata.sorted_tables if table.name != ALEMBIC_TABLE]
 

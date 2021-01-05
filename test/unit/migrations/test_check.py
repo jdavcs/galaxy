@@ -139,6 +139,7 @@ def test_case_5(db_url, metadata):
     with pytest.raises(NoAlembicVersioningError):
         run(db_url, metadata)
 
+
 def test_case_5_automigrate(db_url, metadata):
     """Same as 5 + auto-migrate."""
     state_to_load = state2  # what we're loading into the db

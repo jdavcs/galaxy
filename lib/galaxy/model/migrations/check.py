@@ -59,8 +59,8 @@ def run(url, metadata, alembic_dir=None, auto_migrate=False): # TODO no args; mo
     # and we're done!
 
 
-
 def create_galaxy_database(url):
     log.info('Creating database')
     create_database(url)
     assert database_exists(url)
+
