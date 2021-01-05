@@ -2,7 +2,7 @@ import sqlalchemy as sa
 
 metadata = sa.MetaData()
 
-# v0: initialized, no versioning
+# 1. initialized, no versioning
 dataset = sa.Table(
     'dataset', metadata,
     sa.Column('id', sa.Integer, primary_key=True),

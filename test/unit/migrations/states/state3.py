@@ -2,14 +2,12 @@ import sqlalchemy as sa
 
 metadata = sa.MetaData()
 
-# v0: initialized, no versioning
 dataset = sa.Table(
     'dataset', metadata,
     sa.Column('id', sa.Integer, primary_key=True),
     sa.Column('name', sa.String(40)),
 )
 
-# added in v1: last change before versioning: can upgrade
 history = sa.Table(
     'history', metadata,
     sa.Column('id', sa.Integer, primary_key=True),
@@ -24,7 +22,6 @@ hda = sa.Table(
     sa.Column('name', sa.String(40)),
 )
 
-# added in v2: migrate-versioned
 migrate_version = sa.Table(
     'migrate_version', metadata,
     sa.Column('repository_id', sa.String(250), primary_key=True),
@@ -32,22 +29,9 @@ migrate_version = sa.Table(
     sa.Column('version', sa.Integer),
 )
 
-# added in v3: last change before alembic
-foo2 = sa.Table(
-    'foo2', metadata,
-    sa.Column('id', sa.Integer, primary_key=True),
-    sa.Column('name', sa.String(40)),
-)
-
-## added in v4: alembic-versioned
-#alembic_version = sa.Table(
-#    'alembic_version', metadata,
-#    sa.Column('version_num', sa.String(32), primary_key=True),
-#)
-
-# added in v5: last change: current version
-foo3 = sa.Table(
-    'foo3', metadata,
+# added in 3: last change before Alembic (in 4)
+foo1 = sa.Table(
+    'foo1', metadata,
     sa.Column('id', sa.Integer, primary_key=True),
     sa.Column('name', sa.String(40)),
 )
@@ -70,15 +54,8 @@ data = {
     'migrate_version': [
         ('repo1', 'repo path', 1),
     ],
-    'foo2': [
-        (1, 'foo2-1'),
-        (2, 'foo2-2'),
-    ],
-#    'alembic_version': [
-#        ('42',),
-#    ],
-    'foo3': [
-        (1, 'foo3-1'),
-        (2, 'foo3-2'),
+    'foo1': [
+        (1, 'foo1-1'),
+        (2, 'foo1-2'),
     ],
 }

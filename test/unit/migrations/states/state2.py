@@ -2,14 +2,13 @@ import sqlalchemy as sa
 
 metadata = sa.MetaData()
 
-# v0: initialized, no versioning
 dataset = sa.Table(
     'dataset', metadata,
     sa.Column('id', sa.Integer, primary_key=True),
     sa.Column('name', sa.String(40)),
 )
 
-# added in v1: last change before versioning: can upgrade
+# added in 2
 history = sa.Table(
     'history', metadata,
     sa.Column('id', sa.Integer, primary_key=True),
@@ -24,7 +23,7 @@ hda = sa.Table(
     sa.Column('name', sa.String(40)),
 )
 
-# added in v2: migrate-versioned
+# this table similates placing db under SA Migrate version control
 migrate_version = sa.Table(
     'migrate_version', metadata,
     sa.Column('repository_id', sa.String(250), primary_key=True),

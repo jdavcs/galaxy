@@ -25,12 +25,12 @@ class DBOutdatedError(Exception):
         super().__init__('database is outdated: run alembic script')
 
 
-def run(url, metadata, auto_migrate=False):
+def run(url, metadata, alembic_dir=None, auto_migrate=False): # TODO no args; mock in tests.
 
     if not database_exists(url):
         create_galaxy_database(url)
 
-    dbm = DBManager(url, metadata)
+    dbm = DBManager(url, metadata, alembic_dir)
 
     if not dbm.is_initialized():
         dbm.initialize_schema()

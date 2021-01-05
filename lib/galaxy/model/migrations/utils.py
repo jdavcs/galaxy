@@ -1,4 +1,5 @@
 import logging 
+import os
 
 from sqlalchemy import create_engine, MetaData, Table
 
@@ -10,18 +11,24 @@ from alembic.script import ScriptDirectory
 log = logging.getLogger(__name__)
 
 ALEMBIC_TABLE = 'alembic_version'
+MIGRATE_TABLE = 'migrate_version'
 COLUMN_ATTRIBUTES_TO_VERIFY = ('name', 'key', 'primary_key', 'nullable', 'default')
 TYPE_ATTRIBUTES_TO_VERIFY = ('length',)
+ALEMBIC_CONFIG_FILE = 'alembic.ini'
+ALEMBIC_DIR = 'lib/galaxy/model/migrations/alembic'
+
 
 class DBManager:
 
-    def __init__(self, url, metadata):
+    def __init__(self, url, metadata, alembic_dir):  # TODO do not pass alembic_dir; find better way
         self.url = url
         self.metadata = metadata        # loaded from module
         self.db_metadata = MetaData()   # loaded from database
         self.engine = create_engine(url)
         with self.engine.connect() as conn:
             self._load_db_metadata(conn)
+        alembic_dir = alembic_dir or ALEMBIC_DIR
+        self._load_alembic_config(alembic_dir)
 
     def is_initialized(self):
         """Assume database is initialized if 'dataset' table exists."""
@@ -29,17 +36,14 @@ class DBManager:
 
     def is_alembic_versioned(self):
         """Database is under Alembic version control if 'alembic_version' table exists."""
-        return 'alembic_version' in self.db_metadata.tables
+        return ALEMBIC_TABLE in self.db_metadata.tables
 
     def is_migrate_versioned(self):
         """Database is under SQLAlchemy version control if 'migrate_version' table exists."""
-        return 'migrate_version' in self.db_metadata.tables
+        return MIGRATE_TABLE in self.db_metadata.tables
 
     def is_current(self):
-        cfg = Config()
-        cfg.set_main_option('script_location', 'lib/galaxy/model/migrations/alembic') #TODO remove duplication
-        cfg.set_main_option('sqlalchemy.url', self.url)
-        script = ScriptDirectory.from_config(cfg)
+        script = ScriptDirectory.from_config(self.alembic_cfg)
         app_version = script.get_current_head()
         with self.engine.connect() as conn:
             context = MigrationContext.configure(conn)
@@ -54,26 +58,33 @@ class DBManager:
             self._load_db_metadata(conn)
 
     def initialize_alembic(self):
-
         log.info('Placing database under Alembic version control')
-        cfg = Config()
-        cfg.set_main_option('script_location', 'lib/galaxy/model/migrations/alembic') #TODO fix path creation!
-        cfg.set_main_option('sqlalchemy.url', self.url)
-        command.stamp(cfg, "head")  # create alembic_version table in db; insert latest (head) revision id.
+        command.stamp(self.alembic_cfg, "head")  # create alembic_version table in db; insert latest (head) revision id.
 
     def _load_db_metadata(self, conn):
         self.db_metadata.bind = conn  
         self.db_metadata.reflect()
  
+    def _load_alembic_config(self, alembic_dir):
+        config_file = os.path.join(alembic_dir, ALEMBIC_CONFIG_FILE)
+        self.alembic_cfg = Config(config_file)
+        self.alembic_cfg.set_main_option('script_location', alembic_dir)
+        self.alembic_cfg.set_main_option('sqlalchemy.url', self.url)
+
+    #def _alembic_dir(self):
+    #    return 'lib/galaxy/model/migrations/alembic'  # TODO  (need this for testing)
+
+    
+def get_metadata_tables(metadata):
+    return [table for table in metadata.sorted_tables if table.name != ALEMBIC_TABLE]
+
 
 class MetaDataComparator:
     # TODO: can we replace this with a library?
     """Compares 2 SQLAlchemy MetaData objects."""
-    def _exclude_alembic(self, metadata):
-        return [table for table in metadata.sorted_tables if table.name != ALEMBIC_TABLE]
 
     def compare(self, metadata1, metadata2, column_attributes, type_attributes=None):
-        tables1, tables2 = self._exclude_alembic(metadata1), self._exclude_alembic(metadata2)
+        tables1, tables2 = get_metadata_tables(metadata1), get_metadata_tables(metadata2)
         assert len(tables1) == len(tables2), 'Number of tables not the same'
 
         for (t1, t2) in zip(tables1, tables2):

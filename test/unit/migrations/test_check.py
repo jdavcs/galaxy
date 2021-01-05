@@ -22,199 +22,206 @@ from galaxy.model.migrations.check import (
     run, 
 )
 from galaxy.model.migrations.utils import (
+    ALEMBIC_CONFIG_FILE,
     ALEMBIC_TABLE,
     COLUMN_ATTRIBUTES_TO_VERIFY,
     TYPE_ATTRIBUTES_TO_VERIFY,
     MetaDataComparator,
+    get_metadata_tables,
 )
-from mapping import state0, state2, state3, state5
+from states import state1, state2, state3, state5 as state_current
 
 
 """
+DATABASE STATES:
+1. dataset
+2. state1 + history, hda, migrate_version
+3. state2 + foo1
+4. alembic added here
+5. state4 + foo2
+
 CASES: 
 1. no db >> create, initialize, add alembic
 2. empty db >> initialize, add alembic
 3. nonempty db, alembic, up-to-date, w/data >> do nothing
-4. nonempty db, no alembic, no migrate >> fail, error message: manual upgrade
-5. nonempty db, no alembic, migrate >> fail, error message: run migrate+alembic upgrade script
-6. nonempty db, alembic >> fail, error message: run alembic upgrade script
+4. nonempty db, no migrate, no alembic >> fail, error message: manual upgrade
+4a. same + automigrate >> same: fail, error message: manual upgrade
+5. nonempty db, has migrate, no alembic >> fail, error message: run migrate+alembic upgrade script
+5a. same + automigrate >> ? (use migrate to upgrade to alembic-0, add alembic, upgrade)
+6. nonempty db, has alembic >> fail, error message: run alembic upgrade script
+6a. same + automigrate >> upgrade
 """
 
-#TODO maybe define state imports as fixtures?
-#@pytest.fixture
-#def state0():
-#    return state0
-#
 
 @pytest.fixture
-def dburl():
+def db_url():
     with tempfile.NamedTemporaryFile() as f:
         yield 'sqlite:///%s' % f.name
 
 
-def test_case_1(dburl):
-    """No database."""
-    state = state0
-    metadata = state.metadata
-    assert not database_exists(dburl)
+@pytest.fixture
+def metadata():
+    return state_current.metadata
 
-    run(dburl, metadata)
-    assert_schema_loaded(dburl, metadata)
-    assert_alembic_versioned(dburl)
+
+def test_case_1(db_url, metadata):
+    """No database."""
+    assert not database_exists(db_url)
+
+    run(db_url, metadata)
+    assert database_exists(db_url)
+    with create_engine(db_url).connect() as conn:
+        assert_metadata(conn)
+        assert_alembic(conn)
     
 
-def test_case_2(dburl):
+def test_case_2(db_url, metadata):
     """Empty database."""
-    state = state0
-    metadata = state.metadata
-    create_database(dburl)
+    assert not database_exists(db_url)
+    create_database(db_url)
 
-    run(dburl, metadata)
-    assert_schema_loaded(dburl, metadata)
-    assert_alembic_versioned(dburl)
+    run(db_url, metadata)
+    with create_engine(db_url).connect() as conn:
+        assert_metadata(conn)
+        assert_alembic(conn)
 
 
-def test_case_3(dburl):
+def test_case_3(db_url, metadata):
     """Everything is up-to-date."""
-    state = state5
-    metadata = state.metadata
-    create_database(dburl)
-    load_schema(dburl, metadata)
-    load_data(dburl, state)
-    stamp_alembic(dburl)
+    assert not database_exists(db_url)
+    create_database(db_url)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        alembic_cfg = init_alembic(db_url, tmpdir)
+        command.stamp(alembic_cfg, 'head')
 
-    run(dburl, metadata)
-    assert_schema_loaded(dburl, metadata)
-    assert_alembic_versioned(dburl)
-    assert_data(dburl, state)
+        with create_engine(db_url).connect() as conn:
+            load_metadata(conn, metadata)
+            load_data(conn, state_current)
+
+            run(db_url, metadata, tmpdir)
+            assert_metadata(conn)
+            assert_alembic(conn)
+            assert_data(conn, state_current)
 
 
-def test_case_4(dburl):
-    """Nonempty database, no alembic, no migrate."""
-    state = state0
-    metadata = state.metadata
-    create_database(dburl)
-    load_schema(dburl, metadata)
-    load_data(dburl, state)
+def test_case_4(db_url, metadata):
+    """Nonempty database, no migrate, no alembic."""
+    state_to_load = state1  # what we're loading into the db
+    create_database(db_url)
+    with create_engine(db_url).connect() as conn:
+        load_metadata(conn, state_to_load.metadata)
+        load_data(conn, state_to_load)
+
     with pytest.raises(NoMigrateVersioningError):
-        run(dburl, metadata)
+        run(db_url, metadata)
 
 
-def test_case_4_automigrate(dburl):
-    """Nonempty database, no alembic, no migrate. Auto-migrate."""
-    #TODO
+def test_case_4_automigrate(db_url, metadata):
+    """Same as 4 + auto-migrate."""
+    state_to_load = state1  # what we're loading into the db
+    create_database(db_url)
+    with create_engine(db_url).connect() as conn:
+        load_metadata(conn, state_to_load.metadata)
+        load_data(conn, state_to_load)
+
+    with pytest.raises(NoMigrateVersioningError):
+        run(db_url, metadata, auto_migrate=True)
 
 
-def test_case_5(dburl):
-    """Nonempty database, no alembic, migrate."""
-    state = state2
-    metadata = state.metadata
-    create_database(dburl)
-    load_schema(dburl, metadata)
-    load_data(dburl, state)
+def test_case_5(db_url, metadata):
+    """Nonempty database, has migrate, no alembic."""
+    state_to_load = state2  # what we're loading into the db
+    create_database(db_url)
+    with create_engine(db_url).connect() as conn:
+        load_metadata(conn, state_to_load.metadata)
+        load_data(conn, state_to_load)
+
     with pytest.raises(NoAlembicVersioningError):
-        run(dburl, metadata)
+        run(db_url, metadata)
 
-
-def test_case_5_automigrate(dburl):
-    """Nonempty database, no alembic, migrate. Auto-migrate"""
+def test_case_5_automigrate(db_url, metadata):
+    """Same as 5 + auto-migrate."""
+    state_to_load = state2  # what we're loading into the db
+    create_database(db_url)
+    with create_engine(db_url).connect() as conn:
+        load_metadata(conn, state_to_load.metadata)
+        load_data(conn, state_to_load)
     #TODO
 
 
-def test_case_6(dburl):
+def test_case_6(db_url, metadata):
     """Nonempty database, alembic-versioned, out-of-date."""
-    state = state3
-    metadata = state.metadata
-    create_database(dburl)
-    load_schema(dburl, metadata)
-    load_data(dburl, state)
-    stamp_alembic(dburl)
+    create_database(db_url)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        alembic_cfg = init_alembic(db_url, tmpdir)
+        command.stamp(alembic_cfg, 'head')
+        command.revision(alembic_cfg)  # new revision makes db outdated
 
-    cfg = Config()
-    cfg.set_main_option('script_location', 'lib/galaxy/model/migrations/alembic') #TODO fix path creation!
-    cfg.set_main_option('sqlalchemy.url', dburl)
-    script = ScriptDirectory.from_config(cfg)
-    rev_id, rev_msg = 'new_rev', 'tmp'
-    try:
-        script.generate_revision(rev_id, rev_msg)
-        with pytest.raises(DBOutdatedError):
-            run(dburl, metadata)
-    finally:
-        revision = script.get_revision(rev_id)
-        os.remove(revision.path)
+        with create_engine(db_url).connect() as conn:
+            load_metadata(conn, metadata)
+            load_data(conn, state_current)
+
+            with pytest.raises(DBOutdatedError):
+                run(db_url, metadata, tmpdir)
 
 
-def test_case_6_automigrate():
-    """Nonempty database, alembic-versioned, out-of-date. Auto-migrate."""
-#    create_db()
-#    load_schema_and_data(mapping_v3)
-#    stamp_alembic()
-#
-#    cfg = Config("alembic.ini")
-#    script = ScriptDirectory.from_config(cfg)
-#    rev_id, rev_msg = 'new_rev', 'tmp'
-#   # try:
-#   #     script.generate_revision(rev_id, rev_msg)
-#   #     run(URL, auto_migrate=True)
-#   #     # problem: alembic revisions != mapping files in states/
-#   #     assert_schema_loaded()
-#   #     assert_alembic_versioned()
-#   #     assert_data(mapping_v3)
-#   # finally:
-#   #     revision = script.get_revision(rev_id)
-#   #     os.remove(revision.path)
+def test_case_6_automigrate(db_url, metadata):
+    """Same as 6 + auto-migrate."""
+    create_database(db_url)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        alembic_cfg = init_alembic(db_url, tmpdir)
+        command.stamp(alembic_cfg, 'head')
+        command.revision(alembic_cfg)  # new revision makes db outdated
+
+        with create_engine(db_url).connect() as conn:
+            load_metadata(conn, metadata)
+            load_data(conn, state_current)
+        #TODO
 
 
-
-
-
-# for test6, use a temp dir
-# TODO: maybe use a temp dir for all cases? There's no need to use the real alembic repository?
- 
 ################# test utilities #################
 
-def load_schema(url, metadata):
-    with create_engine(url).connect() as conn:
-        metadata.bind = conn
-        metadata.create_all()
-    assert_schema_loaded(url, metadata)
+def init_alembic(url, alembic_dir):
+    config_file = os.path.join(alembic_dir, ALEMBIC_CONFIG_FILE)
+    config = Config(config_file)
+    config.set_main_option('sqlalchemy.url', url)
+    config.set_main_option('script_location', alembic_dir)
+    command.init(config, alembic_dir)
+    return config
 
 
-def load_data(url, state):
-    with create_engine(url).connect() as conn:
-        db_metadata = MetaData(bind=conn)
-        db_metadata.reflect()
-        for table in db_metadata.sorted_tables:
-            ins = table.insert().values(state.data[table.name])
-            conn.execute(ins)
-    assert_data(url, state)
+def load_metadata(conn, metadata):
+    metadata.bind = conn
+    metadata.create_all()
+    assert_metadata(conn, metadata)
 
 
-def stamp_alembic(url):
-    cfg = Config()
-    cfg.set_main_option('script_location', 'lib/galaxy/model/migrations/alembic') #TODO fix path creation!
-    cfg.set_main_option('sqlalchemy.url', url)
-    command.stamp(cfg, "head")
+def load_data(conn, state):
+    db_metadata = MetaData(bind=conn)
+    db_metadata.reflect()
+    for table in get_metadata_tables(db_metadata):
+        table_data = state.data[table.name]
+        ins = table.insert().values(table_data)
+        conn.execute(ins)
+    assert_data(conn, state)
 
 
-def assert_schema_loaded(url, metadata):
-    """Assert that db schema is same as schema in metadata."""
-    with create_engine(url).connect() as conn:
-        db_metadata = MetaData(bind=conn)
-        db_metadata.reflect()
+def assert_metadata(conn, metadata=state_current.metadata):
+    """Metadata loaded from the database is the same as the `metadata` argument."""
+    db_metadata = MetaData(bind=conn)
+    db_metadata.reflect()
 
     MetaDataComparator().compare(
         db_metadata, metadata, COLUMN_ATTRIBUTES_TO_VERIFY, TYPE_ATTRIBUTES_TO_VERIFY)
 
 
-def assert_alembic_versioned(url):
-    """Assert that db is under alembic version control."""
-    with create_engine(url).connect() as conn:
-        metadata = MetaData(bind=conn)
-        metadata.reflect()
-        assert ALEMBIC_TABLE in metadata.tables, 'Database is not under alembic version control'
+def assert_alembic(conn):
+    """Database is under alembic version control."""
+    metadata = MetaData(bind=conn)
+    metadata.reflect()
+    assert ALEMBIC_TABLE in metadata.tables, 'Database is not under alembic version control'
 
-def assert_data(url, state):
+def assert_data(conn, state):
     """Assert that data in db is the same as defined in state.data."""
 
     def assert_table_data(table_name):
@@ -222,17 +229,16 @@ def assert_data(url, state):
         # Assert that data in database is the same as the data devined in mapping* module.
         assert db_data == state.data[table_name]
 
-    with create_engine(url).connect() as conn:
-        if state in (state0, state5):
-            assert_table_data('dataset')
-        #if mapping in (mapping_v1, mapping_v2, mapping_v3, mapping_current):
-        #    assert_table_data('history')
-        #    assert_table_data('hda')
-        #if mapping in (mapping_v2, mapping_v3, mapping_current):
-        #    assert_table_data('migrate_version')
-        #if mapping in (mapping_v3, mapping_current):
-        #    assert_table_data('foo2')
-        ## we do not test mapping_v4 because that's just for adding alembic
-        #if mapping == mapping_current:
-        #    assert_table_data('foo3')
+    if state in (state1, state_current):
+        assert_table_data('dataset')
+    #if mapping in (mapping_v1, mapping_v2, mapping_v3, mapping_current):
+    #    assert_table_data('history')
+    #    assert_table_data('hda')
+    #if mapping in (mapping_v2, mapping_v3, mapping_current):
+    #    assert_table_data('migrate_version')
+    #if mapping in (mapping_v3, mapping_current):
+    #    assert_table_data('foo2')
+    ## we do not test mapping_v4 because that's just for adding alembic
+    #if mapping == mapping_current:
+    #    assert_table_data('foo3')
 
