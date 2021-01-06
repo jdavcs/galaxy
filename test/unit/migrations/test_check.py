@@ -15,13 +15,13 @@ from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
-from galaxy.model.migrations.check import (
+from galaxy.model.mapping import metadata as galaxy_metadata
+
+from galaxy.model.migrations import (
     DBOutdatedError, 
     NoAlembicVersioningError,
     NoMigrateVersioningError,
     run, 
-)
-from galaxy.model.migrations.utils import (
     ALEMBIC_CONFIG_FILE,
     ALEMBIC_TABLE,
     COLUMN_ATTRIBUTES_TO_VERIFY,
@@ -29,6 +29,7 @@ from galaxy.model.migrations.utils import (
     MetaDataComparator,
     get_metadata_tables,
 )
+
 from states import state1, state2, state3, state5 as state_current
 
 
@@ -73,7 +74,7 @@ def test_case_1(db_url, metadata):
     with create_engine(db_url).connect() as conn:
         assert_metadata(conn)
         assert_alembic(conn)
-    
+ 
 
 def test_case_2(db_url, metadata):
     """Empty database."""
@@ -85,6 +86,17 @@ def test_case_2(db_url, metadata):
         assert_metadata(conn)
         assert_alembic(conn)
 
+
+def test_case_2_galaxy_metadata(db_url):
+    """Empty database, galaxy metadada."""
+    assert not database_exists(db_url)
+    create_database(db_url)
+
+    run(db_url, galaxy_metadata)
+    with create_engine(db_url).connect() as conn:
+        assert_metadata(conn, metadata=galaxy_metadata)
+        assert_alembic(conn)
+   
 
 def test_case_3(db_url, metadata):
     """Everything is up-to-date."""
@@ -104,6 +116,22 @@ def test_case_3(db_url, metadata):
             assert_data(conn, state_current)
 
 
+def test_case_3_galaxy_metadata(db_url):
+    """Everything is up-to-date, galaxy metadata."""
+    assert not database_exists(db_url)
+    create_database(db_url)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        alembic_cfg = init_alembic(db_url, tmpdir)
+        command.stamp(alembic_cfg, 'head')
+
+        with create_engine(db_url).connect() as conn:
+            load_metadata(conn, galaxy_metadata)
+
+            run(db_url, galaxy_metadata, tmpdir)
+            assert_metadata(conn, metadata=galaxy_metadata)
+            assert_alembic(conn)
+
+
 def test_case_4(db_url, metadata):
     """Nonempty database, no migrate, no alembic."""
     state_to_load = state1  # what we're loading into the db
@@ -114,6 +142,16 @@ def test_case_4(db_url, metadata):
 
     with pytest.raises(NoMigrateVersioningError):
         run(db_url, metadata)
+
+
+def test_case_4_galaxy_metadata(db_url):
+    """Nonempty database, no migrate, no alembic, galaxy metadata."""
+    create_database(db_url)
+    with create_engine(db_url).connect() as conn:
+        load_metadata(conn, galaxy_metadata)
+
+    with pytest.raises(NoMigrateVersioningError):
+        run(db_url, galaxy_metadata)
 
 
 def test_case_4_automigrate(db_url, metadata):
@@ -128,6 +166,16 @@ def test_case_4_automigrate(db_url, metadata):
         run(db_url, metadata, auto_migrate=True)
 
 
+def test_case_4_automigrate_galaxy_metadata(db_url):
+    """Same as 4 + auto-migrate, galaxy metadata."""
+    create_database(db_url)
+    with create_engine(db_url).connect() as conn:
+        load_metadata(conn, galaxy_metadata)
+
+    with pytest.raises(NoMigrateVersioningError):
+        run(db_url, galaxy_metadata, auto_migrate=True)
+
+
 def test_case_5(db_url, metadata):
     """Nonempty database, has migrate, no alembic."""
     state_to_load = state2  # what we're loading into the db
@@ -140,14 +188,24 @@ def test_case_5(db_url, metadata):
         run(db_url, metadata)
 
 
-def test_case_5_automigrate(db_url, metadata):
-    """Same as 5 + auto-migrate."""
-    state_to_load = state2  # what we're loading into the db
-    create_database(db_url)
-    with create_engine(db_url).connect() as conn:
-        load_metadata(conn, state_to_load.metadata)
-        load_data(conn, state_to_load)
-    #TODO
+# TODO: add case 5 w/galaxy metadata (mock migrate_version table)
+
+
+# def test_case_5_automigrate(db_url, metadata):
+#     """Same as 5 + auto-migrate."""
+# TODO
+#    state_to_load = state2  # what we're loading into the db
+#    create_database(db_url)
+#    with tempfile.TemporaryDirectory() as tmpdir:
+#
+#        with create_engine(db_url).connect() as conn:
+#            load_metadata(conn, state_to_load.metadata)
+#            load_data(conn, state_to_load)
+#
+#            run(db_url, metadata, tmpdir, auto_migrate=True)
+#            assert_metadata(conn)
+#            assert_alembic(conn)
+#            assert_data(conn, state2)
 
 
 def test_case_6(db_url, metadata):
@@ -166,8 +224,8 @@ def test_case_6(db_url, metadata):
                 run(db_url, metadata, tmpdir)
 
 
-def test_case_6_automigrate(db_url, metadata):
-    """Same as 6 + auto-migrate."""
+def test_case_6_galaxy_metadata(db_url):
+    """Nonempty database, alembic-versioned, out-of-date, galaxy metadata."""
     create_database(db_url)
     with tempfile.TemporaryDirectory() as tmpdir:
         alembic_cfg = init_alembic(db_url, tmpdir)
@@ -175,9 +233,29 @@ def test_case_6_automigrate(db_url, metadata):
         command.revision(alembic_cfg)  # new revision makes db outdated
 
         with create_engine(db_url).connect() as conn:
-            load_metadata(conn, metadata)
-            load_data(conn, state_current)
-        #TODO
+            load_metadata(conn, galaxy_metadata)
+
+            with pytest.raises(DBOutdatedError):
+                run(db_url, galaxy_metadata, tmpdir)
+
+
+# def test_case_6_automigrate(db_url, metadata):
+#     """Same as 6 + auto-migrate."""
+# TODO
+#    create_database(db_url)
+#    with tempfile.TemporaryDirectory() as tmpdir:
+#        alembic_cfg = init_alembic(db_url, tmpdir)
+#        command.stamp(alembic_cfg, 'head')
+#        command.revision(alembic_cfg)  # new revision makes db outdated
+#
+#        with create_engine(db_url).connect() as conn:
+#            load_metadata(conn, metadata)
+#            load_data(conn, state_current)
+#            run(db_url, metadata, tmpdir, auto_migrate=True)
+#            assert_metadata(conn)
+#            assert_alembic(conn)
+#            assert_data(conn, state2)
+
 
 
 ################# test utilities #################

@@ -1229,20 +1229,42 @@ class ConfiguresGalaxyMixin:
             from galaxy.model import custom_types
             custom_types.MAX_METADATA_VALUE_SIZE = self.config.max_metadata_value_size
 
+
         if check_migrate_databases:
             # Initialize database / check for appropriate schema version.  # If this
             # is a new installation, we'll restrict the tool migration messaging.
-            from galaxy.model.migrate.check import create_or_verify_database
-            create_or_verify_database(db_url, config_file, self.config.database_engine_options, app=self, map_install_models=combined_install_database)
-            if not combined_install_database:
-                tsi_create_or_verify_database(install_db_url, install_database_options, app=self)
 
-        if check_migrate_tools:
-            # Alert the Galaxy admin to tools that have been moved from the distribution to the tool shed.
-            from galaxy.tool_shed.galaxy_install.migrate.check import verify_tools
-            verify_tools(self, install_db_url, config_file, install_database_options)
+            # TODO trying to reroute
+            #from galaxy.model.migrate.check import create_or_verify_database
+            #create_or_verify_database(db_url, config_file, self.config.database_engine_options, app=self, map_install_models=combined_install_database)
+            from galaxy.model.migrations.check import run
+            run(db_url, mapping.metadata, self.config.database_engine_options, app=self, map_install_models=combined_install_database)
+            
+            #print('\n\n--------------------------------------------RETURNING\n\n')
 
-        self.model = init_models_from_config(
+            # here: model.init(): must have been called???
+            #return  # this will cause galaxy to be not initialized, but the db is loaded.
+
+
+
+
+            # at this point the db should be ready.
+
+
+# TODO uncomment later
+#            if not combined_install_database:
+#                tsi_create_or_verify_database(install_db_url, install_database_options, app=self)
+
+
+# TODO uncomment later
+#        if check_migrate_tools:
+#            # Alert the Galaxy admin to tools that have been moved from the distribution to the tool shed.
+#            from galaxy.tool_shed.galaxy_install.migrate.check import verify_tools
+#            verify_tools(self, install_db_url, config_file, install_database_options)
+
+
+        # this will not create tables, right?
+        self.model = init_models_from_config(    
             self.config,
             map_install_models=combined_install_database,
             object_store=self.object_store,
@@ -1252,11 +1274,14 @@ class ConfiguresGalaxyMixin:
             log.info("Install database targetting Galaxy's database configuration.")
             self.install_model = self.model
         else:
+            # TODO this is where the TS happens if it's a different database!
             from galaxy.model.tool_shed_install import mapping as install_mapping
             install_db_url = self.config.install_database_connection
             log.info("Install database using its own connection %s" % install_db_url)
             self.install_model = install_mapping.init(install_db_url,
                                                       install_database_options)
+
+
 
     def _configure_signal_handlers(self, handlers):
         for sig, handler in handlers.items():
