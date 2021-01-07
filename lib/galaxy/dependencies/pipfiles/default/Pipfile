@@ -90,7 +90,6 @@ gxformat2 = "*"
 refgenconf = ">=0.7.0"
 future = "*"
 zipstream-new = "*"
-alembic = "*"
 
 [requires]
 python_version = "3.6"
