@@ -5,11 +5,8 @@ from alembic import command
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-
 from sqlalchemy import MetaData, Unicode
-
 from sqlalchemy.types import TypeDecorator
-
 from sqlalchemy_utils import (
     create_database,
     database_exists,
