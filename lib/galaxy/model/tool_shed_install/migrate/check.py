@@ -12,13 +12,12 @@ from sqlalchemy import (
     Table
 )
 from sqlalchemy.exc import NoSuchTableError
-from sqlalchemy_utils import (
-    create_database,
-    database_exists,
-)
 
 from galaxy.model.tool_shed_install import mapping
-
+from galaxy.utils import (
+    create_databse,
+    database_exists,
+)
 
 log = logging.getLogger(__name__)
 

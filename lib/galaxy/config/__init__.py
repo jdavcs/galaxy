@@ -37,6 +37,7 @@ from galaxy.util import (
     unicodify,
 )
 from galaxy.util.custom_logging import LOGLV_TRACE
+from galaxy.util.database import databse_exists
 from galaxy.util.dbkeys import GenomeBuilds
 from galaxy.util.properties import (
     find_config_file,
@@ -1270,7 +1271,6 @@ class ConfiguresGalaxyMixin:
             signal.signal(sig, handler)
 
     def _wait_for_database(self, url):
-        from sqlalchemy_utils import database_exists
         attempts = self.config.database_wait_attempts
         pause = self.config.database_wait_sleep
         for i in range(1, attempts):

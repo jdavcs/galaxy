@@ -22,10 +22,6 @@ import nose.loader
 import nose.plugins.manager
 import yaml
 from paste import httpserver
-from sqlalchemy_utils import (
-    create_database,
-    database_exists,
-)
 
 from galaxy.app import UniverseApplication as GalaxyUniverseApplication
 from galaxy.config import LOGGING_CONFIG_DEFAULT
@@ -33,6 +29,10 @@ from galaxy.model import mapping
 from galaxy.model.tool_shed_install import mapping as toolshed_mapping
 from galaxy.tool_util.verify.interactor import GalaxyInteractorApi, verify_tool
 from galaxy.util import asbool, download_to_file, galaxy_directory
+from galaxy.util.database import (
+    create_database,
+    database_exists,
+)
 from galaxy.util.properties import load_app_properties
 from galaxy.webapps.galaxy import buildapp
 from galaxy_test.base.api_util import get_admin_api_key, get_user_api_key
