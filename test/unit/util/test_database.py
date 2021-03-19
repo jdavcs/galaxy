@@ -4,6 +4,7 @@ import tempfile
 import uuid
 
 from galaxy.util.database import database_exists, create_database
+from ..unittest_utils.database_helpers import drop_database
 
 
 # GALAXY_TEST_CONNECT_POSTGRES_URI='postgresql://postgres@localhost:5432/postgres' pytest test/unit/util/test_database.py
@@ -23,29 +24,61 @@ def postgres_url():
     return os.environ.get('GALAXY_TEST_CONNECT_POSTGRES_URI')
 
 
-@skip_if_not_postgres_uri
-def test_postgres_database_does_not_exist(database_name, postgres_url):
-    assert not database_exists(postgres_url, database_name)
+@pytest.fixture
+def sqlite_memory_url():
+    return 'sqlite:///:memory:'
 
 
 @skip_if_not_postgres_uri
-def test_postgres_create_database(database_name, postgres_url):
+def test_postgres_create_exists_drop_database(database_name, postgres_url):
     assert not database_exists(postgres_url, database_name)
     create_database(postgres_url, database_name)
     assert database_exists(postgres_url, database_name)
+    drop_database(postgres_url, database_name)
+    assert not database_exists(postgres_url, database_name)
 
 
-def test_sqlite_database_does_not_exist(database_name):
+@skip_if_not_postgres_uri
+def test_postgres_create_exists_drop_database__pass_one_argument(database_name, postgres_url):
+    # Substitute the database part of postgres_url for database_name:
+    # url: 'foo/db1', database: 'db2' => url: 'foo/db2' (will not work for unix domain connections)
+    url = postgres_url
+    i = url.rfind('/')
+    url = f'{url[:i]}/{database_name}'
+
+    assert not database_exists(url)
+    create_database(url)
+    assert database_exists(url)
+    drop_database(postgres_url, database_name)
+    assert not database_exists(url)
+
+
+def test_sqlite_create_exists_drop_database(database_name):
     with tempfile.TemporaryDirectory() as tmp_dir:
-        path = os.path.join(tmp_dir, database_name)
-        db_url = f'sqlite:///{path}?isolation_level=IMMEDIATE'
-        assert not database_exists(db_url, database_name)
+        url = _make_sqlite_url(tmp_dir, database_name)
+
+        assert not database_exists(url, database_name)
+        create_database(url, database_name)
+        assert database_exists(url, database_name)
+        drop_database(url, database_name)
+        assert not database_exists(url, database_name)
 
 
-def test_sqlite_create_database(database_name):
+def test_sqlite_create_exists_drop_database__pass_one_argument(database_name):
     with tempfile.TemporaryDirectory() as tmp_dir:
-        path = os.path.join(tmp_dir, database_name)
-        db_url = f'sqlite:///{path}?isolation_level=IMMEDIATE'
-        assert not database_exists(db_url, database_name)
-        create_database(db_url, database_name)
-        assert database_exists(db_url, database_name)
+        url = _make_sqlite_url(tmp_dir, database_name)
+
+        assert not database_exists(url)
+        create_database(url)
+        assert database_exists(url)
+        drop_database(url, database_name)
+        assert not database_exists(url)
+
+
+def test_sqlite_create_exists_drop_in_memory_database(database_name, sqlite_memory_url):
+    assert database_exists(sqlite_memory_url)
+
+
+def _make_sqlite_url(tmp_dir, database_name):
+    path = os.path.join(tmp_dir, database_name)
+    return f'sqlite:///{path}?isolation_level=IMMEDIATE'
