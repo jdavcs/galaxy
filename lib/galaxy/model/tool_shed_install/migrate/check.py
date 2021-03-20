@@ -14,8 +14,8 @@ from sqlalchemy import (
 from sqlalchemy.exc import NoSuchTableError
 
 from galaxy.model.tool_shed_install import mapping
-from galaxy.utils import (
-    create_databse,
+from galaxy.util.database import (
+    create_database,
     database_exists,
 )
 

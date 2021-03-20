@@ -3,36 +3,33 @@ View wrappers, currently using sqlalchemy_views
 """
 from inspect import getmembers
 
-from sqlalchemy.ext import compiler
-from sqlalchemy_utils import view
+import sqlalchemy
+from sqlalchemy import (
+    Column,
+    MetaData,
+    Table,
+    event
+)
+from sqlalchemy.schema import DDLElement
 
 
 class View:
     is_view = True
 
 
-class DropView(view.DropView):
-    def __init__(self, ViewModel, **kwargs):
-        super().__init__(str(ViewModel.__table__.name), **kwargs)
+class CreateView(DDLElement):
+    def __init__(self, name, selectable):
+        self.name = name
+        self.selectable = selectable
 
 
-@compiler.compiles(DropView, "sqlite")
-def compile_drop_materialized_view(element, compiler, **kw):
-    # modified because sqlalchemy_utils adds a cascade for
-    # sqlite even though sqlite does not support cascade keyword
-    return 'DROP {}VIEW IF EXISTS {}'.format(
-        'MATERIALIZED ' if element.materialized else '',
-        element.name
-    )
-
-
-class CreateView(view.CreateView):
-    def __init__(self, ViewModel, **kwargs):
-        super().__init__(str(ViewModel.__table__.name), ViewModel.__view__, **kwargs)
+class DropView(DDLElement):
+    def __init__(self, name):
+        self.name = name
 
 
 def is_view_model(o):
-    return hasattr(o, '__view__') and issubclass(o, View)
+    return hasattr(o, '__view__') and issubclass(o, View)   # TODO
 
 
 def install_views(engine):
@@ -45,3 +42,22 @@ def install_views(engine):
         # to change the sql that gest emitted when CreateView is rendered.
         engine.execute(DropView(ViewModel))
         engine.execute(CreateView(ViewModel))
+
+
+def create_view(name, selectable, pkey):
+    metadata = MetaData()
+
+    columns = [
+        Column(
+            c.name,
+            c.type,
+            primary_key=(c.name == pkey)
+        )
+        for c in selectable.subquery().c
+    ]
+    table = Table(name, metadata, *columns)
+
+    event.listen(metadata, 'after_create', CreateView(name, selectable))
+    event.listen(metadata, 'before_drop', DropView(name))
+
+    return table

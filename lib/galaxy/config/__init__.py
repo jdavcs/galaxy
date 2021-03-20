@@ -37,7 +37,7 @@ from galaxy.util import (
     unicodify,
 )
 from galaxy.util.custom_logging import LOGLV_TRACE
-from galaxy.util.database import databse_exists
+from galaxy.util.database import database_exists
 from galaxy.util.dbkeys import GenomeBuilds
 from galaxy.util.properties import (
     find_config_file,
