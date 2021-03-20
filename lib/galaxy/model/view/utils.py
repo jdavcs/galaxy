@@ -3,7 +3,6 @@ View wrappers, currently using sqlalchemy_views
 """
 from inspect import getmembers
 
-import sqlalchemy
 from sqlalchemy import (
     Column,
     MetaData,
@@ -11,6 +10,7 @@ from sqlalchemy import (
     event
 )
 from sqlalchemy.schema import DDLElement
+from sqlalchemy.ext import compiler
 
 
 class View:
@@ -23,25 +23,36 @@ class CreateView(DDLElement):
         self.selectable = selectable
 
 
+@compiler.compiles(CreateView)
+def compile_create_view(element, compiler, **kw):
+    compiled_selectable = compiler.sql_compiler.process(element.selectable, literal_binds=True)
+    return f'CREATE VIEW {element.name} AS {compiled_selectable}'
+
+
 class DropView(DDLElement):
     def __init__(self, name):
         self.name = name
 
 
+@compiler.compiles(DropView)
+def compile_drop_view(element, compiler, **kw):
+    return f'DROP VIEW IF EXISTS {element.name}'
+
+
 def is_view_model(o):
-    return hasattr(o, '__view__') and issubclass(o, View)   # TODO
+    return hasattr(o, '__view__') and issubclass(o, View)
 
 
 def install_views(engine):
     import galaxy.model.view
     views = getmembers(galaxy.model.view, is_view_model)
-    for _name, ViewModel in views:
+    for _, view in views:
         # adding DropView here because our unit-testing calls this function when
         # it mocks the app and CreateView will attempt to rebuild an existing
         # view in a database that is already made, the right answer is probably
         # to change the sql that gest emitted when CreateView is rendered.
-        engine.execute(DropView(ViewModel))
-        engine.execute(CreateView(ViewModel))
+        engine.execute(DropView(view.name))
+        engine.execute(CreateView(view.name, view.__view__))
 
 
 def create_view(name, selectable, pkey):
