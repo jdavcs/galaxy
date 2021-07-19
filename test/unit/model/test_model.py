@@ -1,3 +1,44 @@
+"""
+TODO: documentaion on writing model tests goes here
+
+Example:
+
+TestFoo(BaseTest):  # BaseTest is parent class
+
+    # test table-level properties (e.g. table name, indexes, unique constraints)
+    def test_table(self, cls_):  # cls_ is fixture defined in parent class, returns class under test.
+        assert cls_.__tablename__ == 'foo'  # assert table name
+        assert has_index(cls.__table__, ('foo',))  # second arg is a tuple containg field names
+
+    # test column-mapped fields
+    def test_columns(self, session, cls_):
+        some_foo, some_bar = 42, 'stuff'  # create test values here
+        obj = cls_(foo=some_foo)  # pass test values to constructor
+        obj.bar = some_bar  # assign test values to obj if can't pass to constructor
+
+        with persist2(session, obj) as obj_id:  # use context manager to ensure obj is deleted from db on exit.
+            stored_obj = get_stored_obj(session, cls_, obj_id)  # retrieve data from db and create new obj.
+            # check ALL column-mapped fields
+            assert stored_obj.id == obj_id
+            assert stored_obj.create_time == create_time
+            assert stored_obj.user_id == user_id
+            assert stored_obj.key == key
+
+    # test relationship-mapped fields
+    def test_relationships(self, session, cls_):
+        obj = cls_()  # use minimal possible constructor
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            # check ALL relationshipmapped fields
+
+# TODO: ADD MORE EXAMPLES!
+# TODO: explain why we test for columns: 
+            assert stored_obj.user_id == user_id
+            and for relationships:
+            assert stored_obj.user.id == user_id
+"""
+
 import random
 from contextlib import contextmanager
 from datetime import datetime, timedelta
@@ -25,192 +66,245 @@ class BaseTest:
         return getattr(model, class_name)
 
 
-def test_APIKeys(model, session, user):
-    cls = model.APIKeys
-    assert cls.__tablename__ == 'api_keys'
-    with dbcleanup(session, cls):
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
+class TestAPIKeys(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'api_keys'
+
+    def test_columns(self, session, cls_, user):
         create_time, user_id, key = datetime.now(), user.id, get_random_string()
-        obj = cls(user_id=user_id, key=key, create_time=create_time)
-        obj_id = persist(session, obj)
+        obj = cls_(user_id=user_id, key=key, create_time=create_time)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.create_time == create_time
-        assert stored_obj.user_id == user_id
-        assert stored_obj.key == key
-        # test mapped relationships
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.create_time == create_time
+            assert stored_obj.user_id == user_id
+            assert stored_obj.key == key
+
+    def test_relationships(self, session, cls_, user):
+        user_id, key = user.id, get_random_string()
+        obj = cls_(user_id=user.id, key=key)
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.user.id == user.id
 
 
-def test_CloudAuthz(model, session, user, user_authnz_token):
-    cls = model.CloudAuthz
-    assert cls.__tablename__ == 'cloudauthz'
-    with dbcleanup(session, cls):
+class TestCloudAuthz(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'cloudauthz'
+
+    def test_columns(self, session, cls_, user, user_authnz_token):
         provider, config, description = 'a', 'b', 'c'
-        obj = cls(user.id, provider, config, user_authnz_token.id, description)
-        obj_id = persist(session, obj)
+        obj = cls_(user.id, provider, config, user_authnz_token.id, description)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.provider == provider
-        assert stored_obj.config == config
-        assert stored_obj.authn_id == user_authnz_token.id
-        assert stored_obj.tokens is None
-        assert stored_obj.last_update
-        assert stored_obj.last_activity
-        assert stored_obj.description == description
-        assert stored_obj.create_time
-        # test mapped relationships
-        assert stored_obj.user.id == user.id
-        assert stored_obj.authn.id == user_authnz_token.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.provider == provider
+            assert stored_obj.config == config
+            assert stored_obj.authn_id == user_authnz_token.id
+            assert stored_obj.tokens is None
+            assert stored_obj.last_update
+            assert stored_obj.last_activity
+            assert stored_obj.description == description
+            assert stored_obj.create_time
+ 
+    def test_relationships(self, session, cls_, user, user_authnz_token):
+        obj = cls_(user.id, 'a', 'b', user_authnz_token.id, 'c')
 
-
-def test_CustosAuthnzToken(model, session, user):
-    cls = model.CustosAuthnzToken
-    assert cls.__tablename__ == 'custos_authnz_token'
-    assert has_unique_constraint(cls.__table__, ('user_id', 'external_user_id', 'provider'))
-    assert has_unique_constraint(cls.__table__, ('external_user_id', 'provider'))
-    with dbcleanup(session, cls):
-        external_user_id = get_random_string()
-        provider = get_random_string()
-        access_token = 'c'
-        id_token = 'd'
-        refresh_token = 'e'
-        expiration_time = datetime.now()
-        refresh_expiration_time = datetime.now()
-        obj = cls(user, external_user_id, provider, access_token, id_token, refresh_token,
-            expiration_time, refresh_expiration_time)
-        obj_id = persist(session, obj)
-
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.external_user_id == external_user_id
-        assert stored_obj.provider == provider
-        assert stored_obj.access_token == access_token
-        assert stored_obj.id_token == id_token
-        assert stored_obj.refresh_token == refresh_token
-        assert stored_obj.expiration_time == expiration_time
-        assert stored_obj.refresh_expiration_time == refresh_expiration_time
-        # test mapped relationships
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.user.id == user.id
+            assert stored_obj.authn.id == user_authnz_token.id
 
 
-def test_DatasetHash(model, session, dataset):
-    cls = model.DatasetHash
-    assert cls.__tablename__ == 'dataset_hash'
-    with dbcleanup(session, cls):
+class TestDatasetHash(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'dataset_hash'
+
+    def test_columns(self, session, cls_, dataset):
         hash_function, hash_value, extra_files_path = 'a', 'b', 'c'
-        obj = cls()
+        obj = cls_()
         obj.dataset = dataset
         obj.hash_function = hash_function
         obj.hash_value = hash_value
         obj.extra_files_path = extra_files_path
-        obj_id = persist(session, obj)
+ 
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.dataset_id == dataset.id
+            assert stored_obj.hash_function == hash_function
+            assert stored_obj.hash_value == hash_value
+            assert stored_obj.extra_files_path == extra_files_path
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.dataset_id == dataset.id
-        assert stored_obj.hash_function == hash_function
-        assert stored_obj.hash_value == hash_value
-        assert stored_obj.extra_files_path == extra_files_path
-        # test mapped relationships
-        assert stored_obj.dataset.id == dataset.id
+    def test_relationships(self, session, cls_, dataset):
+        obj = cls_()
+        obj.dataset = dataset
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.dataset.id == dataset.id
 
 
-def test_DatasetSource(model, session, dataset, dataset_source_hash):
-    cls = model.DatasetSource
-    assert cls.__tablename__ == 'dataset_source'
-    with dbcleanup(session, cls):
+class TestDatasetSource(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'dataset_source'
+
+    def test_columns(self, session, cls_, dataset, dataset_source_hash):
         source_uri, extra_files_path, transform = 'a', 'b', 'c'
-        obj = cls()
+        obj = cls_()
         obj.dataset = dataset
         obj.source_uri = source_uri
         obj.extra_files_path = extra_files_path
         obj.transform = transform
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.dataset_id == dataset.id
+            assert stored_obj.source_uri == source_uri
+            assert stored_obj.extra_files_path == extra_files_path
+            assert stored_obj.transform == transform
+
+    def test_relationships(self, session, cls_, dataset, dataset_source_hash):
+        obj = cls_()
+        obj.dataset = dataset
         obj.hashes.append(dataset_source_hash)
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.dataset_id == dataset.id
-        assert stored_obj.source_uri == source_uri
-        assert stored_obj.extra_files_path == extra_files_path
-        assert stored_obj.transform == transform
-        # test mapped relationships
-        assert stored_obj.dataset.id == dataset.id
-        assert stored_obj.hashes == [dataset_source_hash]
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.dataset.id == dataset.id
+            assert stored_obj.hashes == [dataset_source_hash]
 
 
-def test_DatasetSourceHash(model, session, dataset_source):
-    cls = model.DatasetSourceHash
-    assert cls.__tablename__ == 'dataset_source_hash'
-    with dbcleanup(session, cls):
+class TestDatasetSourceHash(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'dataset_source_hash'
+
+    def test_columns(self, session, cls_, dataset_source):
         hash_function, hash_value = 'a', 'b'
-        obj = cls()
+        obj = cls_()
         obj.source = dataset_source
         obj.hash_function = hash_function
         obj.hash_value = hash_value
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.dataset_source_id == dataset_source.id
-        assert stored_obj.hash_function == hash_function
-        assert stored_obj.hash_value == hash_value
-        # test mapped relationships
-        assert stored_obj.source.id == dataset_source.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.dataset_source_id == dataset_source.id
+            assert stored_obj.hash_function == hash_function
+            assert stored_obj.hash_value == hash_value
+
+    def test_relationships(self, session, cls_, dataset_source):
+        obj = cls_()
+        obj.source = dataset_source
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.source.id == dataset_source.id
 
 
-def test_DatasetPermissions(model, session, dataset, role):
-    cls = model.DatasetPermissions
-    assert cls.__tablename__ == 'dataset_permissions'
-    with dbcleanup(session, cls):
+class TestDatasetPermissions(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'dataset_permissions'
+
+    def test_columns(self, session, cls_, dataset, role):
         action = 'a'
-        obj = cls(action, dataset, role)
         create_time = datetime.now()
         update_time = create_time + timedelta(hours=1)
+        obj = cls_(action, dataset, role)
         obj.create_time = create_time
         obj.update_time = update_time
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.create_time == create_time
-        assert stored_obj.update_time == update_time
-        assert stored_obj.action == action
-        assert stored_obj.dataset_id == dataset.id
-        assert stored_obj.role_id == role.id
-        # test mapped relationships
-        assert stored_obj.dataset == dataset
-        assert stored_obj.role == role
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.update_time == update_time
+            assert stored_obj.action == action
+            assert stored_obj.dataset_id == dataset.id
+            assert stored_obj.role_id == role.id
+
+    def test_relationships(self, session, cls_, dataset, role):
+        obj = cls_('a', dataset, role)
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.dataset == dataset
+            assert stored_obj.role == role
 
 
-def test_DefaultHistoryPermissions(model, session, history, role):
-    cls = model.DefaultHistoryPermissions
-    assert cls.__tablename__ == 'default_history_permissions'
-    with dbcleanup(session, cls):
+class TestDefaultHistoryPermissions(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'default_history_permissions'
+
+    def test_columns(self, session, cls_, history, role):
         action = 'a'
-        obj = cls(history, action, role)
-        obj_id = persist(session, obj)
+        obj = cls_(history, action, role)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.action == action
-        assert stored_obj.history_id == history.id
-        assert stored_obj.role_id == role.id
-        # test mapped relationships
-        assert stored_obj.history.id == history.id
-        assert stored_obj.role == role
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.action == action
+            assert stored_obj.history_id == history.id
+            assert stored_obj.role_id == role.id
+
+    def test_relationships(self, session, cls_, history, role):
+        obj = cls_(history, 'a', role)
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.history.id == history.id
+            assert stored_obj.role == role
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_DefaultQuotaAssociation(model, session, quota):
@@ -236,6 +330,26 @@ def test_DefaultQuotaAssociation(model, session, quota):
         assert stored_obj.quota.id == quota.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_DefaultUserPermissions(model, session, user, role):
     cls = model.DefaultUserPermissions
     assert cls.__tablename__ == 'default_user_permissions'
@@ -253,6 +367,26 @@ def test_DefaultUserPermissions(model, session, user, role):
         # test mapped relationships
         assert stored_obj.user.id == user.id
         assert stored_obj.role.id == role.id
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_DynamicTool(model, session, workflow_step):
@@ -295,6 +429,26 @@ def test_DynamicTool(model, session, workflow_step):
         assert workflow_step in stored_obj.workflow_steps
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_FormDefinition(model, session, form_definition_current):
     cls = model.FormDefinition
     assert cls.__tablename__ == 'form_definition'
@@ -328,6 +482,26 @@ def test_FormDefinition(model, session, form_definition_current):
         assert stored_obj.form_definition_current.id == form_definition_current.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_FormDefinitionCurrent(model, session, form_definition):
     cls = model.FormDefinitionCurrent
     assert cls.__tablename__ == 'form_definition_current'
@@ -355,6 +529,26 @@ def test_FormDefinitionCurrent(model, session, form_definition):
         assert stored_obj.forms == [form_definition]
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_FormValues(model, session, form_definition):
     cls = model.FormValues
     assert cls.__tablename__ == 'form_values'
@@ -380,6 +574,26 @@ def test_FormValues(model, session, form_definition):
         assert stored_obj.form_definition.id == form_definition.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_GroupQuotaAssociation(model, session, group, quota):
     cls = model.GroupQuotaAssociation
     assert cls.__tablename__ == 'group_quota_association'
@@ -401,6 +615,26 @@ def test_GroupQuotaAssociation(model, session, group, quota):
         # test mapped relationships
         assert stored_obj.group.id == group.id
         assert stored_obj.quota.id == quota.id
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_GroupRoleAssociation(model, session, group, role):
@@ -426,6 +660,26 @@ def test_GroupRoleAssociation(model, session, group, role):
         assert stored_obj.role.id == role.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_HistoryUserShareAssociation(model, session, history, user):
     cls = model.HistoryUserShareAssociation
     assert cls.__tablename__ == 'history_user_share_association'
@@ -444,6 +698,26 @@ def test_HistoryUserShareAssociation(model, session, history, user):
         assert stored_obj.user_id == user.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_HistoryAudit(model, session, history):
     cls = model.HistoryAudit
     assert cls.__tablename__ == 'history_audit'
@@ -459,6 +733,26 @@ def test_HistoryAudit(model, session, history):
         assert stored_obj.update_time == update_time
         # test mapped relationships
         assert stored_obj.history.id == history.id
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_HistoryAnnotationAssociation(model, session, history, user):
@@ -482,6 +776,26 @@ def test_HistoryAnnotationAssociation(model, session, history, user):
         # test mapped relationships
         assert stored_obj.history.id == history.id
         assert stored_obj.user.id == user.id
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_HistoryDatasetAssociationAnnotationAssociation(
@@ -508,6 +822,26 @@ def test_HistoryDatasetAssociationAnnotationAssociation(
         assert stored_obj.user.id == user.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_HistoryDatasetAssociationRatingAssociation(model, session, history_dataset_association, user):
     cls = model.HistoryDatasetAssociationRatingAssociation
     assert cls.__tablename__ == 'history_dataset_association_rating_association'
@@ -525,6 +859,26 @@ def test_HistoryDatasetAssociationRatingAssociation(model, session, history_data
         # test mapped relationships
         assert stored_obj.history_dataset_association.id == history_dataset_association.id
         assert stored_obj.user.id == user.id
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_HistoryDatasetAssociationTagAssociation(
@@ -553,6 +907,26 @@ def test_HistoryDatasetAssociationTagAssociation(
         assert stored_obj.user.id == user.id
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
+
+
 def test_HistoryDatasetCollectionAssociationAnnotationAssociation(
         model, session, history_dataset_collection_association, user):
     cls = model.HistoryDatasetCollectionAssociationAnnotationAssociation
@@ -574,6 +948,26 @@ def test_HistoryDatasetCollectionAssociationAnnotationAssociation(
         # test mapped relationships
         assert stored_obj.history_dataset_collection.id == history_dataset_collection_association.id
         assert stored_obj.user.id == user.id
+
+
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.user.id == user.id
 
 
 def test_HistoryDatasetCollectionRatingAssociation(
@@ -2593,6 +2987,25 @@ def dbcleanup_wrapper(session, obj):
         yield obj
 
 
+
+@contextmanager
+def persist2(session, obj, return_id=True):
+    """Store obj in database, delete on exit."""
+    try:
+        session.add(obj)
+        session.flush()
+        obj_id = obj.id if return_id else None  # save this before obj is expunged
+        # Remove from session, so that on a subsequent load from the database we get a *new* obj.
+        session.expunge(obj)
+        yield obj_id
+    finally:
+        # Cannot do `session.delete(obj)` because obj has been replaced in the session with another
+        # instance of the same class when calling `get_stored_obj()` in the test function.
+        stored_obj = get_stored_obj(session, type(obj), obj_id)
+        session.delete(stored_obj)  
+
+
+
 def persist(session, obj, return_id=True):
     session.add(obj)
     session.flush()
@@ -2600,6 +3013,7 @@ def persist(session, obj, return_id=True):
     # Remove from session, so that on a subsequent load we get a *new* obj from the db
     session.expunge(obj)
     return obj_id
+
 
 
 def has_unique_constraint(table, fields):
