@@ -84,7 +84,6 @@ class BaseTest:
 #
 #        with persist2(session, obj) as obj_id:
 #            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.user.id == user.id
 
 
 class TestAPIKeys(BaseTest):
@@ -626,260 +625,232 @@ class TestHistoryAnnotationAssociation(BaseTest):
             assert stored_obj.user.id == user.id
 
 
-#class TestHistoryDatasetAssociationAnnotationAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.user.id == user.id
+class TestHistoryDatasetAssociationAnnotationAssociation(BaseTest):
 
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_dataset_association_annotation_association'
+        assert has_index(cls_.__table__, ('annotation',))
 
-def test_HistoryDatasetAssociationAnnotationAssociation(
-        model, session, history_dataset_association, user):
-    cls = model.HistoryDatasetAssociationAnnotationAssociation
-    assert cls.__tablename__ == 'history_dataset_association_annotation_association'
-    assert has_index(cls.__table__, ('annotation',))
-    with dbcleanup(session, cls):
+    def test_columns(self, session, cls_, history_dataset_association, user):
         annotation = 'a'
-        obj = cls()
+        obj = cls_()
         obj.user = user
         obj.hda = history_dataset_association
         obj.annotation = annotation
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_dataset_association_id == history_dataset_association.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.annotation == annotation
-        # test mapped relationships
-        assert stored_obj.hda.id == history_dataset_association.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_dataset_association_id == history_dataset_association.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.annotation == annotation
 
+    def test_relationships(self, session, cls_, history_dataset_association, user):
+        obj = cls_()
+        obj.user = user
+        obj.hda = history_dataset_association
 
-#class TestHistoryDatasetAssociationRatingAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.hda.id == history_dataset_association.id
+            assert stored_obj.user.id == user.id
 
 
-def test_HistoryDatasetAssociationRatingAssociation(model, session, history_dataset_association, user):
-    cls = model.HistoryDatasetAssociationRatingAssociation
-    assert cls.__tablename__ == 'history_dataset_association_rating_association'
-    with dbcleanup(session, cls):
+class TestHistoryDatasetAssociationRatingAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_dataset_association_rating_association'
+
+    def test_columns(self, session, cls_, history_dataset_association, user):
         rating = 9
-        obj = cls(user, history_dataset_association, rating)
-        obj_id = persist(session, obj)
+        obj = cls_(user, history_dataset_association, rating)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_dataset_association_id == history_dataset_association.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.rating == rating
-        # test mapped relationships
-        assert stored_obj.history_dataset_association.id == history_dataset_association.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.rating == rating
 
+    def test_relationships(self, session, cls_, history_dataset_association, user):
+        obj = cls_(user, history_dataset_association, 1)
 
-#class TestHistoryDatasetAssociationTagAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.history_dataset_association.id == history_dataset_association.id
+            assert stored_obj.user.id == user.id
 
 
-def test_HistoryDatasetAssociationTagAssociation(
-        model, session, history_dataset_association, tag, user):
-    cls = model.HistoryDatasetAssociationTagAssociation
-    assert cls.__tablename__ == 'history_dataset_association_tag_association'
-    with dbcleanup(session, cls):
+class TestHistoryDatasetAssociationTagAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_dataset_association_tag_association'
+
+    def test_columns(self, session, cls_, history_dataset_association, tag, user):
         user_tname, value, user_value = 'a', 'b', 'c'
-        obj = cls(user=user, tag_id=tag.id, user_tname=user_tname, value=value)
-        obj.user_value = user_value
+        obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value, user_value=user_value)
         obj.history_dataset_association = history_dataset_association
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_dataset_association_id == history_dataset_association.id
-        assert stored_obj.tag_id == tag.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.user_tname == user_tname
-        assert stored_obj.value == value
-        assert stored_obj.user_value == user_value
-        # test mapped relationships
-        assert stored_obj.history_dataset_association.id == history_dataset_association.id
-        assert stored_obj.tag.id == tag.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_dataset_association_id == history_dataset_association.id
+            assert stored_obj.tag_id == tag.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.user_tname == user_tname
+            assert stored_obj.value == value
+            assert stored_obj.user_value == user_value
 
+    def test_relationships(self, session, cls_, history_dataset_association, tag, user):
+        obj = cls_(user=user, tag=tag)
+        obj.history_dataset_association = history_dataset_association
 
-#class TestHistoryDatasetCollectionAssociationAnnotationAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.history_dataset_association.id == history_dataset_association.id
+            assert stored_obj.tag.id == tag.id
+            assert stored_obj.user.id == user.id
 
 
-def test_HistoryDatasetCollectionAssociationAnnotationAssociation(
-        model, session, history_dataset_collection_association, user):
-    cls = model.HistoryDatasetCollectionAssociationAnnotationAssociation
-    assert cls.__tablename__ == 'history_dataset_collection_annotation_association'
-    with dbcleanup(session, cls):
+class TestHistoryDatasetCollectionAssociationAnnotationAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_dataset_collection_annotation_association'
+
+    def test_columns(self, session, cls_, history_dataset_collection_association, user):
         annotation = 'a'
-        obj = cls()
+        obj = cls_()
         obj.user = user
         obj.history_dataset_collection = history_dataset_collection_association
         obj.annotation = annotation
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.annotation == annotation
-        # test mapped relationships
-        assert stored_obj.history_dataset_collection.id == history_dataset_collection_association.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.annotation == annotation
 
+    def test_relationships(self, session, cls_, history_dataset_collection_association, user):
+        obj = cls_()
+        obj.user = user
+        obj.history_dataset_collection = history_dataset_collection_association
 
-#class TestHistoryDatasetCollectionRatingAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.history_dataset_collection.id == history_dataset_collection_association.id
+            assert stored_obj.user.id == user.id
 
 
-def test_HistoryDatasetCollectionRatingAssociation(
-        model, session, history_dataset_collection_association, user):
-    cls = model.HistoryDatasetCollectionRatingAssociation
-    assert cls.__tablename__ == 'history_dataset_collection_rating_association'
-    with dbcleanup(session, cls):
+class TestHistoryDatasetCollectionRatingAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_dataset_collection_rating_association'
+
+    def test_columns(self, session, cls_, history_dataset_collection_association, user):
         rating = 9
-        obj = cls(user, history_dataset_collection_association, rating)
-        obj_id = persist(session, obj)
+        obj = cls_(user, history_dataset_collection_association, rating)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
-        assert stored_obj.user.id == user.id
-        assert stored_obj.rating == rating
-        # test mapped relationships
-        assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
+            assert stored_obj.user.id == user.id
+            assert stored_obj.rating == rating
+
+    def test_relationships(self, session, cls_, history_dataset_collection_association, user):
+        obj = cls_(user, history_dataset_collection_association, 1)
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
+            assert stored_obj.user.id == user.id
 
 
-def test_HistoryDatasetCollectionTagAssociation(model, session, history_dataset_collection_association, tag, user):
-    cls = model.HistoryDatasetCollectionTagAssociation
-    assert cls.__tablename__ == 'history_dataset_collection_tag_association'
-    with dbcleanup(session, cls):
+class TestHistoryDatasetCollectionTagAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_dataset_collection_tag_association'
+
+    def test_columns(self, session, cls_, history_dataset_collection_association, tag, user):
         user_tname, value, user_value = 'a', 'b', 'c'
-        obj = cls(user=user, tag_id=tag.id, user_tname=user_tname, value=value)
-        obj.user_value = user_value
+        obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value, user_value=user_value)
         obj.dataset_collection = history_dataset_collection_association
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
-        assert stored_obj.tag_id == tag.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.user_tname == user_tname
-        assert stored_obj.value == value
-        assert stored_obj.user_value == user_value
-        # test mapped relationships
-        assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
-        assert stored_obj.tag.id == tag.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
+            assert stored_obj.tag_id == tag.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.user_tname == user_tname
+            assert stored_obj.value == value
+            assert stored_obj.user_value == user_value
 
+    def test_relationships(self, session, cls_, history_dataset_collection_association, tag, user):
+        obj = cls_(user=user, tag=tag)
+        obj.dataset_collection = history_dataset_collection_association
 
-def test_HistoryRatingAssociation(model, session, history, user):
-    cls = model.HistoryRatingAssociation
-    assert cls.__tablename__ == 'history_rating_association'
-    with dbcleanup(session, cls):
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
+            assert stored_obj.tag.id == tag.id
+            assert stored_obj.user.id == user.id
+
+class TestHistoryRatingAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_rating_association'
+
+    def test_columns(self, session, cls_, history, user):
         rating = 9
-        obj = cls(user, history, rating)
-        obj_id = persist(session, obj)
+        obj = cls_(user, history, rating)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.history_id == history.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.rating == rating
-        # test mapped relationships
-        assert stored_obj.history.id == history.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_id == history.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.rating == rating
+
+    def test_relationships(self, session, cls_, history, user):
+        obj = cls_(user, history, 1)
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.history.id == history.id
+            assert stored_obj.user.id == user.id
+
+
+class TestHistoryTagAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'history_tag_association'
+
+    def test_columns(self, session, cls_, history, tag, user):
+        user_tname, value, user_value = 'a', 'b', 'c'
+        obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value)
+        obj.user_value = user_value
+        obj.history = history
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.history_id == history.id
+            assert stored_obj.tag_id == tag.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.user_tname == user_tname
+            assert stored_obj.value == value
+            assert stored_obj.user_value == user_value
+
+    def test_relationships(self, session, cls_, history, tag, user):
+        obj = cls_(user=user, tag=tag)
+        obj.history = history
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.history.id == history.id
+            assert stored_obj.tag.id == tag.id
+            assert stored_obj.user.id == user.id
 
 
 def test_HistoryTagAssociation(model, session, history, tag, user):
@@ -908,6 +879,23 @@ def test_HistoryTagAssociation(model, session, history, tag, user):
         assert stored_obj.user.id == user.id
 
 
+#class TestJobMetricNumeric(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobMetricNumeric(model, session, job):
     cls = model.JobMetricNumeric
     assert cls.__tablename__ == 'job_metric_numeric'
@@ -927,6 +915,23 @@ def test_JobMetricNumeric(model, session, job):
         assert stored_obj.job.id == job.id
 
 
+#class TestJobMetricText(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobMetricText(model, session, job):
     cls = model.JobMetricText
     assert cls.__tablename__ == 'job_metric_text'
@@ -946,6 +951,23 @@ def test_JobMetricText(model, session, job):
         assert stored_obj.job.id == job.id
 
 
+#class TestJobParameter(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobParameter(model, session, job):
     cls = model.JobParameter
     assert cls.__tablename__ == 'job_parameter'
@@ -963,6 +985,23 @@ def test_JobParameter(model, session, job):
         assert stored_obj.value == value
 
 
+#class TestJobStateHistory(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobStateHistory(model, session, job):
     cls = model.JobStateHistory
     assert cls.__tablename__ == 'job_state_history'
@@ -987,6 +1026,23 @@ def test_JobStateHistory(model, session, job):
         assert stored_obj.job.id == job.id
 
 
+#class TestJobToImplicitOutputDatasetCollectionAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToImplicitOutputDatasetCollectionAssociation(
         model, session, dataset_collection, job):
     cls = model.JobToImplicitOutputDatasetCollectionAssociation
@@ -1009,6 +1065,23 @@ def test_JobToImplicitOutputDatasetCollectionAssociation(
         assert stored_obj.dataset_collection.id == dataset_collection.id
 
 
+#class TestJobToInputDatasetCollectionAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToInputDatasetCollectionAssociation(
         model, session, history_dataset_collection_association, job):
     cls = model.JobToInputDatasetCollectionAssociation
@@ -1031,6 +1104,23 @@ def test_JobToInputDatasetCollectionAssociation(
         assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
 
 
+#class TestJobToInputDatasetCollectionElementAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToInputDatasetCollectionElementAssociation(
         model, session, dataset_collection_element, job):
     cls = model.JobToInputDatasetCollectionElementAssociation
@@ -1053,6 +1143,23 @@ def test_JobToInputDatasetCollectionElementAssociation(
         assert stored_obj.dataset_collection_element.id == dataset_collection_element.id
 
 
+#class TestJobToInputDatasetAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToInputDatasetAssociation(model, session, history_dataset_association, job):
     cls = model.JobToInputDatasetAssociation
     assert cls.__tablename__ == 'job_to_input_dataset'
@@ -1076,6 +1183,23 @@ def test_JobToInputDatasetAssociation(model, session, history_dataset_associatio
         assert stored_obj.dataset.id == history_dataset_association.id
 
 
+#class TestJobToInputLibraryDatasetAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToInputLibraryDatasetAssociation(
         model, session, library_dataset_dataset_association, job):
     cls = model.JobToInputLibraryDatasetAssociation
@@ -1098,6 +1222,23 @@ def test_JobToInputLibraryDatasetAssociation(
         assert stored_obj.dataset.id == library_dataset_dataset_association.id
 
 
+#class TestJobToOutputDatasetAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToOutputDatasetAssociation(model, session, history_dataset_association, job):
     cls = model.JobToOutputDatasetAssociation
     assert cls.__tablename__ == 'job_to_output_dataset'
@@ -1119,6 +1260,23 @@ def test_JobToOutputDatasetAssociation(model, session, history_dataset_associati
         assert stored_obj.dataset.id == history_dataset_association.id
 
 
+#class TestJobToOutputDatasetCollectionAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToOutputDatasetCollectionAssociation(
         model, session, history_dataset_collection_association, job):
     cls = model.JobToOutputDatasetCollectionAssociation
@@ -1202,6 +1360,23 @@ class TestLibraryDataset(BaseTest):
             assert stored_obj.actions == [library_dataset_permission]
 
 
+#class TestJobToOutputLibraryDatasetAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_JobToOutputLibraryDatasetAssociation(model, session, library_dataset_dataset_association, job):
     cls = model.JobToOutputLibraryDatasetAssociation
     assert cls.__tablename__ == 'job_to_output_library_dataset'
@@ -1223,6 +1398,23 @@ def test_JobToOutputLibraryDatasetAssociation(model, session, library_dataset_da
         assert stored_obj.dataset.id == library_dataset_dataset_association.id
 
 
+#class TestLibrary(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_Library(model, session, library_folder, library_permission):
     cls = model.Library
     assert cls.__tablename__ == 'library'
@@ -1254,6 +1446,23 @@ def test_Library(model, session, library_folder, library_permission):
         assert stored_obj.actions == [library_permission]
 
 
+#class TestLibraryDatasetCollectionAnnotationAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryDatasetCollectionAnnotationAssociation(
         model, session, library_dataset_collection_association, user):
     cls = model.LibraryDatasetCollectionAnnotationAssociation
@@ -1277,6 +1486,23 @@ def test_LibraryDatasetCollectionAnnotationAssociation(
         assert stored_obj.user.id == user.id
 
 
+#class TestLibraryDatasetCollectionTagAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryDatasetCollectionTagAssociation(model, session, library_dataset_collection_association, tag, user):
     cls = model.LibraryDatasetCollectionTagAssociation
     assert cls.__tablename__ == 'library_dataset_collection_tag_association'
@@ -1302,6 +1528,23 @@ def test_LibraryDatasetCollectionTagAssociation(model, session, library_dataset_
         assert stored_obj.user.id == user.id
 
 
+#class TestLibraryDatasetCollectionRatingAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryDatasetCollectionRatingAssociation(
         model, session, library_dataset_collection_association, user):
     cls = model.LibraryDatasetCollectionRatingAssociation
@@ -1322,6 +1565,23 @@ def test_LibraryDatasetCollectionRatingAssociation(
         assert stored_obj.user.id == user.id
 
 
+#class TestLibraryDatasetDatasetAssociationPermissions(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryDatasetDatasetAssociationPermissions(
         model, session, library_dataset_dataset_association, role):
     cls = model.LibraryDatasetDatasetAssociationPermissions
@@ -1348,6 +1608,23 @@ def test_LibraryDatasetDatasetAssociationPermissions(
         assert stored_obj.role.id == role.id
 
 
+#class TestLibraryDatasetDatasetAssociationTagAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryDatasetDatasetAssociationTagAssociation(
         model, session, library_dataset_dataset_association, tag, user):
     cls = model.LibraryDatasetDatasetAssociationTagAssociation
@@ -1374,6 +1651,23 @@ def test_LibraryDatasetDatasetAssociationTagAssociation(
         assert stored_obj.user.id == user.id
 
 
+#class TestLibraryDatasetPermissions(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryDatasetPermissions(model, session, library_dataset, role):
     cls = model.LibraryDatasetPermissions
     assert cls.__tablename__ == 'library_dataset_permissions'
@@ -1472,6 +1766,23 @@ class TestLibraryFolder(BaseTest):
             assert stored_obj.active_datasets[0].id == library_dataset.id
 
 
+#class TestLibraryFolderPermissions(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryFolderPermissions(model, session, library_folder, role):
     cls = model.LibraryFolderPermissions
     assert cls.__tablename__ == 'library_folder_permissions'
@@ -1497,6 +1808,23 @@ def test_LibraryFolderPermissions(model, session, library_folder, role):
         assert stored_obj.role.id == role.id
 
 
+#class TestLibraryPermissions(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_LibraryPermissions(model, session, library, role):
     cls = model.LibraryPermissions
     assert cls.__tablename__ == 'library_permissions'
@@ -1522,6 +1850,23 @@ def test_LibraryPermissions(model, session, library, role):
         assert stored_obj.role.id == role.id
 
 
+#class TestPage(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_Page(
         model,
         session,
@@ -1581,6 +1926,24 @@ def test_Page(
         assert stored_obj.users_shared_with == [page_user_share_association]
 
 
+#class Test(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+# TODO: this is an inconsistent name. Why?
 def test_Page_average_rating(model, session, page, user):
     cls = model.PageRatingAssociation
     with dbcleanup(session, cls):
@@ -1596,6 +1959,23 @@ def test_Page_average_rating(model, session, page, user):
         assert page.average_rating == 3.0  # Expect average after ratings added.
 
 
+#class TestPageAnnotationAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_PageAnnotationAssociation(model, session, page, user):
     cls = model.PageAnnotationAssociation
     assert cls.__tablename__ == 'page_annotation_association'
@@ -1619,6 +1999,23 @@ def test_PageAnnotationAssociation(model, session, page, user):
         assert stored_obj.user.id == user.id
 
 
+#class TestPageRatingAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_PageRatingAssociation(model, session, page, user):
     cls = model.PageRatingAssociation
     assert cls.__tablename__ == 'page_rating_association'
@@ -1638,6 +2035,23 @@ def test_PageRatingAssociation(model, session, page, user):
         assert stored_obj.user.id == user.id
 
 
+#class TestPageRevision(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_PageRevision(model, session, page):
     cls = model.PageRevision
     assert cls.__tablename__ == 'page_revision'
@@ -1666,6 +2080,23 @@ def test_PageRevision(model, session, page):
         assert stored_obj.page.id == page.id
 
 
+#class TestPageTagAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_PageTagAssociation(model, session, page, tag, user):
     cls = model.PageTagAssociation
     assert cls.__tablename__ == 'page_tag_association'
@@ -1691,6 +2122,23 @@ def test_PageTagAssociation(model, session, page, tag, user):
         assert stored_obj.user.id == user.id
 
 
+#class TestPageUserShareAssociation(BaseTest):
+#
+#    def test_table(self, cls_):
+#        assert cls_.__tablename__ == ''
+#
+#    def test_columns(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
+#            assert stored_obj.id == obj_id
+#
+#    def test_relationships(self, session, cls_):
+#        obj = cls_()
+#
+#        with persist2(session, obj) as obj_id:
+#            stored_obj = get_stored_obj(session, cls_, obj_id)
 def test_PageUserShareAssociation(model, session, page, user):
     cls = model.PageUserShareAssociation
     assert cls.__tablename__ == 'page_user_share_association'
