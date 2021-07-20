@@ -2535,337 +2535,236 @@ class TestUserQuotaAssociation(BaseTest):
             assert stored_obj.quota.id == quota.id
 
 
-#class TestVisualizationAnnotationAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+class TestVisualizationAnnotationAssociation(BaseTest):
 
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'visualization_annotation_association'
+        assert has_index(cls_.__table__, ('annotation',))
 
-def test_VisualizationAnnotationAssociation(model, session, visualization, user):
-    cls = model.VisualizationAnnotationAssociation
-    assert cls.__tablename__ == 'visualization_annotation_association'
-    assert has_index(cls.__table__, ('annotation',))
-    with dbcleanup(session, cls):
+    def test_columns(self, session, cls_, visualization, user):
         annotation = 'a'
-        obj = cls()
+        obj = cls_()
         obj.user = user
         obj.visualization = visualization
         obj.annotation = annotation
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.visualization_id == visualization.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.annotation == annotation
-        # test mapped relationships
-        assert stored_obj.visualization.id == visualization.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.visualization_id == visualization.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.annotation == annotation
 
+    def test_relationships(self, session, cls_, visualization, user):
+        obj = cls_()
+        obj.user = user
+        obj.visualization = visualization
 
-#class TestVisualizationRatingAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.visualization.id == visualization.id
+            assert stored_obj.user.id == user.id
 
 
-def test_VisualizationRatingAssociation(model, session, visualization, user):
-    cls = model.VisualizationRatingAssociation
-    assert cls.__tablename__ == 'visualization_rating_association'
-    with dbcleanup(session, cls):
+class TestVisualizationRatingAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'visualization_rating_association'
+
+    def test_columns(self, session, cls_, visualization, user):
         rating = 9
-        obj = cls(user, visualization, rating)
+        obj = cls_(user, visualization, rating)
         obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.visualization_id == visualization.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.rating == rating
-        # test mapped relationships
-        assert stored_obj.visualization.id == visualization.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.visualization_id == visualization.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.rating == rating
+
+    def test_relationships(self, session, cls_, visualization, user):
+        obj = cls_(user, visualization, 1)
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.visualization.id == visualization.id
+            assert stored_obj.user.id == user.id
 
 
-#class TestVisualizationRevision(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+class TestVisualizationRevision(BaseTest):
 
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'visualization_revision'
+        assert has_index(cls_.__table__, ('dbkey',))
 
-def test_VisualizationRevision(model, session, visualization):
-    cls = model.VisualizationRevision
-    assert cls.__tablename__ == 'visualization_revision'
-    assert has_index(cls.__table__, ('dbkey',))
-    with dbcleanup(session, cls):
+    def test_columns(self, session, cls_, visualization):
         visualization, title, dbkey, config = visualization, 'a', 'b', 'c'
-        obj = cls(visualization, title, dbkey, config)
         create_time = datetime.now()
         update_time = create_time + timedelta(hours=1)
+        obj = cls_(visualization, title, dbkey, config)
         obj.create_time = create_time
         obj.update_time = update_time
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.create_time == create_time
-        assert stored_obj.update_time == update_time
-        assert stored_obj.visualization_id == visualization.id
-        assert stored_obj.title == title
-        assert stored_obj.dbkey == dbkey
-        assert stored_obj.config == config
-        # test mapped relationships
-        assert stored_obj.visualization.id == visualization.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.create_time == create_time
+            assert stored_obj.update_time == update_time
+            assert stored_obj.visualization_id == visualization.id
+            assert stored_obj.title == title
+            assert stored_obj.dbkey == dbkey
+            assert stored_obj.config == config
 
+    def test_relationships(self, session, cls_, visualization):
+        obj = cls_(visualization) 
 
-#class TestWorkerProcess(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.visualization.id == visualization.id
 
 
-def test_WorkerProcess(model, session):
-    cls = model.WorkerProcess
-    assert cls.__tablename__ == 'worker_process'
-    assert has_unique_constraint(cls.__table__, ('server_name', 'hostname'))
-    with dbcleanup(session, cls):
+class TestWorkerProcess(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'worker_process'
+        assert has_unique_constraint(cls_.__table__, ('server_name', 'hostname'))
+
+    def test_columns(self, session, cls_):
         server_name, hostname = get_random_string(), 'a'
-        obj = cls(server_name, hostname)
         update_time = datetime.now()
+        obj = cls_(server_name, hostname)
         obj.update_time = update_time
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.server_name == server_name
-        assert stored_obj.hostname == hostname
-        assert stored_obj.pid is None
-        assert stored_obj.update_time == update_time
-
-
-#class TestWorkflowStepAnnotationAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.server_name == server_name
+            assert stored_obj.hostname == hostname
+            assert stored_obj.pid is None
+            assert stored_obj.update_time == update_time
 
 
-def test_WorkflowStepAnnotationAssociation(model, session, workflow_step, user):
-    cls = model.WorkflowStepAnnotationAssociation
-    assert cls.__tablename__ == 'workflow_step_annotation_association'
-    assert has_index(cls.__table__, ('annotation',))
-    with dbcleanup(session, cls):
+class TestWorkflowStepAnnotationAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'workflow_step_annotation_association'
+        assert has_index(cls_.__table__, ('annotation',))
+
+    def test_columns(self, session, cls_, workflow_step, user):
         annotation = 'a'
-        obj = cls()
+        obj = cls_()
         obj.user = user
         obj.workflow_step = workflow_step
         obj.annotation = annotation
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.workflow_step_id == workflow_step.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.annotation == annotation
-        # test mapped relationships
-        assert stored_obj.workflow_step.id == workflow_step.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.workflow_step_id == workflow_step.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.annotation == annotation
 
+    def test_relationships(self, session, cls_, workflow_step, user):
+        obj = cls_()
+        obj.user = user
+        obj.workflow_step = workflow_step
 
-#class TestWorkflowStepTagAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.workflow_step.id == workflow_step.id
+            assert stored_obj.user.id == user.id
 
 
-def test_WorkflowStepTagAssociation(model, session, workflow_step, tag, user):
-    cls = model.WorkflowStepTagAssociation
-    assert cls.__tablename__ == 'workflow_step_tag_association'
-    with dbcleanup(session, cls):
+class TestWorkflowStepTagAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'workflow_step_tag_association'
+
+    def test_columns(self, session, cls_, workflow_step, tag, user):
         user_tname, value, user_value = 'a', 'b', 'c'
-        obj = cls(user=user, tag_id=tag.id, user_tname=user_tname, value=value)
+        obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value)
         obj.user_value = user_value
         obj.workflow_step = workflow_step
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.workflow_step_id == workflow_step.id
-        assert stored_obj.tag_id == tag.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.user_tname == user_tname
-        assert stored_obj.value == value
-        assert stored_obj.user_value == user_value
-        # test mapped relationships
-        assert stored_obj.workflow_step.id == workflow_step.id
-        assert stored_obj.tag.id == tag.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.workflow_step_id == workflow_step.id
+            assert stored_obj.tag_id == tag.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.user_tname == user_tname
+            assert stored_obj.value == value
+            assert stored_obj.user_value == user_value
 
+    def test_relationships(self, session, cls_, workflow_step, tag, user):
+        obj = cls_(user=user, tag=tag)
+        obj.workflow_step = workflow_step
 
-#class TestVisualizationTagAssociation(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.workflow_step.id == workflow_step.id
+            assert stored_obj.tag.id == tag.id
+            assert stored_obj.user.id == user.id
 
 
-def test_VisualizationTagAssociation(model, session, visualization, tag, user):
-    cls = model.VisualizationTagAssociation
-    assert cls.__tablename__ == 'visualization_tag_association'
-    with dbcleanup(session, cls):
+class TestVisualizationTagAssociation(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'visualization_tag_association'
+
+    def test_columns(self, session, cls_, visualization, tag, user):
         user_tname, value, user_value = 'a', 'b', 'c'
-        obj = cls(user=user, tag_id=tag.id, user_tname=user_tname, value=value)
+        obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value)
         obj.user_value = user_value
         obj.visualization = visualization
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.visualization_id == visualization.id
-        assert stored_obj.tag_id == tag.id
-        assert stored_obj.user_id == user.id
-        assert stored_obj.user_tname == user_tname
-        assert stored_obj.value == value
-        assert stored_obj.user_value == user_value
-        # test mapped relationships
-        assert stored_obj.visualization.id == visualization.id
-        assert stored_obj.tag.id == tag.id
-        assert stored_obj.user.id == user.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.visualization_id == visualization.id
+            assert stored_obj.tag_id == tag.id
+            assert stored_obj.user_id == user.id
+            assert stored_obj.user_tname == user_tname
+            assert stored_obj.value == value
+            assert stored_obj.user_value == user_value
 
+    def test_relationships(self, session, cls_, visualization, tag, user):
+        obj = cls_(user=user, tag=tag)
+        obj.visualization = visualization
 
-#class TestWorkflowRequestInputParameter(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.visualization.id == visualization.id
+            assert stored_obj.tag.id == tag.id
+            assert stored_obj.user.id == user.id
 
 
-def test_WorkflowRequestInputParameter(model, session, workflow_invocation):
-    cls = model.WorkflowRequestInputParameter
-    assert cls.__tablename__ == 'workflow_request_input_parameters'
-    with dbcleanup(session, cls):
+class TestWorkflowRequestInputParameter(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'workflow_request_input_parameters'
+
+    def test_columns(self, session, cls_, workflow_invocation):
         name, value, type = 'a', 'b', 'c'
-        obj = cls(name, value, type)
+        obj = cls_(name, value, type)
         obj.workflow_invocation = workflow_invocation
-        obj_id = persist(session, obj)
 
-        stored_obj = get_stored_obj(session, cls, obj_id)
-        # test mapped columns
-        assert stored_obj.id == obj_id
-        assert stored_obj.workflow_invocation_id == workflow_invocation.id
-        assert stored_obj.name == name
-        assert stored_obj.value == value
-        assert stored_obj.type == type
-        # test mapped relationships
-        assert stored_obj.workflow_invocation.id == workflow_invocation.id
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.workflow_invocation_id == workflow_invocation.id
+            assert stored_obj.name == name
+            assert stored_obj.value == value
+            assert stored_obj.type == type
+
+    def test_relationships(self, session, cls_, workflow_invocation):
+        obj = cls_()
+        obj.workflow_invocation = workflow_invocation
+
+        with persist2(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.workflow_invocation.id == workflow_invocation.id
 
 
 @pytest.fixture(scope='module')
