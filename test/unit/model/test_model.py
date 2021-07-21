@@ -16,7 +16,7 @@ TestFoo(BaseTest):  # BaseTest is parent class
         obj = cls_(foo=some_foo)  # pass test values to constructor
         obj.bar = some_bar  # assign test values to obj if can't pass to constructor
 
-        with persist2(session, obj) as obj_id:  # use context manager to ensure obj is deleted from db on exit.
+        with dbcleanup(session, obj) as obj_id:  # use context manager to ensure obj is deleted from db on exit.
             stored_obj = get_stored_obj(session, cls_, obj_id)  # retrieve data from db and create new obj.
             # check ALL column-mapped fields
             assert stored_obj.id == obj_id
@@ -28,14 +28,15 @@ TestFoo(BaseTest):  # BaseTest is parent class
     def test_relationships(self, session, cls_):
         obj = cls_()  # use minimal possible constructor
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             # check ALL relationship-mapped fields
 
 # TODO: ADD MORE EXAMPLES!
 - point to TestLibraryDataset for example of using more than one object of same type (and, thus,
     not being able to use a fixture.
-# TODO: explain why we test for columns: 
+- TestPage: how to call cleanup explicitly (see average_ratings)
+# TODO: explain why we test for columns:
             assert stored_obj.user_id == user_id
             and for relationships:
             assert stored_obj.user.id == user_id
@@ -47,6 +48,7 @@ from datetime import datetime, timedelta
 
 import pytest
 from sqlalchemy import (
+    and_,
     delete,
     select,
     UniqueConstraint,
@@ -68,26 +70,6 @@ class BaseTest:
         return getattr(model, class_name)
 
 
-# TODO remove this
-#class Test(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-
-
 class TestAPIKeys(BaseTest):
 
     def test_table(self, cls_):
@@ -97,7 +79,7 @@ class TestAPIKeys(BaseTest):
         create_time, user_id, key = datetime.now(), user.id, get_random_string()
         obj = cls_(user_id=user_id, key=key, create_time=create_time)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -105,10 +87,9 @@ class TestAPIKeys(BaseTest):
             assert stored_obj.key == key
 
     def test_relationships(self, session, cls_, user):
-        user_id, key = user.id, get_random_string()
-        obj = cls_(user_id=user.id, key=key)
+        obj = cls_(user_id=user.id, key=get_random_string())
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
 
@@ -122,7 +103,7 @@ class TestCloudAuthz(BaseTest):
         provider, config, description = 'a', 'b', 'c'
         obj = cls_(user.id, provider, config, user_authnz_token.id, description)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.user_id == user.id
@@ -134,11 +115,11 @@ class TestCloudAuthz(BaseTest):
             assert stored_obj.last_activity
             assert stored_obj.description == description
             assert stored_obj.create_time
- 
+
     def test_relationships(self, session, cls_, user, user_authnz_token):
         obj = cls_(user.id, None, None, user_authnz_token.id, 'c')
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
             assert stored_obj.authn.id == user_authnz_token.id
@@ -156,8 +137,8 @@ class TestDatasetHash(BaseTest):
         obj.hash_function = hash_function
         obj.hash_value = hash_value
         obj.extra_files_path = extra_files_path
- 
-        with persist2(session, obj) as obj_id:
+
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.dataset_id == dataset.id
@@ -169,7 +150,7 @@ class TestDatasetHash(BaseTest):
         obj = cls_()
         obj.dataset = dataset
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset.id == dataset.id
 
@@ -187,7 +168,7 @@ class TestDatasetSource(BaseTest):
         obj.extra_files_path = extra_files_path
         obj.transform = transform
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.dataset_id == dataset.id
@@ -200,7 +181,7 @@ class TestDatasetSource(BaseTest):
         obj.dataset = dataset
         obj.hashes.append(dataset_source_hash)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset.id == dataset.id
             assert stored_obj.hashes == [dataset_source_hash]
@@ -218,7 +199,7 @@ class TestDatasetSourceHash(BaseTest):
         obj.hash_function = hash_function
         obj.hash_value = hash_value
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.dataset_source_id == dataset_source.id
@@ -229,7 +210,7 @@ class TestDatasetSourceHash(BaseTest):
         obj = cls_()
         obj.source = dataset_source
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.source.id == dataset_source.id
 
@@ -247,7 +228,7 @@ class TestDatasetPermissions(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.update_time == update_time
@@ -258,7 +239,7 @@ class TestDatasetPermissions(BaseTest):
     def test_relationships(self, session, cls_, dataset, role):
         obj = cls_(None, dataset, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset == dataset
             assert stored_obj.role == role
@@ -273,7 +254,7 @@ class TestDefaultHistoryPermissions(BaseTest):
         action = 'a'
         obj = cls_(history, action, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.action == action
@@ -283,7 +264,7 @@ class TestDefaultHistoryPermissions(BaseTest):
     def test_relationships(self, session, cls_, history, role):
         obj = cls_(history, None, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history.id == history.id
             assert stored_obj.role == role
@@ -302,7 +283,7 @@ class TestDefaultQuotaAssociation(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -313,7 +294,7 @@ class TestDefaultQuotaAssociation(BaseTest):
     def test_relationships(self, session, cls_, quota):
         obj = cls_(cls_.types.REGISTERED, quota)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.quota.id == quota.id
 
@@ -327,7 +308,7 @@ class TestDefaultUserPermissions(BaseTest):
         action = 'a'
         obj = cls_(user, action, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.user_id == user.id
@@ -337,7 +318,7 @@ class TestDefaultUserPermissions(BaseTest):
     def test_relationships(self, session, cls_, user, role):
         obj = cls_(user, None, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
             assert stored_obj.role.id == role.id
@@ -365,7 +346,7 @@ class TestDynamicTool(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.uuid
@@ -384,7 +365,7 @@ class TestDynamicTool(BaseTest):
         obj = cls_()
         obj.workflow_steps.append(workflow_step)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.workflow_steps == [workflow_step]
 
@@ -408,7 +389,7 @@ class TestFormDefinition(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -423,7 +404,7 @@ class TestFormDefinition(BaseTest):
     def test_relationships(self, session, cls_, form_definition_current):
         obj = cls_(name='a', form_definition_current=form_definition_current)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.form_definition_current.id == form_definition_current.id
 
@@ -443,7 +424,7 @@ class TestFormDefinitionCurrent(BaseTest):
         obj.latest_form = form_definition
         obj.deleted = deleted
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -455,7 +436,7 @@ class TestFormDefinitionCurrent(BaseTest):
         obj = cls_(form_definition)
         obj.forms.append(form_definition)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.latest_form.id == form_definition.id
             assert stored_obj.forms == [form_definition]
@@ -476,7 +457,7 @@ class TestFormValues(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -487,7 +468,7 @@ class TestFormValues(BaseTest):
     def test_relationships(self, session, cls_, form_definition):
         obj = cls_(form_definition)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.form_definition.id == form_definition.id
 
@@ -504,7 +485,7 @@ class TestGroupQuotaAssociation(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.group_id == group.id
@@ -515,7 +496,7 @@ class TestGroupQuotaAssociation(BaseTest):
     def test_relationships(self, session, cls_, group, quota):
         obj = cls_(group, quota)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.group.id == group.id
             assert stored_obj.quota.id == quota.id
@@ -533,7 +514,7 @@ class TestGroupRoleAssociation(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.group_id == group.id
@@ -544,7 +525,7 @@ class TestGroupRoleAssociation(BaseTest):
     def test_relationships(self, session, cls_, group, role):
         obj = cls_(group, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.group.id == group.id
             assert stored_obj.role.id == role.id
@@ -560,7 +541,7 @@ class TestHistoryUserShareAssociation(BaseTest):
         obj.history = history
         obj.user = user
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_id == history.id
@@ -571,10 +552,11 @@ class TestHistoryUserShareAssociation(BaseTest):
         obj.history = history
         obj.user = user
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history_id == history.id
             assert stored_obj.user_id == user.id
+
 
 class TestHistoryAudit(BaseTest):
 
@@ -585,10 +567,10 @@ class TestHistoryAudit(BaseTest):
         update_time = datetime.now()
         obj = cls_(history, update_time)
 
-        stmt = select(cls_).where(cls_.history_id == history.id, cls_.update_time == update_time)
+        where_clause = and_(cls_.history_id == history.id, cls_.update_time == update_time)
 
-        with persist_no_id(session, obj, stmt):
-            stored_obj = get_stored_obj(session, cls_, stmt=stmt)
+        with dbcleanup(session, obj, where_clause):
+            stored_obj = get_stored_obj2(session, cls_, where_clause=where_clause)
             # test columns
             assert stored_obj.history_id == history.id
             assert stored_obj.update_time == update_time
@@ -609,7 +591,7 @@ class TestHistoryAnnotationAssociation(BaseTest):
         obj.history = history
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_id == history.id
@@ -621,7 +603,7 @@ class TestHistoryAnnotationAssociation(BaseTest):
         obj.user = user
         obj.history = history
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history.id == history.id
             assert stored_obj.user.id == user.id
@@ -640,7 +622,7 @@ class TestHistoryDatasetAssociationAnnotationAssociation(BaseTest):
         obj.hda = history_dataset_association
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_dataset_association_id == history_dataset_association.id
@@ -652,7 +634,7 @@ class TestHistoryDatasetAssociationAnnotationAssociation(BaseTest):
         obj.user = user
         obj.hda = history_dataset_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.hda.id == history_dataset_association.id
             assert stored_obj.user.id == user.id
@@ -667,7 +649,7 @@ class TestHistoryDatasetAssociationRatingAssociation(BaseTest):
         rating = 9
         obj = cls_(user, history_dataset_association, rating)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.user_id == user.id
@@ -676,7 +658,7 @@ class TestHistoryDatasetAssociationRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, history_dataset_association, user):
         obj = cls_(user, history_dataset_association, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history_dataset_association.id == history_dataset_association.id
             assert stored_obj.user.id == user.id
@@ -692,7 +674,7 @@ class TestHistoryDatasetAssociationTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value, user_value=user_value)
         obj.history_dataset_association = history_dataset_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_dataset_association_id == history_dataset_association.id
@@ -706,7 +688,7 @@ class TestHistoryDatasetAssociationTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.history_dataset_association = history_dataset_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history_dataset_association.id == history_dataset_association.id
             assert stored_obj.tag.id == tag.id
@@ -725,7 +707,7 @@ class TestHistoryDatasetCollectionAssociationAnnotationAssociation(BaseTest):
         obj.history_dataset_collection = history_dataset_collection_association
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
@@ -737,7 +719,7 @@ class TestHistoryDatasetCollectionAssociationAnnotationAssociation(BaseTest):
         obj.user = user
         obj.history_dataset_collection = history_dataset_collection_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history_dataset_collection.id == history_dataset_collection_association.id
             assert stored_obj.user.id == user.id
@@ -752,7 +734,7 @@ class TestHistoryDatasetCollectionRatingAssociation(BaseTest):
         rating = 9
         obj = cls_(user, history_dataset_collection_association, rating)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
@@ -762,7 +744,7 @@ class TestHistoryDatasetCollectionRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, history_dataset_collection_association, user):
         obj = cls_(user, history_dataset_collection_association, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
             assert stored_obj.user.id == user.id
@@ -778,7 +760,7 @@ class TestHistoryDatasetCollectionTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag, user_tname=user_tname, value=value, user_value=user_value)
         obj.dataset_collection = history_dataset_collection_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_dataset_collection_id == history_dataset_collection_association.id
@@ -792,11 +774,12 @@ class TestHistoryDatasetCollectionTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.dataset_collection = history_dataset_collection_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
             assert stored_obj.tag.id == tag.id
             assert stored_obj.user.id == user.id
+
 
 class TestHistoryRatingAssociation(BaseTest):
 
@@ -807,7 +790,7 @@ class TestHistoryRatingAssociation(BaseTest):
         rating = 9
         obj = cls_(user, history, rating)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_id == history.id
@@ -817,7 +800,7 @@ class TestHistoryRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, history, user):
         obj = cls_(user, history, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history.id == history.id
             assert stored_obj.user.id == user.id
@@ -834,7 +817,7 @@ class TestHistoryTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.history = history
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.history_id == history.id
@@ -848,7 +831,7 @@ class TestHistoryTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.history = history
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.history.id == history.id
             assert stored_obj.tag.id == tag.id
@@ -865,7 +848,7 @@ class TestJobMetricNumeric(BaseTest):
         obj = cls_(plugin, metric_name, metric_value)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -876,7 +859,7 @@ class TestJobMetricNumeric(BaseTest):
         obj = cls_(None, None, None)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
 
@@ -891,7 +874,7 @@ class TestJobMetricText(BaseTest):
         obj = cls_(plugin, metric_name, metric_value)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -902,7 +885,7 @@ class TestJobMetricText(BaseTest):
         obj = cls_(None, None, None)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
 
@@ -917,7 +900,7 @@ class TestJobParameter(BaseTest):
         obj = cls_(name, value)
         obj.job_id = job.id
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -938,7 +921,7 @@ class TestJobStateHistory(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -950,7 +933,7 @@ class TestJobStateHistory(BaseTest):
     def test_relationships(self, session, cls_, job):
         obj = cls_(job)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
         assert stored_obj.job.id == job.id
 
@@ -965,7 +948,7 @@ class TestJobToImplicitOutputDatasetCollectionAssociation(BaseTest):
         obj = cls_(name, dataset_collection)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -976,12 +959,12 @@ class TestJobToImplicitOutputDatasetCollectionAssociation(BaseTest):
         obj = cls_(None, dataset_collection)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset_collection.id == dataset_collection.id
 
-            
+
 class TestJobToInputDatasetCollectionAssociation(BaseTest):
 
     def test_table(self, cls_):
@@ -992,7 +975,7 @@ class TestJobToInputDatasetCollectionAssociation(BaseTest):
         obj = cls_(name, history_dataset_collection_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1003,7 +986,7 @@ class TestJobToInputDatasetCollectionAssociation(BaseTest):
         obj = cls_(None, history_dataset_collection_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset_collection.id == history_dataset_collection_association.id
@@ -1019,7 +1002,7 @@ class TestJobToInputDatasetCollectionElementAssociation(BaseTest):
         obj = cls_(name, dataset_collection_element)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1030,7 +1013,7 @@ class TestJobToInputDatasetCollectionElementAssociation(BaseTest):
         obj = cls_(None, dataset_collection_element)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset_collection_element.id == dataset_collection_element.id
@@ -1047,7 +1030,7 @@ class TestJobToInputDatasetAssociation(BaseTest):
         obj.job = job
         obj.dataset_version = dataset_version
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1059,7 +1042,7 @@ class TestJobToInputDatasetAssociation(BaseTest):
         obj = cls_(None, history_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset.id == history_dataset_association.id
@@ -1075,7 +1058,7 @@ class TestJobToInputLibraryDatasetAssociation(BaseTest):
         obj = cls_(name, library_dataset_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1086,7 +1069,7 @@ class TestJobToInputLibraryDatasetAssociation(BaseTest):
         obj = cls_(None, library_dataset_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset.id == library_dataset_dataset_association.id
@@ -1102,7 +1085,7 @@ class TestJobToOutputDatasetAssociation(BaseTest):
         obj = cls_(name, history_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1113,7 +1096,7 @@ class TestJobToOutputDatasetAssociation(BaseTest):
         obj = cls_(None, history_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset.id == history_dataset_association.id
@@ -1129,7 +1112,7 @@ class TestJobToOutputDatasetCollectionAssociation(BaseTest):
         obj = cls_(name, history_dataset_collection_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1140,7 +1123,7 @@ class TestJobToOutputDatasetCollectionAssociation(BaseTest):
         obj = cls_(None, history_dataset_collection_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset_collection_instance.id == history_dataset_collection_association.id
@@ -1170,7 +1153,7 @@ class TestLibraryDataset(BaseTest):
         obj.deleted = deleted
         obj.purged = purged
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.folder_id == library_folder.id
@@ -1200,7 +1183,7 @@ class TestLibraryDataset(BaseTest):
         ldda.library_dataset = obj
         obj.actions.append(library_dataset_permission)
 
-        with persist2(session, obj) as obj_id, persist2(session, ldda):
+        with dbcleanup(session, obj) as obj_id, dbcleanup(session, ldda):
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.library_dataset_dataset_association.id == library_dataset_dataset_association.id
             assert stored_obj.folder.id == library_folder.id
@@ -1218,7 +1201,7 @@ class TestJobToOutputLibraryDatasetAssociation(BaseTest):
         obj = cls_(name, library_dataset_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.job_id == job.id
@@ -1229,7 +1212,7 @@ class TestJobToOutputLibraryDatasetAssociation(BaseTest):
         obj = cls_(None, library_dataset_dataset_association)
         obj.job = job
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.dataset.id == library_dataset_dataset_association.id
@@ -1250,7 +1233,7 @@ class TestLibrary(BaseTest):
         obj.deleted = deleted
         obj.purged = purged
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.root_folder_id == library_folder.id
@@ -1266,7 +1249,7 @@ class TestLibrary(BaseTest):
         obj = cls_(None, None, None, library_folder)
         obj.actions.append(library_permission)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.root_folder.id == library_folder.id
             assert stored_obj.actions == [library_permission]
@@ -1284,7 +1267,7 @@ class TestLibraryDatasetCollectionAnnotationAssociation(BaseTest):
         obj.dataset_collection = library_dataset_collection_association
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.library_dataset_collection_id == library_dataset_collection_association.id
@@ -1296,7 +1279,7 @@ class TestLibraryDatasetCollectionAnnotationAssociation(BaseTest):
         obj.user = user
         obj.dataset_collection = library_dataset_collection_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset_collection.id == library_dataset_collection_association.id
             assert stored_obj.user.id == user.id
@@ -1313,7 +1296,7 @@ class TestLibraryDatasetCollectionTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.dataset_collection = library_dataset_collection_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.library_dataset_collection_id == library_dataset_collection_association.id
@@ -1327,7 +1310,7 @@ class TestLibraryDatasetCollectionTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.dataset_collection = library_dataset_collection_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset_collection.id == library_dataset_collection_association.id
             assert stored_obj.tag.id == tag.id
@@ -1343,7 +1326,7 @@ class TestLibraryDatasetCollectionRatingAssociation(BaseTest):
         rating = 9
         obj = cls_(user, library_dataset_collection_association, rating)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.library_dataset_collection_id == library_dataset_collection_association.id
@@ -1353,7 +1336,7 @@ class TestLibraryDatasetCollectionRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, library_dataset_collection_association, user):
         obj = cls_(user, library_dataset_collection_association, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset_collection.id == library_dataset_collection_association.id
             assert stored_obj.user.id == user.id
@@ -1372,7 +1355,7 @@ class TestLibraryDatasetDatasetAssociationPermissions(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -1384,7 +1367,7 @@ class TestLibraryDatasetDatasetAssociationPermissions(BaseTest):
     def test_relationships(self, session, cls_, library_dataset_dataset_association, role):
         obj = cls_(None, library_dataset_dataset_association, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.library_dataset_dataset_association.id == library_dataset_dataset_association.id
             assert stored_obj.role.id == role.id
@@ -1401,7 +1384,7 @@ class TestLibraryDatasetDatasetAssociationTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.library_dataset_dataset_association = library_dataset_dataset_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.library_dataset_dataset_association_id == library_dataset_dataset_association.id
@@ -1415,7 +1398,7 @@ class TestLibraryDatasetDatasetAssociationTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.library_dataset_dataset_association = library_dataset_dataset_association
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.library_dataset_dataset_association.id == library_dataset_dataset_association.id
             assert stored_obj.tag.id == tag.id
@@ -1435,7 +1418,7 @@ class TestLibraryDatasetPermissions(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -1447,84 +1430,80 @@ class TestLibraryDatasetPermissions(BaseTest):
     def test_relationships(self, session, cls_, library_dataset, role):
         obj = cls_(None, library_dataset, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.library_dataset.id == library_dataset.id
             assert stored_obj.role.id == role.id
 
-# TODO
-#class TestLibraryFolder(BaseTest):
-#
-#    def test_table(self, cls_, model):
-#        assert cls_.__tablename__ == 'library_folder'
-#        assert has_index(cls_.__table__, ('name',))
-#
-#    def test_columns(self, cls_, model, session, library_folder):
-#        with dbcleanup(session, cls_):
-#            parent = library_folder
-#            create_time = datetime.now()
-#            update_time = create_time + timedelta(hours=1)
-#            name = 'a'
-#            description = 'b'
-#            order_id = 9
-#            item_count = 1
-#            deleted = False
-#            purged = False
-#            genome_build = 'c'
-#
-#            obj = cls_()
-#            obj.parent = parent
-#            obj.create_time = create_time
-#            obj.update_time = update_time
-#            obj.name = name
-#            obj.description = description
-#            obj.order_id = order_id
-#            obj.item_count = item_count
-#            obj.deleted = deleted
-#            obj.purged = purged
-#            obj.genome_build = genome_build
-#            obj_id = persist(session, obj)
-#
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#            assert stored_obj.parent_id == parent.id
-#            assert stored_obj.create_time == create_time
-#            assert stored_obj.update_time == update_time
-#            assert stored_obj.name == name
-#            assert stored_obj.description == description
-#            assert stored_obj.order_id == order_id
-#            assert stored_obj.item_count == item_count
-#            assert stored_obj.deleted == deleted
-#            assert stored_obj.purged == purged
-#            assert stored_obj.genome_build == genome_build
-#
-#    def test_relationships(
-#            self, cls_, model, session, library_folder, library_dataset, library, library_folder_permission):
-#        with dbcleanup(session, cls_):
-#            folder1 = model.LibraryFolder()
-#
-#            obj = cls_()
-#            # no back reference, so dataset does not update folder; so we have to flush to the db
-#            # todo: ..but why is there no back reference?
-#            library_dataset.folder = obj
-#            persist(session, library_dataset)
-#
-#            obj.parent = library_folder
-#            obj.folders.append(folder1)
-#            obj.library_root.append(library)
-#            obj.actions.append(library_folder_permission)
-#            obj_id = persist(session, obj)
-#
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.parent.id == library_folder.id
-#            assert stored_obj.folders == [folder1]
-#            assert stored_obj.active_folders == [folder1]
-#            assert stored_obj.library_root == [library]
-#            assert stored_obj.actions == [library_folder_permission]
-#            # use identity equality instread of object equality.
-#            assert stored_obj.datasets[0].id == library_dataset.id
-#            assert stored_obj.active_datasets[0].id == library_dataset.id
-#
+
+class TestLibraryFolder(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'library_folder'
+        assert has_index(cls_.__table__, ('name',))
+
+    def test_columns(self, session, cls_, library_folder):
+        parent = library_folder
+        create_time = datetime.now()
+        update_time = create_time + timedelta(hours=1)
+        name = 'a'
+        description = 'b'
+        order_id = 9
+        item_count = 1
+        deleted = False
+        purged = False
+        genome_build = 'c'
+
+        obj = cls_()
+        obj.parent = parent
+        obj.create_time = create_time
+        obj.update_time = update_time
+        obj.name = name
+        obj.description = description
+        obj.order_id = order_id
+        obj.item_count = item_count
+        obj.deleted = deleted
+        obj.purged = purged
+        obj.genome_build = genome_build
+
+        with dbcleanup(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.parent_id == parent.id
+            assert stored_obj.create_time == create_time
+            assert stored_obj.update_time == update_time
+            assert stored_obj.name == name
+            assert stored_obj.description == description
+            assert stored_obj.order_id == order_id
+            assert stored_obj.item_count == item_count
+            assert stored_obj.deleted == deleted
+            assert stored_obj.purged == purged
+            assert stored_obj.genome_build == genome_build
+
+    def test_relationships(
+            self, session, cls_, model, library_folder, library_dataset, library, library_folder_permission):
+        obj = cls_()
+        obj.parent = library_folder
+        folder1 = model.LibraryFolder()
+        obj.folders.append(folder1)
+        obj.library_root.append(library)
+        obj.actions.append(library_folder_permission)
+
+        # There's no back reference, so dataset does not update folder; so we have to flush to the database
+        # via dbcleanup() context manager. TODO: ..but why is there no back reference?
+        library_dataset.folder = obj
+
+        with dbcleanup(session, obj) as obj_id, dbcleanup(session, library_dataset):
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.parent.id == library_folder.id
+            assert stored_obj.folders == [folder1]
+            assert stored_obj.active_folders == [folder1]
+            assert stored_obj.library_root == [library]
+            assert stored_obj.actions == [library_folder_permission]
+            # use identity equality instread of object equality.
+            assert stored_obj.datasets[0].id == library_dataset.id
+            assert stored_obj.active_datasets[0].id == library_dataset.id
+
 
 class TestLibraryFolderPermissions(BaseTest):
 
@@ -1539,7 +1518,7 @@ class TestLibraryFolderPermissions(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -1551,7 +1530,7 @@ class TestLibraryFolderPermissions(BaseTest):
     def test_relationships(self, session, cls_, library_folder, role):
         obj = cls_(None, library_folder, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.folder.id == library_folder.id
             assert stored_obj.role.id == role.id
@@ -1571,7 +1550,7 @@ class TestLibraryPermissions(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -1583,7 +1562,7 @@ class TestLibraryPermissions(BaseTest):
     def test_relationships(self, session, cls_, library, role):
         obj = cls_(None, library, role)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.library.id == library.id
             assert stored_obj.role.id == role.id
@@ -1611,7 +1590,7 @@ class TestPage(BaseTest):
         # This is OK for this test; however, page_revision.page != obj. Can we do better?
         obj.latest_revision = page_revision
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -1645,7 +1624,7 @@ class TestPage(BaseTest):
         obj.ratings.append(page_rating_association)
         obj.users_shared_with.append(page_user_share_association)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
             assert stored_obj.revisions == [page_revision]
@@ -1657,38 +1636,21 @@ class TestPage(BaseTest):
             # This doesn't test the average amount, just the mapping.
             assert stored_obj.average_rating == page_rating_association.rating
 
-
-#class Test(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == ''
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-# TODO: this is an inconsistent name. Why?
-def test_Page_average_rating(model, session, page, user):
-    cls = model.PageRatingAssociation
-    with dbcleanup(session, cls):
+    def test_average_rating(self, model, session, page, user):
         # Page has been expunged; to access its deferred properties,
         # it needs to be added back to the session.
         session.add(page)
         assert page.average_rating is None  # With no ratings, we expect None.
         # Create ratings
+        to_cleanup = []
         for rating in (1, 2, 3, 4, 5):
-            r = cls(user, page)
-            r.rating = rating
-            persist(session, r)
+            page_rating_assoc = model.PageRatingAssociation(user, page)
+            page_rating_assoc.rating = rating
+            persist(session, page_rating_assoc)
+            to_cleanup.append(page_rating_assoc)
         assert page.average_rating == 3.0  # Expect average after ratings added.
+        # Cleanup: remove ratings from database
+        delete_from_database(session, to_cleanup)
 
 
 class TestPageAnnotationAssociation(BaseTest):
@@ -1704,7 +1666,7 @@ class TestPageAnnotationAssociation(BaseTest):
         obj.page = page
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.page_id == page.id
@@ -1716,7 +1678,7 @@ class TestPageAnnotationAssociation(BaseTest):
         obj.user = user
         obj.page = page
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.page.id == page.id
             assert stored_obj.user.id == user.id
@@ -1731,7 +1693,7 @@ class TestPageRatingAssociation(BaseTest):
         rating = 9
         obj = cls_(user, page, rating)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.page_id == page.id
@@ -1741,7 +1703,7 @@ class TestPageRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, page, user):
         obj = cls_(user, page, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.page.id == page.id
             assert stored_obj.user.id == user.id
@@ -1763,7 +1725,7 @@ class TestPageRevision(BaseTest):
         obj.title = title
         obj.content = content
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -1777,7 +1739,7 @@ class TestPageRevision(BaseTest):
         obj = cls_()
         obj.page = page
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.page.id == page.id
 
@@ -1793,7 +1755,7 @@ class TestPageTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.page = page
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.page_id == page.id
@@ -1807,7 +1769,7 @@ class TestPageTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.page = page
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.page.id == page.id
             assert stored_obj.tag.id == tag.id
@@ -1824,7 +1786,7 @@ class TestPageUserShareAssociation(BaseTest):
         obj.page = page
         obj.user = user
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.page_id == page.id
@@ -1835,51 +1797,33 @@ class TestPageUserShareAssociation(BaseTest):
         obj.page = page
         obj.user = user
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.page.id == page.id
             assert stored_obj.user.id == user.id
 
-# TODO
-#class TestPasswordResetToken(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == 'password_reset_token'
-#
-#    def test_columns(self, session, cls_):
-#        token = get_random_string()
-#        expiration_time = datetime.now()
-#        obj = cls_(user, token)
-#        obj.expiration_time = expiration_time
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#
-#
-#def test_PasswordResetToken(model, session, user):
-#    cls = model.PasswordResetToken
-#    assert cls.__tablename__ == 'password_reset_token'
-#    with dbcleanup(session, cls):
-#        token = get_random_string()
-#        expiration_time = datetime.now()
-#        obj = cls(user, token)
-#        obj.expiration_time = expiration_time
-#        persist(session, obj, return_id=False)
-#
-#        stmt = select(cls).where(cls.token == token)
-#        stored_obj = get_stored_obj(session, cls, stmt=stmt)
-#        # test mapped columns
-#        assert stored_obj.token == token
-#        assert stored_obj.expiration_time == expiration_time
-#        # test mapped relationships
-#        assert stored_obj.user.id == user.id
+
+class TestPasswordResetToken(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'password_reset_token'
+
+    def test_columns_and_relationships(self, session, cls_, user):
+        token = get_random_string()
+        expiration_time = datetime.now()
+        obj = cls_(user, token)
+        obj.expiration_time = expiration_time
+
+        where_clause = cls_.token == token
+
+        with dbcleanup(session, obj, where_clause):
+            stored_obj = get_stored_obj2(session, cls_, where_clause=where_clause)
+            # test columns
+            assert stored_obj.token == token
+            assert stored_obj.expiration_time == expiration_time
+            assert stored_obj.user_id == user.id
+            # test relationships
+            assert stored_obj.user.id == user.id
 
 
 class TestPSAAssociation(BaseTest):
@@ -1891,7 +1835,7 @@ class TestPSAAssociation(BaseTest):
         server_url, handle, secret, issued, lifetime, assoc_type = 'a', 'b', 'c', 1, 2, 'd'
         obj = cls_(server_url, handle, secret, issued, lifetime, assoc_type)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.server_url == server_url
@@ -1912,7 +1856,7 @@ class TestPSACode(BaseTest):
         email, code = 'a', get_random_string()
         obj = cls_(email, code)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.email == email
@@ -1928,7 +1872,7 @@ class TestPSANonce(BaseTest):
         server_url, timestamp, salt = 'a', 1, 'b'
         obj = cls_(server_url, timestamp, salt)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.server_url
@@ -1945,7 +1889,7 @@ class TestPSAPartial(BaseTest):
         token, data, next_step, backend = 'a', 'b', 1, 'c'
         obj = cls_(token, data, next_step, backend)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.token == token
@@ -1967,7 +1911,7 @@ class TestQuota(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.id == obj_id
@@ -1990,7 +1934,7 @@ class TestQuota(BaseTest):
         add_association(group_quota_association, 'groups')
         add_association(user_quota_association, 'users')
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.default == [default_quota_association]
             assert stored_obj.groups == [group_quota_association]
@@ -2010,7 +1954,7 @@ class TestRole(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -2040,7 +1984,7 @@ class TestRole(BaseTest):
         obj.library_dataset_dataset_actions.append(library_dataset_dataset_association_permission)
         obj.groups.append(group_role_association)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.dataset_actions == [dataset_permission]
             assert stored_obj.groups == [group_role_association]
@@ -2063,7 +2007,7 @@ class TestStoredWorkflowAnnotationAssociation(BaseTest):
         obj.user = user
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.stored_workflow_id == stored_workflow.id
@@ -2075,7 +2019,7 @@ class TestStoredWorkflowAnnotationAssociation(BaseTest):
         obj.stored_workflow = stored_workflow
         obj.user = user
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.stored_workflow.id == stored_workflow.id
             assert stored_obj.user.id == user.id
@@ -2090,7 +2034,7 @@ class TestStoredWorkflowRatingAssociation(BaseTest):
         rating = 9
         obj = cls_(user, stored_workflow, rating)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.stored_workflow_id == stored_workflow.id
@@ -2100,7 +2044,7 @@ class TestStoredWorkflowRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, stored_workflow, user):
         obj = cls_(user, stored_workflow, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.stored_workflow.id == stored_workflow.id
             assert stored_obj.user.id == user.id
@@ -2117,7 +2061,7 @@ class TestStoredWorkflowTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.stored_workflow = stored_workflow
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.stored_workflow_id == stored_workflow.id
@@ -2131,95 +2075,82 @@ class TestStoredWorkflowTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.stored_workflow = stored_workflow
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.stored_workflow.id == stored_workflow.id
             assert stored_obj.tag.id == tag.id
             assert stored_obj.user.id == user.id
 
-# TODO
-#class TestTag(BaseTest):
-#
-#    def test_table(self, cls_):
-#        assert cls_.__tablename__ == 'tag'
-#        assert has_unique_constraint(cls.__table__, ('name',))
-#
-#    def test_columns(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#            assert stored_obj.id == obj_id
-#
-#    def test_relationships(self, session, cls_):
-#        obj = cls_()
-#
-#        with persist2(session, obj) as obj_id:
-#            stored_obj = get_stored_obj(session, cls_, obj_id)
-#
-#
-#def test_Tag(
-#        model,
-#        session,
-#        history_tag_association,
-#        history_dataset_association_tag_association,
-#        library_dataset_dataset_association_tag_association,
-#        page_tag_association,
-#        workflow_step_tag_association,
-#        stored_workflow_tag_association,
-#        visualization_tag_association,
-#        history_dataset_collection_tag_association,
-#        library_dataset_collection_tag_association,
-#        tool_tag_association,
-#):
-#    cls = model.Tag
-#    assert cls.__tablename__ == 'tag'
-#    assert has_unique_constraint(cls.__table__, ('name',))
-#
-#    with dbcleanup(session, cls):
-#        parent_tag = cls()
-#        child_tag = cls()
-#        type_, name = 1, 'a'
-#        obj = cls(type=type_, name=name)
-#        obj.parent = parent_tag
-#        obj.children.append(child_tag)
-#
-#        def add_association(assoc_object, assoc_attribute):
-#            assoc_object.tag = obj
-#            getattr(obj, assoc_attribute).append(assoc_object)
-#
-#        add_association(history_tag_association, 'tagged_histories')
-#        add_association(history_dataset_association_tag_association, 'tagged_history_dataset_associations')
-#        add_association(library_dataset_dataset_association_tag_association, 'tagged_library_dataset_dataset_associations')
-#        add_association(page_tag_association, 'tagged_pages')
-#        add_association(workflow_step_tag_association, 'tagged_workflow_steps')
-#        add_association(stored_workflow_tag_association, 'tagged_stored_workflows')
-#        add_association(visualization_tag_association, 'tagged_visualizations')
-#        add_association(history_dataset_collection_tag_association, 'tagged_history_dataset_collections')
-#        add_association(library_dataset_collection_tag_association, 'tagged_library_dataset_collections')
-#        add_association(tool_tag_association, 'tagged_tools')
-#
-#        obj_id = persist(session, obj)
-#
-#        stored_obj = get_stored_obj(session, cls, obj_id)
-#        # test mapped columns
-#        assert stored_obj.id == obj_id
-#        assert stored_obj.type == type_
-#        assert stored_obj.parent_id == parent_tag.id
-#        assert stored_obj.name == name
-#        # test mapped relationships
-#        assert stored_obj.parent.id == parent_tag.id
-#        assert stored_obj.children == [child_tag]
-#        assert stored_obj.tagged_histories == [history_tag_association]
-#        assert stored_obj.tagged_history_dataset_associations == [history_dataset_association_tag_association]
-#        assert stored_obj.tagged_library_dataset_dataset_associations == [library_dataset_dataset_association_tag_association]
-#        assert stored_obj.tagged_pages == [page_tag_association]
-#        assert stored_obj.tagged_workflow_steps == [workflow_step_tag_association]
-#        assert stored_obj.tagged_stored_workflows == [stored_workflow_tag_association]
-#        assert stored_obj.tagged_visualizations == [visualization_tag_association]
-#        assert stored_obj.tagged_history_dataset_collections == [history_dataset_collection_tag_association]
-#        assert stored_obj.tagged_library_dataset_collections == [library_dataset_collection_tag_association]
-#        assert stored_obj.tagged_tools == [tool_tag_association]
+
+class TestTag(BaseTest):
+
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'tag'
+        assert has_unique_constraint(cls_.__table__, ('name',))
+
+    def test_columns(self, session, cls_):
+        parent_tag = cls_()
+        type_, name = 1, 'a'
+        obj = cls_(type=type_, name=name)
+        obj.parent = parent_tag
+
+        with dbcleanup(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.id == obj_id
+            assert stored_obj.type == type_
+            assert stored_obj.parent_id == parent_tag.id
+            assert stored_obj.name == name
+
+    def test_relationships(
+        self,
+        session,
+        cls_,
+        history_tag_association,
+        history_dataset_association_tag_association,
+        library_dataset_dataset_association_tag_association,
+        page_tag_association,
+        workflow_step_tag_association,
+        stored_workflow_tag_association,
+        visualization_tag_association,
+        history_dataset_collection_tag_association,
+        library_dataset_collection_tag_association,
+        tool_tag_association,
+    ):
+        obj = cls_()
+        parent_tag = cls_()
+        child_tag = cls_()
+        obj.parent = parent_tag
+        obj.children.append(child_tag)
+
+        def add_association(assoc_object, assoc_attribute):
+            assoc_object.tag = obj
+            getattr(obj, assoc_attribute).append(assoc_object)
+
+        add_association(history_tag_association, 'tagged_histories')
+        add_association(history_dataset_association_tag_association, 'tagged_history_dataset_associations')
+        add_association(library_dataset_dataset_association_tag_association, 'tagged_library_dataset_dataset_associations')
+        add_association(page_tag_association, 'tagged_pages')
+        add_association(workflow_step_tag_association, 'tagged_workflow_steps')
+        add_association(stored_workflow_tag_association, 'tagged_stored_workflows')
+        add_association(visualization_tag_association, 'tagged_visualizations')
+        add_association(history_dataset_collection_tag_association, 'tagged_history_dataset_collections')
+        add_association(library_dataset_collection_tag_association, 'tagged_library_dataset_collections')
+        add_association(tool_tag_association, 'tagged_tools')
+
+        with dbcleanup(session, obj) as obj_id:
+            stored_obj = get_stored_obj(session, cls_, obj_id)
+            assert stored_obj.parent.id == parent_tag.id
+            assert stored_obj.children == [child_tag]
+            assert stored_obj.tagged_histories == [history_tag_association]
+            assert stored_obj.tagged_history_dataset_associations == [history_dataset_association_tag_association]
+            assert stored_obj.tagged_library_dataset_dataset_associations == [library_dataset_dataset_association_tag_association]
+            assert stored_obj.tagged_pages == [page_tag_association]
+            assert stored_obj.tagged_workflow_steps == [workflow_step_tag_association]
+            assert stored_obj.tagged_stored_workflows == [stored_workflow_tag_association]
+            assert stored_obj.tagged_visualizations == [visualization_tag_association]
+            assert stored_obj.tagged_history_dataset_collections == [history_dataset_collection_tag_association]
+            assert stored_obj.tagged_library_dataset_collections == [library_dataset_collection_tag_association]
+            assert stored_obj.tagged_tools == [tool_tag_association]
 
 
 class TestTask(BaseTest):
@@ -2267,7 +2198,7 @@ class TestTask(BaseTest):
         obj.task_runner_name = task_runner_name
         obj.task_runner_external_id = task_runner_external_id
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -2293,7 +2224,7 @@ class TestTask(BaseTest):
         obj.numeric_metrics.append(task_metric_numeric)
         obj.text_metrics.append(task_metric_text)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.job.id == job.id
             assert stored_obj.numeric_metrics == [task_metric_numeric]
@@ -2310,7 +2241,7 @@ class TestTaskMetricNumeric(BaseTest):
         obj = cls_(plugin, metric_name, metric_value)
         obj.task = task
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.task_id == task.id
@@ -2321,7 +2252,7 @@ class TestTaskMetricNumeric(BaseTest):
         obj = cls_(None, None, None)
         obj.task = task
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.task.id == task.id
 
@@ -2336,7 +2267,7 @@ class TestTaskMetricText(BaseTest):
         obj = cls_(plugin, metric_name, metric_value)
         obj.task = task
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.task_id == task.id
@@ -2347,7 +2278,7 @@ class TestTaskMetricText(BaseTest):
         obj = cls_(None, None, None)
         obj.task = task
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.task.id == task.id
 
@@ -2363,7 +2294,7 @@ class TestToolTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.tool_id = tool_id
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.tool_id == tool_id
@@ -2376,7 +2307,7 @@ class TestToolTagAssociation(BaseTest):
     def test_relationships(self, session, cls_, tag, user):
         obj = cls_(user=user, tag=tag)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.tag.id == tag.id
             assert stored_obj.user.id == user.id
@@ -2393,7 +2324,7 @@ class TestUserAction(BaseTest):
         obj = cls_(user, galaxy_session.id, action, params, context)
         obj.create_time = create_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -2406,7 +2337,7 @@ class TestUserAction(BaseTest):
     def test_relationships(self, session, cls_, user, galaxy_session):
         obj = cls_(user, galaxy_session.id, None, None, None)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
 
@@ -2427,7 +2358,7 @@ class TestUserAddress(BaseTest):
         obj.deleted = deleted
         obj.purged = purged
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             # test columns
             assert stored_obj.id == obj_id
@@ -2459,7 +2390,7 @@ class TestUserAuthnzToken(BaseTest):
         provider, uid, extra_data, lifetime, assoc_type = get_random_string(), 'b', 'c', 1, 'd'
         obj = cls_(provider, uid, extra_data, lifetime, assoc_type, user)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.user_id == user.id
@@ -2473,7 +2404,7 @@ class TestUserAuthnzToken(BaseTest):
         obj = cls_(get_random_string(), None, user=user)
         obj.cloudauthz.append(cloud_authz)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.cloudauthz == [cloud_authz]
             assert stored_obj.user.id == user.id
@@ -2491,7 +2422,7 @@ class TestUserGroupAssociation(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.user_id == user.id
@@ -2502,7 +2433,7 @@ class TestUserGroupAssociation(BaseTest):
     def test_relationships(self, session, cls_, user, group):
         obj = cls_(user, group)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
             assert stored_obj.group.id == group.id
@@ -2520,7 +2451,7 @@ class TestUserQuotaAssociation(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.user_id == user.id
@@ -2531,7 +2462,7 @@ class TestUserQuotaAssociation(BaseTest):
     def test_relationships(self, session, cls_, user, quota):
         obj = cls_(user, quota)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.user.id == user.id
             assert stored_obj.quota.id == quota.id
@@ -2550,7 +2481,7 @@ class TestVisualizationAnnotationAssociation(BaseTest):
         obj.visualization = visualization
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.visualization_id == visualization.id
@@ -2562,7 +2493,7 @@ class TestVisualizationAnnotationAssociation(BaseTest):
         obj.user = user
         obj.visualization = visualization
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.visualization.id == visualization.id
             assert stored_obj.user.id == user.id
@@ -2576,9 +2507,8 @@ class TestVisualizationRatingAssociation(BaseTest):
     def test_columns(self, session, cls_, visualization, user):
         rating = 9
         obj = cls_(user, visualization, rating)
-        obj_id = persist(session, obj)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.visualization_id == visualization.id
@@ -2588,7 +2518,7 @@ class TestVisualizationRatingAssociation(BaseTest):
     def test_relationships(self, session, cls_, visualization, user):
         obj = cls_(user, visualization, 1)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.visualization.id == visualization.id
             assert stored_obj.user.id == user.id
@@ -2608,7 +2538,7 @@ class TestVisualizationRevision(BaseTest):
         obj.create_time = create_time
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.create_time == create_time
@@ -2619,9 +2549,9 @@ class TestVisualizationRevision(BaseTest):
             assert stored_obj.config == config
 
     def test_relationships(self, session, cls_, visualization):
-        obj = cls_(visualization) 
+        obj = cls_(visualization)
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.visualization.id == visualization.id
 
@@ -2638,7 +2568,7 @@ class TestWorkerProcess(BaseTest):
         obj = cls_(server_name, hostname)
         obj.update_time = update_time
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.server_name == server_name
@@ -2660,7 +2590,7 @@ class TestWorkflowStepAnnotationAssociation(BaseTest):
         obj.workflow_step = workflow_step
         obj.annotation = annotation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.workflow_step_id == workflow_step.id
@@ -2672,7 +2602,7 @@ class TestWorkflowStepAnnotationAssociation(BaseTest):
         obj.user = user
         obj.workflow_step = workflow_step
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.workflow_step.id == workflow_step.id
             assert stored_obj.user.id == user.id
@@ -2689,7 +2619,7 @@ class TestWorkflowStepTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.workflow_step = workflow_step
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.workflow_step_id == workflow_step.id
@@ -2703,7 +2633,7 @@ class TestWorkflowStepTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.workflow_step = workflow_step
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.workflow_step.id == workflow_step.id
             assert stored_obj.tag.id == tag.id
@@ -2721,7 +2651,7 @@ class TestVisualizationTagAssociation(BaseTest):
         obj.user_value = user_value
         obj.visualization = visualization
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.visualization_id == visualization.id
@@ -2735,7 +2665,7 @@ class TestVisualizationTagAssociation(BaseTest):
         obj = cls_(user=user, tag=tag)
         obj.visualization = visualization
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.visualization.id == visualization.id
             assert stored_obj.tag.id == tag.id
@@ -2752,7 +2682,7 @@ class TestWorkflowRequestInputParameter(BaseTest):
         obj = cls_(name, value, type)
         obj.workflow_invocation = workflow_invocation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.id == obj_id
             assert stored_obj.workflow_invocation_id == workflow_invocation.id
@@ -2764,7 +2694,7 @@ class TestWorkflowRequestInputParameter(BaseTest):
         obj = cls_()
         obj.workflow_invocation = workflow_invocation
 
-        with persist2(session, obj) as obj_id:
+        with dbcleanup(session, obj) as obj_id:
             stored_obj = get_stored_obj(session, cls_, obj_id)
             assert stored_obj.workflow_invocation.id == workflow_invocation.id
 
@@ -3127,67 +3057,54 @@ def workflow_step_tag_association(model, session):
     yield from dbcleanup_wrapper(session, wsta)
 
 
-@contextmanager
-def dbcleanup(session, cls):
-    """
-    Ensure all records of cls are deleted from the database on exit.
-    """
-    try:
-        yield
-    finally:
-        session.execute(delete(cls))
-
-
 def dbcleanup_wrapper(session, obj):
-    persist(session, obj)
-    with dbcleanup(session, type(obj)):
+    with dbcleanup(session, obj):
         yield obj
 
 
 @contextmanager
-def persist2(session, obj):
-    """Store obj in database, delete on exit."""
+def dbcleanup(session, obj, where_clause=None):
+    """
+    Use the session to store obj in database; delete from database on exit, bypassing the session.
+
+    If obj does not have an id field, a SQLAlchemy WHERE clause should be provided to construct
+    a custom select statement.
+    """
+    return_id = where_clause is None
+
     try:
-        session.add(obj)
-        session.flush()
-        obj_id = obj.id
-        # Remove from session, so that on a subsequent load from the database we get a *new* obj.
-        session.expunge(obj)
+        obj_id = persist(session, obj, return_id)
         yield obj_id
     finally:
-        # Cannot do `session.delete(obj)` because obj has been replaced in the session with another
-        # instance of the same class when calling `get_stored_obj()` in the test function.
-        stored_obj = get_stored_obj(session, type(obj), obj_id)
-        session.delete(stored_obj)  
-        session.flush()
-
-
-# TODO can we do better?
-@contextmanager
-def persist_no_id(session, obj, select_statement):
-    """Store obj in database, delete on exit."""
-    try:
-        session.add(obj)
-        session.flush()
-        # Remove from session, so that on a subsequent load from the database we get a *new* obj.
-        session.expunge(obj)
-        yield
-    finally:
-        # Cannot do `session.delete(obj)` because obj has been replaced in the session with another
-        # instance of the same class when calling `get_stored_obj()` in the test function.
-        stored_obj = get_stored_obj(session, type(obj), stmt=select_statement)
-        session.delete(stored_obj)  
-        session.flush()
+        table = obj.__table__
+        if where_clause is None:
+            where_clause = get_default_where_clause(type(obj), obj_id)
+        stmt = delete(table).where(where_clause)
+        session.execute(stmt)
 
 
 def persist(session, obj, return_id=True):
+    """
+    Use the session to store obj in database, then remove obj from session,
+    so that on a subsequent load from the database we get a clean instance.
+    """
     session.add(obj)
     session.flush()
     obj_id = obj.id if return_id else None  # save this before obj is expunged
-    # Remove from session, so that on a subsequent load we get a *new* obj from the db
     session.expunge(obj)
     return obj_id
 
+
+def delete_from_database(session, objects):
+    """
+    Delete each object in objects from database.
+    May be called at the end of a test if use of a context manager is impractical.
+    (Assume all objects have the id field as their primary key.)
+    """
+    for obj in objects:
+        table = obj.__table__
+        stmt = delete(table).where(table.c.id == obj.id)
+        session.execute(stmt)
 
 
 def has_unique_constraint(table, fields):
@@ -3203,6 +3120,21 @@ def has_index(table, fields):
         col_names = {c.name for c in index.columns}
         if set(fields) == col_names:
             return True
+
+
+def get_stored_obj2(session, cls, obj_id=None, where_clause=None):
+    # Either obj_id or where_clause must be provided, but not both
+    assert bool(obj_id) ^ (where_clause is not None)
+
+    if where_clause is None:
+        where_clause = get_default_where_clause(cls, obj_id)
+    stmt = select(cls).where(where_clause)
+    return session.execute(stmt).scalar_one()
+
+
+def get_default_where_clause(cls, obj_id):
+    where_clause = cls.__table__.c.id == obj_id
+    return where_clause
 
 
 def get_stored_obj(session, cls, obj_id=None, stmt=None):
