@@ -14,7 +14,6 @@ from sqlalchemy import (
     Column,
     DateTime,
     desc,
-    false,
     ForeignKey,
     func,
     Index,
@@ -105,7 +104,6 @@ model.HistoryDatasetAssociation.table = Table(
     Column("hidden_beneath_collection_instance_id",
            ForeignKey("history_dataset_collection_association.id"), nullable=True))
 
-
 model.HistoryDatasetAssociationHistory.table = Table(
     "history_dataset_association_history", metadata,
     Column("id", Integer, primary_key=True),
@@ -117,25 +115,6 @@ model.HistoryDatasetAssociationHistory.table = Table(
     Column("metadata", JSONType, key="_metadata"),
     Column("extended_metadata_id", Integer, ForeignKey("extended_metadata.id"), index=True),
 )
-
-
-model.Dataset.table = Table(
-    "dataset", metadata,
-    Column("id", Integer, primary_key=True),
-    Column('job_id', Integer, ForeignKey('job.id'), index=True, nullable=True),
-    Column("create_time", DateTime, default=now),
-    Column("update_time", DateTime, index=True, default=now, onupdate=now),
-    Column("state", TrimmedString(64), index=True),
-    Column("deleted", Boolean, index=True, default=False),
-    Column("purged", Boolean, index=True, default=False),
-    Column("purgable", Boolean, default=True),
-    Column("object_store_id", TrimmedString(255), index=True),
-    Column("external_filename", TEXT),
-    Column("_extra_files_path", TEXT),
-    Column("created_from_basename", TEXT),
-    Column('file_size', Numeric(15, 0)),
-    Column('total_size', Numeric(15, 0)),
-    Column('uuid', UUIDType()))
 
 # hda read access permission given by a user to a specific site (gen. for external display applications)
 model.HistoryDatasetAssociationDisplayAtAuthorization.table = Table(
@@ -843,7 +822,7 @@ mapper_registry.map_imperatively(model.UserPreference, model.UserPreference.tabl
 
 simple_mapping(model.HistoryDatasetAssociation,
     dataset=relation(model.Dataset,
-        primaryjoin=(model.Dataset.table.c.id == model.HistoryDatasetAssociation.table.c.dataset_id),
+        primaryjoin=(model.Dataset.id == model.HistoryDatasetAssociation.table.c.dataset_id),
         lazy=False,
         backref='history_associations'),
     # .history defined in History mapper
@@ -879,29 +858,6 @@ simple_mapping(model.HistoryDatasetAssociation,
     creating_job_associations=relation(
         model.JobToOutputDatasetAssociation, back_populates='dataset'),
     history=relation(model.History, back_populates='datasets'),
-)
-
-simple_mapping(model.Dataset,
-    actions=relation(model.DatasetPermissions, back_populates='dataset'),
-    job=relation(model.Job, primaryjoin=(model.Dataset.table.c.job_id == model.Job.table.c.id)),
-    active_history_associations=relation(model.HistoryDatasetAssociation,
-        primaryjoin=(
-            (model.Dataset.table.c.id == model.HistoryDatasetAssociation.table.c.dataset_id)
-            & (model.HistoryDatasetAssociation.table.c.deleted == false())
-            & (model.HistoryDatasetAssociation.table.c.purged == false())),
-        viewonly=True),
-    purged_history_associations=relation(model.HistoryDatasetAssociation,
-        primaryjoin=(
-            (model.Dataset.table.c.id == model.HistoryDatasetAssociation.table.c.dataset_id)
-            & (model.HistoryDatasetAssociation.table.c.purged == true())),
-        viewonly=True),
-    active_library_associations=relation(model.LibraryDatasetDatasetAssociation,
-        primaryjoin=(
-            (model.Dataset.table.c.id == model.LibraryDatasetDatasetAssociation.table.c.dataset_id)
-            & (model.LibraryDatasetDatasetAssociation.table.c.deleted == false())),
-        viewonly=True),
-    hashes=relation(model.DatasetHash, back_populates='dataset'),
-    sources=relation(model.DatasetSource, back_populates='dataset'),
 )
 
 mapper_registry.map_imperatively(model.HistoryDatasetAssociationHistory, model.HistoryDatasetAssociationHistory.table)
@@ -1039,7 +995,7 @@ mapper_registry.map_imperatively(model.LibraryFolderInfoAssociation, model.Libra
 
 mapper_registry.map_imperatively(model.LibraryDatasetDatasetAssociation, model.LibraryDatasetDatasetAssociation.table, properties=dict(
     dataset=relation(model.Dataset,
-        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.dataset_id == model.Dataset.table.c.id),
+        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.dataset_id == model.Dataset.id),
         backref='library_associations'),
     library_dataset=relation(model.LibraryDataset,
         foreign_keys=model.LibraryDatasetDatasetAssociation.table.c.library_dataset_id),
