@@ -4701,6 +4701,7 @@ class LibraryDataset(Base, RepresentById):
 
 
 class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, RepresentById):
+
     def __init__(self,
                  copied_from_history_dataset_association=None,
                  copied_from_library_dataset_dataset_association=None,
