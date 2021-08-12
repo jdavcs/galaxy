@@ -458,14 +458,14 @@ class User(Base, Dictifiable, RepresentById):
     default_permissions = relationship('DefaultUserPermissions', back_populates='user')
     groups = relationship('UserGroupAssociation', back_populates='user')
     histories = relationship('History',
-        backref='user',
+        back_populates='user',
         order_by='desc(History.update_time)')
     active_histories = relationship('History',
         primaryjoin=(lambda: (History.user_id == User.id) & (not_(History.deleted))),  # type: ignore
         viewonly=True,
         order_by='desc(History.update_time)')
     galaxy_sessions = relationship('GalaxySession',
-        backref='user',
+        back_populates='user',
         order_by='desc(GalaxySession.update_time)')
     pages_shared_by_others = relationship('PageUserShareAssociation', back_populates='user')
     quotas = relationship('UserQuotaAssociation', back_populates='user')
@@ -476,11 +476,11 @@ class User(Base, Dictifiable, RepresentById):
             & (StoredWorkflowMenuEntry.stored_workflow_id == StoredWorkflow.id)  # type: ignore
             & not_(StoredWorkflow.deleted)  # type: ignore
         ),
-        backref='user',
+        back_populates='user',
         cascade='all, delete-orphan',
         collection_class=ordering_list('order_index'))
     _preferences = relationship('UserPreference',
-        backref='user',
+        back_populates='user',
         collection_class=attribute_mapped_collection('name'))
     values = relationship('FormValues',
         primaryjoin=(lambda: User.form_values_id == FormValues.id))  # type: ignore
@@ -498,7 +498,7 @@ class User(Base, Dictifiable, RepresentById):
 
     use_pbkdf2 = True
     bootstrap_admin_user = False
-    api_keys: 'List[APIKeys]'
+    # api_keys: 'List[APIKeys]'  # TODO: hmmm... Will this break our DI?
 
     # attributes that will be accessed and returned when calling to_dict( view='collection' )
     dict_collection_visible_keys = ['id', 'email', 'username', 'deleted', 'active', 'last_password_change']
@@ -2411,6 +2411,7 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, RepresentByI
     users_shared_with = relationship('HistoryUserShareAssociation', back_populates='history')
     galaxy_sessions = relationship('GalaxySessionToHistoryAssociation', back_populates='history')
     workflow_invocations = relationship('WorkflowInvocation', back_populates='history')
+    user = relationship('User', back_populates='histories')
 
     update_time = column_property(
         select(func.max(HistoryAudit.update_time)).where(HistoryAudit.history_id == id).scalar_subquery(),
@@ -6048,6 +6049,7 @@ class GalaxySession(Base, RepresentById):
     last_action = Column(DateTime)
     current_history = relationship('History')
     histories = relationship('GalaxySessionToHistoryAssociation', back_populates='galaxy_session')
+    user = relationship('User', back_populates='galaxy_sessions')
 
     def __init__(self,
                  id=None,
@@ -6778,6 +6780,14 @@ class StoredWorkflowMenuEntry(Base, RepresentById):
     order_index = Column(Integer)
 
     stored_workflow = relationship('StoredWorkflow')
+    user = relationship('User',
+        primaryjoin=(lambda:
+            (StoredWorkflowMenuEntry.user_id == User.id)  # type: ignore
+            & (StoredWorkflowMenuEntry.stored_workflow_id == StoredWorkflow.id)  # type: ignore
+            & not_(StoredWorkflow.deleted)  # type: ignore
+        ),
+        back_populates='stored_workflow_menu_entries',
+    )
 
     def __init__(self):
         self.stored_workflow = None
@@ -8809,6 +8819,8 @@ class UserPreference(Base, RepresentById):
     user_id = Column(Integer, ForeignKey('galaxy_user.id'), index=True)
     name = Column(Unicode(255), index=True)
     value = Column(Text)
+
+    user = relationship('User', back_populates='_preferences')
 
     def __init__(self, name=None, value=None):
         self.name = name
