@@ -2824,8 +2824,8 @@ class TestLibraryDatasetCollectionRatingAssociation(BaseTest):
 
 class TestLibraryDatasetDatasetAssociation(BaseTest):
 
-    # def test_table(self, cls_):
-    #    assert cls_.__tablename__ == 'library_dataset_dataset_association'
+    def test_table(self, cls_):
+        assert cls_.__tablename__ == 'library_dataset_dataset_association'
 
     def test_columns(
         self,
@@ -2910,7 +2910,7 @@ class TestLibraryDatasetDatasetAssociation(BaseTest):
             assert stored_obj.message == message
             # We cannot test obj.metadata by setting it directly (like the other attributes).
             # However, the following assertion verifies that it exists and has been initialized correctly.
-            assert stored_obj.metadata.parent.id == obj_id
+            assert stored_obj.metadata.parent.id == obj_id  # TODO THIS BREAKS UNDER DECLARATIVE
             assert stored_obj._metadata == _metadata
 
         delete_from_database(session, [copied_from_ldda, parent])

@@ -118,38 +118,36 @@ model.Dataset.table = Table(
     Column('total_size', Numeric(15, 0)),
     Column('uuid', UUIDType()))
 
-model.LibraryDatasetDatasetAssociation.table = Table(
-    "library_dataset_dataset_association", metadata,
-    Column("id", Integer, primary_key=True),
-    Column("library_dataset_id", Integer, ForeignKey("library_dataset.id"), index=True),
-    Column("dataset_id", Integer, ForeignKey("dataset.id"), index=True),
-    Column("create_time", DateTime, default=now),
-    Column("update_time", DateTime, default=now, onupdate=now, index=True),
-    Column("state", TrimmedString(64), index=True, key="_state"),
-    Column("copied_from_history_dataset_association_id", Integer,
-        ForeignKey("history_dataset_association.id", use_alter=True, name='history_dataset_association_dataset_id_fkey'),
-        nullable=True),
-
-    Column("copied_from_library_dataset_dataset_association_id", Integer,
-        ForeignKey("library_dataset_dataset_association.id", use_alter=True, name='library_dataset_dataset_association_id_fkey'),
-        nullable=True),
-
-    Column("name", TrimmedString(255), index=True),
-    Column("info", TrimmedString(255)),
-    Column("blurb", TrimmedString(255)),
-    Column("peek", TEXT, key="_peek"),
-    Column("tool_version", TEXT),
-    Column("extension", TrimmedString(64)),
-    Column("metadata", JSONType, key="_metadata"),
-    Column("parent_id", Integer, ForeignKey("library_dataset_dataset_association.id"), nullable=True),
-    Column("designation", TrimmedString(255)),
-    Column("deleted", Boolean, index=True, default=False),
-    Column("validated_state", TrimmedString(64), default='unvalidated', nullable=False),
-    Column("validated_state_message", TEXT),
-    Column("visible", Boolean),
-    Column("extended_metadata_id", Integer, ForeignKey("extended_metadata.id"), index=True),
-    Column("user_id", Integer, ForeignKey("galaxy_user.id"), index=True),
-    Column("message", TrimmedString(255)))
+#model.LibraryDatasetDatasetAssociation.table = Table(
+#    "library_dataset_dataset_association", metadata,
+#    Column("id", Integer, primary_key=True),
+#    Column("library_dataset_id", Integer, ForeignKey("library_dataset.id"), index=True),
+#    Column("dataset_id", Integer, ForeignKey("dataset.id"), index=True),
+#    Column("create_time", DateTime, default=now),
+#    Column("update_time", DateTime, default=now, onupdate=now, index=True),
+#    Column("state", TrimmedString(64), index=True, key="_state"),
+#    Column("copied_from_history_dataset_association_id", Integer,
+#        ForeignKey("history_dataset_association.id", use_alter=True, name='history_dataset_association_dataset_id_fkey'),
+#        nullable=True),
+#    Column("copied_from_library_dataset_dataset_association_id", Integer,
+#        ForeignKey("library_dataset_dataset_association.id", use_alter=True, name='library_dataset_dataset_association_id_fkey'),
+#        nullable=True),
+#    Column("name", TrimmedString(255), index=True),
+#    Column("info", TrimmedString(255)),
+#    Column("blurb", TrimmedString(255)),
+#    Column("peek", TEXT, key="_peek"),
+#    Column("tool_version", TEXT),
+#    Column("extension", TrimmedString(64)),
+#    Column("metadata", JSONType, key="_metadata"),
+#    Column("parent_id", Integer, ForeignKey("library_dataset_dataset_association.id"), nullable=True),
+#    Column("designation", TrimmedString(255)),
+#    Column("deleted", Boolean, index=True, default=False),
+#    Column("validated_state", TrimmedString(64), default='unvalidated', nullable=False),
+#    Column("validated_state_message", TEXT),
+#    Column("visible", Boolean),
+#    Column("extended_metadata_id", Integer, ForeignKey("extended_metadata.id"), index=True),
+#    Column("user_id", Integer, ForeignKey("galaxy_user.id"), index=True),
+#    Column("message", TrimmedString(255)))
 
 model.Job.table = Table(
     "job", metadata,
@@ -208,7 +206,7 @@ simple_mapping(model.HistoryDatasetAssociation,
         backref='copied_to_history_dataset_associations'),
     copied_to_library_dataset_dataset_associations=relation(model.LibraryDatasetDatasetAssociation,
         primaryjoin=(model.HistoryDatasetAssociation.table.c.id
-                     == model.LibraryDatasetDatasetAssociation.table.c.copied_from_history_dataset_association_id),
+                     == model.LibraryDatasetDatasetAssociation.copied_from_history_dataset_association_id),
         backref='copied_from_history_dataset_association'),
     tags=relation(model.HistoryDatasetAssociationTagAssociation,
         order_by=model.HistoryDatasetAssociationTagAssociation.id,
@@ -258,8 +256,8 @@ simple_mapping(model.Dataset,
         viewonly=True),
     active_library_associations=relation(model.LibraryDatasetDatasetAssociation,
         primaryjoin=(
-            (model.Dataset.table.c.id == model.LibraryDatasetDatasetAssociation.table.c.dataset_id)
-            & (model.LibraryDatasetDatasetAssociation.table.c.deleted == false())),
+            (model.Dataset.table.c.id == model.LibraryDatasetDatasetAssociation.dataset_id)
+            & (model.LibraryDatasetDatasetAssociation.deleted == false())),
         viewonly=True),
     hashes=relation(model.DatasetHash, back_populates='dataset'),
     sources=relation(model.DatasetSource, back_populates='dataset'),
@@ -328,47 +326,47 @@ mapper_registry.map_imperatively(model.User, model.User.table, properties=dict(
 # <user_obj>.preferences[pref_name] = pref_value
 model.User.preferences = association_proxy('_preferences', 'value', creator=model.UserPreference)  # type: ignore
 
-mapper_registry.map_imperatively(model.LibraryDatasetDatasetAssociation, model.LibraryDatasetDatasetAssociation.table, properties=dict(
-    dataset=relation(model.Dataset,
-        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.dataset_id == model.Dataset.table.c.id),
-        backref='library_associations'),
-    library_dataset=relation(model.LibraryDataset,
-        foreign_keys=model.LibraryDatasetDatasetAssociation.table.c.library_dataset_id),
-    # user=relation( model.User.mapper ),
-    user=relation(model.User),
-    copied_from_library_dataset_dataset_association=relation(model.LibraryDatasetDatasetAssociation,
-        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id
-                     == model.LibraryDatasetDatasetAssociation.table.c.id),
-        remote_side=[model.LibraryDatasetDatasetAssociation.table.c.id],
-        uselist=False,
-        backref='copied_to_library_dataset_dataset_associations'),
-    copied_to_history_dataset_associations=relation(model.HistoryDatasetAssociation,
-        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.id
-                     == model.HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id),
-        backref='copied_from_library_dataset_dataset_association'),
-    implicitly_converted_datasets=relation(model.ImplicitlyConvertedDatasetAssociation,
-        primaryjoin=(model.ImplicitlyConvertedDatasetAssociation.ldda_parent_id
-                     == model.LibraryDatasetDatasetAssociation.table.c.id),
-        backref='parent_ldda'),
-    tags=relation(model.LibraryDatasetDatasetAssociationTagAssociation,
-                  order_by=model.LibraryDatasetDatasetAssociationTagAssociation.id,
-                  back_populates='library_dataset_dataset_association'),
-    extended_metadata=relation(model.ExtendedMetadata,
-        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.extended_metadata_id == model.ExtendedMetadata.id)
-    ),
-    _metadata=deferred(model.LibraryDatasetDatasetAssociation.table.c._metadata),
-    actions=relation(
-        model.LibraryDatasetDatasetAssociationPermissions,
-        back_populates='library_dataset_dataset_association'),
-    dependent_jobs=relation(
-        model.JobToInputLibraryDatasetAssociation, back_populates='dataset'),
-    creating_job_associations=relation(
-        model.JobToOutputLibraryDatasetAssociation, back_populates='dataset'),
-    implicitly_converted_parent_datasets=relation(model.ImplicitlyConvertedDatasetAssociation,
-        primaryjoin=(lambda: model.ImplicitlyConvertedDatasetAssociation.ldda_id  # type: ignore
-            == model.LibraryDatasetDatasetAssociation.id),  # type: ignore
-        back_populates='dataset_ldda'),
-))
+#mapper_registry.map_imperatively(model.LibraryDatasetDatasetAssociation, model.LibraryDatasetDatasetAssociation.table, properties=dict(
+#    dataset=relation(model.Dataset,
+#        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.dataset_id == model.Dataset.table.c.id),
+#        backref='library_associations'),
+#    library_dataset=relation(model.LibraryDataset,
+#        foreign_keys=model.LibraryDatasetDatasetAssociation.table.c.library_dataset_id),
+#    # user=relation( model.User.mapper ),
+#    user=relation(model.User),
+#    copied_from_library_dataset_dataset_association=relation(model.LibraryDatasetDatasetAssociation,
+#        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id
+#                     == model.LibraryDatasetDatasetAssociation.table.c.id),
+#        remote_side=[model.LibraryDatasetDatasetAssociation.table.c.id],
+#        uselist=False,
+#        backref='copied_to_library_dataset_dataset_associations'),
+#    copied_to_history_dataset_associations=relation(model.HistoryDatasetAssociation,
+#        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.id
+#                     == model.HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id),
+#        backref='copied_from_library_dataset_dataset_association'),
+#    implicitly_converted_datasets=relation(model.ImplicitlyConvertedDatasetAssociation,
+#        primaryjoin=(model.ImplicitlyConvertedDatasetAssociation.ldda_parent_id
+#                     == model.LibraryDatasetDatasetAssociation.table.c.id),
+#        backref='parent_ldda'),
+#    tags=relation(model.LibraryDatasetDatasetAssociationTagAssociation,
+#                  order_by=model.LibraryDatasetDatasetAssociationTagAssociation.id,
+#                  back_populates='library_dataset_dataset_association'),
+#    extended_metadata=relation(model.ExtendedMetadata,
+#        primaryjoin=(model.LibraryDatasetDatasetAssociation.table.c.extended_metadata_id == model.ExtendedMetadata.id)
+#    ),
+#    _metadata=deferred(model.LibraryDatasetDatasetAssociation.table.c._metadata),
+#    actions=relation(
+#        model.LibraryDatasetDatasetAssociationPermissions,
+#        back_populates='library_dataset_dataset_association'),
+#    dependent_jobs=relation(
+#        model.JobToInputLibraryDatasetAssociation, back_populates='dataset'),
+#    creating_job_associations=relation(
+#        model.JobToOutputLibraryDatasetAssociation, back_populates='dataset'),
+#    implicitly_converted_parent_datasets=relation(model.ImplicitlyConvertedDatasetAssociation,
+#        primaryjoin=(lambda: model.ImplicitlyConvertedDatasetAssociation.ldda_id  # type: ignore
+#            == model.LibraryDatasetDatasetAssociation.id),  # type: ignore
+#        back_populates='dataset_ldda'),
+#))
 
 # simple_mapping(
 #     model.ImplicitCollectionJobsHistoryDatasetCollectionAssociation,

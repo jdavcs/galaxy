@@ -67,6 +67,7 @@ from sqlalchemy.ext import hybrid
 from sqlalchemy.orm import (
     aliased,
     column_property,
+    deferred,
     joinedload,
     object_session,
     Query,
@@ -4700,7 +4701,88 @@ class LibraryDataset(Base, RepresentById):
         return rval
 
 
-class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, RepresentById):
+class LibraryDatasetDatasetAssociation(Base, DatasetInstance, HasName, RepresentById):
+    __tablename__ = 'library_dataset_dataset_association'
+
+    id = Column(Integer, primary_key=True)
+    library_dataset_id = Column(Integer, ForeignKey('library_dataset.id'), index=True)
+    dataset_id = Column(Integer, ForeignKey('dataset.id'), index=True)
+    create_time = Column(DateTime, default=now)
+    update_time = Column(DateTime, default=now, onupdate=now, index=True)
+    _state = Column('state', TrimmedString(64), index=True)
+    copied_from_history_dataset_association_id = Column(Integer,
+        ForeignKey('history_dataset_association.id', use_alter=True,
+            name='history_dataset_association_dataset_id_fkey'), nullable=True)
+    copied_from_library_dataset_dataset_association_id = Column(Integer,
+        ForeignKey('library_dataset_dataset_association.id', use_alter=True,
+            name='library_dataset_dataset_association_id_fkey'), nullable=True)
+    name = Column(TrimmedString(255), index=True)
+    info = Column(TrimmedString(255))
+    blurb = Column(TrimmedString(255))
+    _peek = Column('peek', TEXT)
+    tool_version = Column(TEXT)
+    extension = Column(TrimmedString(64))
+    _metadata = Column('metadata', JSONType)
+    parent_id = Column(Integer, ForeignKey('library_dataset_dataset_association.id'), nullable=True)
+    designation = Column(TrimmedString(255))
+    deleted = Column(Boolean, index=True, default=False)
+    validated_state = Column(TrimmedString(64), default='unvalidated', nullable=False)
+    validated_state_message = Column(TEXT)
+    visible = Column(Boolean)
+    extended_metadata_id = Column(Integer, ForeignKey('extended_metadata.id'), index=True)
+    user_id = Column(Integer, ForeignKey('galaxy_user.id'), index=True)
+    message = Column(TrimmedString(255))
+
+
+
+    dataset = relationship('Dataset',
+        primaryjoin=(lambda: LibraryDatasetDatasetAssociation.dataset_id == Dataset.table.c.id),  # type: ignore
+        backref='library_associations')
+
+    library_dataset = relationship('LibraryDataset',
+        foreign_keys='LibraryDatasetDatasetAssociation.library_dataset_id')
+
+    user = relationship('User')
+
+    copied_from_library_dataset_dataset_association = relationship('LibraryDatasetDatasetAssociation',
+        primaryjoin=(lambda: LibraryDatasetDatasetAssociation.copied_from_library_dataset_dataset_association_id  # type: ignore
+            == LibraryDatasetDatasetAssociation.id),  # type: ignore
+        remote_side=[id],  # TODO: strign? lambda?
+        uselist=False,
+        backref='copied_to_library_dataset_dataset_associations')
+
+    copied_to_history_dataset_associations = relationship('HistoryDatasetAssociation',
+        primaryjoin=(lambda: LibraryDatasetDatasetAssociation.id  # type: ignore
+            == HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id),  # type: ignore
+        backref='copied_from_library_dataset_dataset_association')
+
+    implicitly_converted_datasets = relationship('ImplicitlyConvertedDatasetAssociation',
+        primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.ldda_parent_id  # type: ignore
+            == LibraryDatasetDatasetAssociation.id),  # type: ignore
+        backref='parent_ldda')
+
+    tags = relationship('LibraryDatasetDatasetAssociationTagAssociation',
+                  order_by='LibraryDatasetDatasetAssociationTagAssociation.id',
+                  back_populates='library_dataset_dataset_association')
+
+    extended_metadata = relationship('ExtendedMetadata',
+        primaryjoin=(lambda: LibraryDatasetDatasetAssociation.extended_metadata_id == ExtendedMetadata.id)  # type: ignore
+    )
+
+    _metadata=deferred(_metadata)  # TODO: string or lambda???
+
+    actions = relationship('LibraryDatasetDatasetAssociationPermissions',
+        back_populates='library_dataset_dataset_association')
+
+    dependent_jobs = relationship('JobToInputLibraryDatasetAssociation', back_populates='dataset')
+
+    creating_job_associations = relationship('JobToOutputLibraryDatasetAssociation', back_populates='dataset')
+
+    implicitly_converted_parent_datasets = relationship('ImplicitlyConvertedDatasetAssociation',
+        primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.ldda_id  # type: ignore
+            == LibraryDatasetDatasetAssociation.id),  # type: ignore
+        back_populates='dataset_ldda')
+
 
     def __init__(self,
                  copied_from_history_dataset_association=None,
