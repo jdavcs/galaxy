@@ -5672,6 +5672,11 @@ class HistoryDatasetCollectionAssociation(
         back_populates='dataset_collection_instance',
     )
 
+    creating_job_associations = relationship(
+        'JobToOutputDatasetCollectionAssociation',
+        viewonly=True,
+    )
+
     editable_keys = ('name', 'deleted', 'visible')
 
     def __init__(

@@ -1870,6 +1870,8 @@ class TestHistoryDatasetCollectionAssociation(BaseTest):
             assert stored_obj.annotations == [history_dataset_collection_annotation_association]
             assert stored_obj.ratings == [history_dataset_collection_rating_association]
             assert stored_obj.output_dataset_collection_instances == [job_to_output_dataset_collection_association]
+            # creating_job_associations is a viewonly copy of output_dataset_collection_instances
+            assert stored_obj.creating_job_associations == [job_to_output_dataset_collection_association]
             assert stored_obj.job_state_summary  # this is a view; TODO: can we test this better?
 
 

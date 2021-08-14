@@ -11,7 +11,7 @@ from sqlalchemy import (
     and_,
     select,
 )
-from sqlalchemy.orm import class_mapper, object_session, relation
+from sqlalchemy.orm import object_session
 
 from galaxy import model
 from galaxy.model import mapper_registry
@@ -25,9 +25,6 @@ from galaxy.model.view.utils import install_views
 log = logging.getLogger(__name__)
 
 metadata = mapper_registry.metadata
-
-class_mapper(model.HistoryDatasetCollectionAssociation).add_property(
-    "creating_job_associations", relation(model.JobToOutputDatasetCollectionAssociation, viewonly=True))
 
 
 # Helper methods.
