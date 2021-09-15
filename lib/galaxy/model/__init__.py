@@ -211,7 +211,6 @@ class HasTags:
         return rval
 
     def make_tag_string_list(self):
-        # add tags string list
         tags_str_list = []
         for tag in self.tags:
             tag_str = tag.user_tname
@@ -240,7 +239,7 @@ class SerializationOptions:
         self.serialize_dataset_objects = serialize_dataset_objects
         self.serialize_files_handler = serialize_files_handler
         if strip_metadata_files is None:
-            # If we're editing datasets - keep MetadataFile(s) in tact. For pure export
+            # If we're editing datasets - keep MetadataFile(s) intact. For pure export
             # expect metadata tool to be rerun.
             strip_metadata_files = not for_edit
         self.strip_metadata_files = strip_metadata_files
@@ -434,7 +433,6 @@ class JobLike:
 class User(Base, Dictifiable, RepresentById):
     use_pbkdf2 = True
     bootstrap_admin_user = False
-    # api_keys: 'List[APIKeys]'  already declared as relationship()
     """
     Data for a Galaxy user or admin and relations to their
     histories, credentials, and roles.
@@ -492,7 +490,6 @@ class User(Base, Dictifiable, RepresentById):
         collection_class=attribute_mapped_collection('name'))
     values = relationship('FormValues',
         primaryjoin=(lambda: User.form_values_id == FormValues.id))  # type: ignore
-    # Add type hint (will this work w/SA?)
     api_keys: 'List[APIKeys]' = relationship('APIKeys',
         back_populates='user',
         order_by=lambda: desc(APIKeys.create_time))  # type: ignore
@@ -960,7 +957,7 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, RepresentById):
         PAUSED = 'paused'
         DELETING = 'deleting'
         DELETED = 'deleted'
-        DELETED_NEW = 'deleted_new'  # now DELETING, remove after 21.0
+        DELETED_NEW = 'deleted_new'  # TODO: now DELETING, remove after 21.0
         STOPPING = 'stop'
         STOPPED = 'stopped'
 
@@ -1956,7 +1953,7 @@ class ImplicitCollectionJobsJobAssociation(Base, RepresentById):
 
     id = Column(Integer, primary_key=True)
     implicit_collection_jobs_id = Column(Integer, ForeignKey('implicit_collection_jobs.id'), index=True)
-    job_id = Column(Integer, ForeignKey('job.id'), index=True)  # Consider making this nullable...
+    job_id = Column(Integer, ForeignKey('job.id'), index=True)  # TODO: Consider making this nullable...
     order_index = Column(Integer, nullable=False)
     implicit_collection_jobs = relationship('ImplicitCollectionJobs', back_populates='jobs')
     job = relationship('Job', back_populates='implicit_collection_jobs_association')
@@ -2208,7 +2205,7 @@ class InteractiveToolEntryPoint(Base, Dictifiable, RepresentById):
         return False
 
 
-class GenomeIndexToolData(Base, RepresentById):  # TODO: params arg is lost
+class GenomeIndexToolData(Base, RepresentById):
     __tablename__ = 'genome_index_tool_data'
 
     id = Column(Integer, primary_key=True)
@@ -2571,7 +2568,7 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, RepresentByI
 
     @property
     def activatable_datasets(self):
-        # This needs to be a list
+        # This needs to be a list  TODO: isn't this available as active_datasets?
         return [hda for hda in self.datasets if not hda.dataset.deleted]
 
     def serialize(self, id_encoder, serialization_options):
@@ -3329,7 +3326,6 @@ class Dataset(StorableObject, RepresentById, _HasTable):
 
     def full_delete(self):
         """Remove the file and extra files, marks deleted and purged"""
-        # os.unlink( self.file_name )
         try:
             self.object_store.delete(self)
         except galaxy.exceptions.ObjectNotFound:
@@ -4554,7 +4550,6 @@ class LibraryFolder(Base, Dictifiable, HasName, RepresentById):
             genome_build=self.genome_build,
             item_count=self.item_count,
             order_id=self.order_id,
-            # update_time=self.update_time,
             deleted=self.deleted,
         )
         folders = []
@@ -7149,8 +7144,6 @@ class WorkflowInvocationStep(Base, Dictifiable, RepresentById):
         rval['order_index'] = self.workflow_step.order_index
         rval['workflow_step_label'] = self.workflow_step.label
         rval['workflow_step_uuid'] = str(self.workflow_step.uuid)
-        # Following no longer makes sense...
-        # rval['state'] = self.job.state if self.job is not None else None
         if view == 'element':
             jobs = []
             for job in self.jobs:
