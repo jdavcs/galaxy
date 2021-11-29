@@ -24,6 +24,7 @@ from galaxy.model.migrations import (
     VersionTooOldError,
 )
 
+
 # Revision numbers from test versions directories
 GXY_REVISION_0 = '62695fac6cc0'  # oldest/base
 GXY_REVISION_1 = '2e8a580bc79a'
@@ -34,6 +35,29 @@ TSI_REVISION_2 = '0e28bf2fb7b5'  # current/head
 
 
 class TestAlembicManager:
+
+    def test_foo(self, url_factory):
+        db_url = url_factory()
+        am = AlembicManagerForTests(db_url)
+        revision = GXY_REVISION_0
+
+        cfg = am.alembic_cfg
+        path = cfg.get_main_option('version_locations').split(';')[0]
+        path = os.path.join(path, '62695fac6cc0_create_gxy_test_branch.py')
+        #breakpoint()
+        #with open(path) as f:
+        #    data = [line for line in f]
+        #print('q' * 50)
+        #print(path)
+        #print(data)
+
+        #breakpoint()
+        #path = am.alembic_cfg.get_main_option(
+        #with open(
+        assert not am.is_at_revision(revision)
+        am.stamp(revision)
+        assert am.is_at_revision(revision)
+
 
     def test_is_at_revision__one_head_one_revision(self, url_factory):
         """ Use case: Check if separate tsi database is at a given revision."""
@@ -568,8 +592,13 @@ class AlembicManagerForTests(AlembicManager):
 
     def __init__(self, db_url):
         path1, path2 = self._get_paths_to_version_locations()
-        config_dict = {'version_locations': f'{path1} {path2}'}
+        config_dict = {'version_locations': f'{path1};{path2}'}
         super().__init__(db_url, config_dict=config_dict)
+
+        print('X' * 30)
+        print(path1)
+        print(self.alembic_cfg.__dict__)
+        #breakpoint()
 
     def _get_paths_to_version_locations(self):
         # One does not simply use a relative path for both tests and package tests.

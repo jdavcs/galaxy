@@ -652,7 +652,7 @@ if [ "$test_script" = 'pytest' ]; then
         marker_args=()
     fi
     args=(-v $structured_data_args --html "$report_file" --self-contained-html $coverage_arg $xunit_args $extra_args "${marker_args[@]}" "$@")
-    "$test_script" "${args[@]}"
+    "$test_script" -s "${args[@]}"
 else
     python "$test_script" $coverage_arg -v --with-nosehtml --html-report-file $report_file $xunit_args $structured_data_args $extra_args "$@"
 fi
