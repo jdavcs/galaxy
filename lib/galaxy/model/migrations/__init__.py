@@ -107,6 +107,10 @@ class DatabaseStateCache:
     Snapshot of database state.
     """
     def __init__(self, engine):
+
+        log.error('ENGINE--------------------')
+        log.error(engine.__dict__)
+
         self._load_db(engine)
 
     def is_database_empty(self):

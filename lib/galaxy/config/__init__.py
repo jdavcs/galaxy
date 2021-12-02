@@ -1382,6 +1382,7 @@ class ConfiguresGalaxyMixin:
             dbv.verify()
 
             # TODO: Improve: can we implement these in revisions? If not, refactor (duplication w/mapping.py)
+            # TODO: this won't work: should only call on an empty db!
             from galaxy.model.migrate.triggers.update_audit_table import install as install_timestamp_triggers
             from galaxy.model.view.utils import install_views
             install_timestamp_triggers(engine)
