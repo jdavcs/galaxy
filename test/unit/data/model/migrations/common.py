@@ -29,9 +29,10 @@ def create_and_drop_database(db_url):
         create_database(db_url)
         yield
     finally:
-        if _is_postgres(db_url):
-            url = make_url(db_url)
-            _drop_postgres_database(url.database)
+        pass
+    # if _is_postgres(db_url):
+    #        url = make_url(db_url)
+    #        _drop_postgres_database(url.database)
 
 
 def _is_postgres(db_url):
@@ -43,7 +44,8 @@ def _drop_postgres_database(database):
     engine = create_engine(connection_url, isolation_level='AUTOCOMMIT')
     preparer = IdentifierPreparer(engine.dialect)
     database = preparer.quote(database)
-    stmt = f'DROP DATABASE IF EXISTS {database}'
-    with engine.connect() as conn:
+    #stmt = f'DROP DATABASE IF EXISTS {database}'
+    stmt = f'DROP DATABASE {database}'
+    with engine.connect() as conn:     # TODO this causes an error remotely. why?
         conn.execute(stmt)
     engine.dispose()
