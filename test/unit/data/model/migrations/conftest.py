@@ -43,6 +43,7 @@ def _make_postgres_db_url(connection_url, database):
 
 def _make_sqlite_db_url(tmpdir, database):
     """Return a unique sqlalchemy db-url within tmp_directory."""
+    raise Exception('not testing sqlite now')  # TODO remove
     path = os.path.join(tmpdir, database)
     return f'sqlite:///{path}'
 
