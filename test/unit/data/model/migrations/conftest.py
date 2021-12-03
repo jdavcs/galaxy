@@ -1,3 +1,4 @@
+import logging
 import os
 import tempfile
 import uuid
@@ -8,6 +9,8 @@ from sqlalchemy.engine import make_url
 
 from .common import get_connection_url
 
+
+log = logging.getLogger(__name__)
 
 # Fixture, fixture factory used to generate urls for postgres and sqlite databases
 
@@ -32,6 +35,7 @@ def url_factory(tmp_directory):
 
 def _make_postgres_db_url(connection_url, database):
     """Return connection_url that has a unique database name."""
+    log.debug(f'MAKING POSTGRES DB {database}')
     url = make_url(connection_url)
     url = url.set(database=database)
     return str(url)
