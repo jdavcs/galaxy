@@ -8,6 +8,8 @@ on:
     paths-ignore:
       - 'client/**'
       - 'doc/**'
+env:
+  GALAXY_TEST_DBURI: 'postgresql://postgres:postgres@localhost:5432/postgres?client_encoding=utf8'  # using postgres as the db
 concurrency:
   group: py-unit-${{ github.ref }}
   cancel-in-progress: true
@@ -19,6 +21,15 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ['3.6', '3.9']
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v2
         with:
