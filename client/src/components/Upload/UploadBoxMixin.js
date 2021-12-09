@@ -66,7 +66,7 @@ export default {
     },
     methods: {
         $uploadBox() {
-            return $(this.$refs.wrapper.$refs.uploadBox);   // this is all we need to get that dom element
+            return $(this.$refs.wrapper.$refs.uploadBox); // this is all we need to get that dom element
         },
         initUploadbox(options) {
             const $uploadBox = this.$uploadBox();
@@ -77,7 +77,7 @@ export default {
             //this.uploadbox = $uploadBox.uploadbox(options);
 
             if (this.lazyLoadMax !== null) {
-                const $uploadBox = this.$uploadBox();  // why???
+                const $uploadBox = this.$uploadBox(); // why???
                 this.loader = new LazyLimited({
                     $container: $uploadBox,
                     collection: this.collection,

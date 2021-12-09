@@ -19,6 +19,44 @@ function submitPayload(payload, cnf) {
         });
 }
 
+/**
+ * Posts chunked files to the API.
+ */
+export function submitUpload(config) {
+    // parse options
+    var cnf = $.extend(
+        {},
+        {
+            data: {},
+            success: () => {},
+            error: () => {},
+            warning: () => {},
+            progress: () => {},
+            attempts: 70000,
+            timeout: 5000,
+            url: null,
+            error_file: "File not provided.",
+            error_attempt: "Maximum number of attempts reached.",
+            error_tool: "Tool submission failed.",
+            chunkSize: 10485760,
+        },
+        config
+    );
+
+    // initial validation
+    var data = cnf.data;
+    if (data.error_message) {
+        cnf.error(data.error_message);
+        return;
+    }
+    if (!data.files.length) {
+        // No files attached, don't need to use TUS uploader
+        return submitPayload(data, cnf);
+    }
+    const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
+    tusUpload(data, 0, tusEndpoint, cnf);
+}
+
 function tusUpload(data, index, tusEndpoint, cnf) {
     const startTime = performance.now();
     const chunkSize = cnf.chunkSize;
@@ -122,7 +160,6 @@ function tusUpload(data, index, tusEndpoint, cnf) {
         };
     };
 })(jQuery);
-
 
 export class UploadQueue {
     constructor(options) {
@@ -246,7 +283,7 @@ export class UploadQueue {
         this.remove(index);
 
         // create and submit data
-        this._upload_chunk({
+        submitUpload({
             url: this.opts.initUrl(index),
             data: this.opts.initialize(index),
             success: (response) => {
@@ -310,43 +347,5 @@ export class UploadQueue {
         };
         xhr.upload.addEventListener("progress", cnf.progress, false);
         xhr.send(cnf.data);
-    }
-
-    /**
-     * Posts chunked files to the API.
-     */
-    _upload_chunk(config) {
-        // parse options
-        var cnf = $.extend(
-            {},
-            {
-                data: {},
-                success: () => {},
-                error: () => {},
-                warning: () => {},
-                progress: () => {},
-                attempts: 70000,
-                timeout: 5000,
-                url: null,
-                error_file: "File not provided.",
-                error_attempt: "Maximum number of attempts reached.",
-                error_tool: "Tool submission failed.",
-                chunkSize: 10485760,
-            },
-            config
-        );
-
-        // initial validation
-        var data = cnf.data;
-        if (data.error_message) {
-            cnf.error(data.error_message);
-            return;
-        }
-        if (!data.files.length) {
-            // No files attached, don't need to use TUS uploader
-            return submitPayload(data, cnf);
-        }
-        const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
-        tusUpload(data, 0, tusEndpoint, cnf);
     }
 }
