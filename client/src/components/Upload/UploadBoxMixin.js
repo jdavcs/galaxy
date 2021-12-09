@@ -13,6 +13,7 @@ import { findExtension } from "./utils";
 import { filesDialog } from "utils/data";
 import { getAppRoot } from "onload";
 import axios from "axios";
+import { UploadQueue } from "utils/uploadbox";
 
 const localize = _l;
 
@@ -65,13 +66,18 @@ export default {
     },
     methods: {
         $uploadBox() {
-            return $(this.$refs.wrapper.$refs.uploadBox);
+            return $(this.$refs.wrapper.$refs.uploadBox);   // this is all we need to get that dom element
         },
         initUploadbox(options) {
             const $uploadBox = this.$uploadBox();
-            this.uploadbox = $uploadBox.uploadbox(options);
+            options.$uploadBox = $uploadBox;
+            console.log(options);
+
+            this.uploadbox = new UploadQueue(options);
+            //this.uploadbox = $uploadBox.uploadbox(options);
+
             if (this.lazyLoadMax !== null) {
-                const $uploadBox = this.$uploadBox();
+                const $uploadBox = this.$uploadBox();  // why???
                 this.loader = new LazyLimited({
                     $container: $uploadBox,
                     collection: this.collection,
