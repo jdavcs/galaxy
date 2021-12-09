@@ -77,7 +77,7 @@ function tusUpload(data, index, tusEndpoint, cnf) {
         // parse options
         var cnf = $.extend(
             {},
-            {
+            {  //TODO check: default params may ne wrong (check how it is called; do i even need them to be correct in javascript?)
                 data: {},
                 success: () => {},
                 error: () => {},
@@ -209,22 +209,23 @@ function tusUpload(data, index, tusEndpoint, cnf) {
         });
 
         // add new files to upload queue
-        function add(files) {
-            if (files && files.length && !queue_running) {
+        function add(files) {  //TODO refactor entire function (and check Sam's version)
+            if (files && files.length && !queue_running) {   //TODO can this happen when Q is running? what happens then?
                 var index = undefined;
                 _.each(files, (file, key) => {
                     if (
-                        file.mode !== "new" &&
-                        _.filter(queue, (f) => f.name === file.name && f.size === file.size).length
+                        file.mode !== "new" &&  //TODO where is mode set and what are the possible values?
+                        _.filter(queue, (f) => f.name === file.name && f.size === file.size).length  //TODO seems awkward and incorrect (use lastmodified in addition to these. or not? that WOULD be a duplicate!)
                     ) {
                         file.duplicate = true;
                     }
                 });
+                debugger;
                 _.each(files, (file) => {
                     if (!file.duplicate) {
                         index = String(queue_index++);
                         queue[index] = file;
-                        opts.announce(index, queue[index]);
+                        opts.announce(index, queue[index]);  //TODO what is announce?
                         queue_length++;
                     }
                 });
@@ -235,7 +236,7 @@ function tusUpload(data, index, tusEndpoint, cnf) {
         // remove file from queue
         function remove(index) {
             if (queue[index]) {
-                delete queue[index];
+                delete queue[index];  //TODO can we ensure this and next stmt happen together or not at all?
                 queue_length--;
             }
         }
@@ -246,13 +247,13 @@ function tusUpload(data, index, tusEndpoint, cnf) {
             if (queue_length == 0 || queue_stop) {
                 queue_stop = false;
                 queue_running = false;
-                opts.complete();
+                opts.complete();  //TODO what is complete(), where is it set?
                 return;
             } else {
                 queue_running = true;
             }
 
-            // get an identifier from the queue
+            // get an identifier from the queue   //TODO what is this?
             var index = -1;
             for (const key in queue) {
                 index = key;
@@ -260,7 +261,7 @@ function tusUpload(data, index, tusEndpoint, cnf) {
             }
 
             // remove from queue
-            remove(index);
+            remove(index);   //TODO what if it invalid like -1?
 
             // create and submit data
             var submitter = $.uploadchunk;
@@ -292,11 +293,11 @@ function tusUpload(data, index, tusEndpoint, cnf) {
 
         // open file browser for selection
         function select() {
-            uploadinput.dialog();
+            uploadinput.dialog();   //TODO what's dialog()?
         }
 
         // remove all entries from queue
-        function reset(index) {
+        function reset(index) {  //TODO do we need to iterate?
             for (index in queue) {
                 remove(index);
             }
@@ -312,11 +313,11 @@ function tusUpload(data, index, tusEndpoint, cnf) {
 
         // stop upload process
         function stop() {
-            queue_stop = true;
+            queue_stop = true;  //TODO what about queue-runnign???
         }
 
         // set options
-        function configure(options) {
+        function configure(options) {   //TODO what does this do?
             opts = $.extend({}, opts, options);
             return opts;
         }
