@@ -195,7 +195,7 @@ function tusUpload(data, index, tusEndpoint, cnf) {
         var queue_running = false;
         var queue_stop = false;
 
-        // element
+        // element  //TODO understand this, maybe move to private function
         var uploadinput = $(this).uploadinput({
             multiple: opts.multiple,
             onchange: (files) => {
