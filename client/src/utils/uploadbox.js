@@ -71,44 +71,6 @@ function tusUpload(data, index, tusEndpoint, cnf) {
     jQuery.event.props.push("dataTransfer");
 
     /**
-        Posts chunked files to the API.
-    */
-    $.uploadchunk = function (config) {
-        // parse options
-        var cnf = $.extend(
-            {},
-            {
-                data: {},
-                success: () => {},
-                error: () => {},
-                warning: () => {},
-                progress: () => {},
-                attempts: 70000,
-                timeout: 5000,
-                url: null,
-                error_file: "File not provided.",
-                error_attempt: "Maximum number of attempts reached.",
-                error_tool: "Tool submission failed.",
-                chunkSize: 10485760,
-            },
-            config
-        );
-
-        // initial validation
-        var data = cnf.data;
-        if (data.error_message) {
-            cnf.error(data.error_message);
-            return;
-        }
-        if (!data.files.length) {
-            // No files attached, don't need to use TUS uploader
-            return submitPayload(data, cnf);
-        }
-        const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
-        tusUpload(data, 0, tusEndpoint, cnf);
-    };
-
-    /**
         Handles the upload events drag/drop etc.
     */
     $.fn.uploadinput = function (options) {
@@ -287,8 +249,8 @@ export class UploadQueue {
         this._upload_chunk({
             url: this.opts.initUrl(index),
             data: this.opts.initialize(index),
-            success: () => {
-                this.opts.success(index);
+            success: (response) => {
+                this.opts.success(index, response);
                 this._process();
             },
             warning: (message) => {
@@ -355,7 +317,6 @@ export class UploadQueue {
      */
     _upload_chunk(config) {
         // parse options
-        console.log('CONFIG', config);
         var cnf = $.extend(
             {},
             {
