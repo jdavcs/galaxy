@@ -1,4 +1,5 @@
-import { UploadQueueDraft as UploadQueue } from "./uploadbox";
+//import { UploadQueue } from "./uploadbox";
+import { UploadQueue } from "./uploadbox_backup";
 
 describe('UploadQueue', () => {
 
@@ -58,7 +59,7 @@ describe('UploadQueue', () => {
         expect(q.opts.bar).toEqual(2);  // value overwritten
     });
 
-    describe('calling the window object', () => {
+    describe('checking browser compatibility', () => {
         const compatibleBrowser = {
             File: 1,
             FormData: 1,
@@ -96,23 +97,44 @@ describe('UploadQueue', () => {
         });
     });
 
-    test('start......does what?...', () =>{  // TODO
+
+
+
+    test('calling start sets isRunning to true', () => {
         const q = TestUploadQueue();
+        q._process = jest.fn();  // mock this, otherwise it'll reset isRunning after it's done.
         expect(q.isRunning).toBe(false);
         q.start();
         expect(q.isRunning).toBe(true);
     });
 
-    test('start is a noop if queue is running', () => {
-        // TODO
+    test('calling start is a noop if queue is running', () => {
+        const q = TestUploadQueue();
+        const mockedProcess = jest.fn();
+        q._process = mockedProcess();
+        q.isRunning = true;
+        q.start();
+        expect(mockedProcess.mock.calls.length === 0);  // function was not called
     });
 
-// TODO test start: more funcitonality (see process)
-// TODO test stop
-    // TODO test adding/removing/resetting after start and after stop
+    test('calling stop sets isPaused to true', () => {
+        const q = TestUploadQueue();
+        q.start();
+        expect(q.isPaused).toBe(false);
+        q.stop();
+        expect(q.isPaused).toBe(true);
+    });
+
+
+// TODO test what happens in _process
+// TODO test adding/removing/resetting after start and after stop
+// TODO maybe test start when queue is not in sequenctial order
     
+
+
+
     describe('adding files', () => {
-        test('adding non-duplicate files increases the queue size by the number of files', () => {
+        test('adding files increases the queue size by the number of files', () => {
             const q = TestUploadQueue();
             expect(q.size).toEqual(0);
             q.add([new StubFile('a'), new StubFile('b')])
@@ -121,14 +143,22 @@ describe('UploadQueue', () => {
             expect(q.size).toEqual(3);
         });
         
+        test.only('adding files increases the next index by the number of files', () => {
+            const q = TestUploadQueue();
+            expect(q.nextIndex).toEqual(0);
+        //    q.add([new StubFile('a'), new StubFile('b')])
+        //    expect(q.nextIndex).toEqual(2);
+        });
+    
         test('duplicate files are not added to the queue', () => {
             const q = TestUploadQueue();
             const file1 = new StubFile('a', 1)
             const file2 = new StubFile('a', 1)
-            q.add([file1, file2]);  // file2 is a duplicate of file1, so only file1 will be added.
-            expect(q.size).toEqual(1);
+            q.add([file1, file2]);  // file2 is a duplicate of file1, so only 1 file is added
+            expect(q.size).toEqual(1);  // queue size incremented by 1
+            expect(q.nextIndex).toEqual(1);  // next index value incremented by 1
         });
-    
+
         test('adding a file calls opts.announce with correct arguments', () => {
             const mockAnnounce = jest.fn();
             const q = TestUploadQueue({announce: mockAnnounce});
@@ -136,7 +166,7 @@ describe('UploadQueue', () => {
             expect(mockAnnounce.mock.calls.length).toBe(0);
             q.add([file]);
             expect(mockAnnounce.mock.calls.length).toBe(1);  // called once
-            expect(mockAnnounce.mock.calls[0][0]).toBe(0);  // first arg is key=0
+            expect(mockAnnounce.mock.calls[0][0]).toBe(0);  // first arg is index=0
             expect(mockAnnounce.mock.calls[0][1]).toBe(file);  // second arg is file
         });
     });
@@ -150,21 +180,21 @@ describe('UploadQueue', () => {
             expect(q.size).toEqual(1);
         });
         
-        test('removing a file by key out of sequence is allowed', () => {
+        test('removing a file by index out of sequence is allowed', () => {
             const q = TestUploadQueue();
             const file1 = new StubFile('a',)
             const file2 = new StubFile('b',)
             const file3 = new StubFile('c',)
             q.add([file1, file2, file3]);
             expect(q.size).toEqual(3);
-            q.remove(1);  // remove file2 (which has key=1)
+            q.remove(1);  // remove file2 (which has index=1)
             expect(q.size).toEqual(2);
             expect(q.queue.get(0)).toBe(file1);
             expect(q.queue.get(1)).toBeUndefined();
             expect(q.queue.get(2)).toBe(file3);
         });
         
-        test('removing a file without providing a key, obeys FIFO protocol', () => {
+        test('removing a file without providing an index, obeys FIFO protocol', () => {
             const q = TestUploadQueue();
             const file1 = new StubFile('a',)
             const file2 = new StubFile('b',)
