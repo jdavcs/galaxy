@@ -160,8 +160,7 @@ export function submitUpload(config) {
     };
 })(jQuery);
 
-
-export class UploadQueue {
+export class UploadQueue_old {
     constructor(options) {
         // set options
         this.opts = Object.assign(
@@ -243,7 +242,6 @@ export class UploadQueue {
         return window.File && window.FormData && window.XMLHttpRequest && window.FileList;
     }
 
-
     // add new files to upload queue
     add(files) {
         if (files && files.length && !this.isRunning) {
@@ -303,7 +301,6 @@ export class UploadQueue {
             },
         });
     }
-
 
     _nextIndex() {
         var index = -1;
