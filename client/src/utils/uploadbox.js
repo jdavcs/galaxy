@@ -254,9 +254,8 @@ export class UploadQueue {
     }
 
     // Remove file from queue
-    remove(index=0) {
-        // If called with no argument, removes first item from queue;
-        // otherwise, removes the item identified by index.
+    remove(index) {
+        // Removes the item identified by index.
         // Returns true if an item was removed, and false otherwise.
         return this.queue.delete(index);
     }
@@ -268,8 +267,7 @@ export class UploadQueue {
     _firstItemIndex() {
         // Return index to first item in queue (in FIFO order).
         // If queue is empty, return undefined.
-        const next = this.queue.values().next()
-        return this.queue.values().next().value;
+        return this.queue.keys().next().value;
     }
 
     // Process an upload, recursive
@@ -307,5 +305,168 @@ export class UploadQueue {
                 this.opts.progress(index, percentage);
             },
         });
+    }
+}
+
+
+
+
+
+
+export class UploadQueue_old {
+    constructor(options) {
+        // set options
+        this.opts = Object.assign(
+            {
+                dragover: () => {},
+                dragleave: () => {},
+                announce: (d) => {},
+                initialize: (d) => {},
+                progress: (d, m) => {},
+                success: (d, m) => {},
+                warning: (d, m) => {},
+                error: (d, m) => {
+                    alert(m);
+                },
+                complete: () => {},
+                multiple: true,
+            },
+            options
+        );
+
+        // file queue
+        this.queue = {};
+
+        // queue index/length counter
+        this.queue_index = 0;
+        this.size = 0;
+
+        // indicates if queue is currently running
+        this.isRunning = false;
+        this.isPaused = false;
+
+        // element
+        this.uploadinput = options.$uploadBox.uploadinput({
+            multiple: this.opts.multiple,
+            onchange: (files) => {
+                _.each(files, (file) => {
+                    file.chunk_mode = true;
+                });
+                this.add(files);
+            },
+            ondragover: options.ondragover,
+            ondragleave: options.ondragleave,
+        });
+    }
+
+    // open file browser for selection
+    select() {
+        this.uploadinput.dialog();
+    }
+
+    // remove all entries from queue
+    reset() {
+        for (const index in this.queue) {
+            this.remove(index);
+        }
+    }
+
+    // initiate upload process
+    start() {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this._process();
+        }
+    }
+
+    // stop upload process
+    stop() {
+        this.isPaused = true;
+    }
+
+    // set options
+    configure(options) {
+        this.opts = Object.assign(this.opts, options);
+        return this.opts;
+    }
+
+    // verify browser compatibility
+    compatible() {
+        return window.File && window.FormData && window.XMLHttpRequest && window.FileList;
+    }
+
+
+    // add new files to upload queue
+    add(files) {
+        if (files && files.length && !this.isRunning) {
+            files.forEach((file) => {
+                if (_.filter(this.queue, (f) => f.name === file.name && f.size === file.size).length == 0) {
+                    const index = String(this.queue_index++);
+                    this.queue[index] = file;
+                    this.opts.announce(index, this.queue[index]);
+                    this.size++;
+                }
+            });
+        }
+    }
+
+    // remove file from queue
+    remove(index) {
+        if (this.queue[index]) {
+            delete this.queue[index];
+            this.size--;
+        }
+    }
+
+    // process an upload, recursive
+    _process() {
+        // validate
+        if (this.size == 0 || this.isPaused) {
+            this.isPaused = false;
+            this.isRunning = false;
+            this.opts.complete();
+            return;
+        } else {
+            this.isRunning = true;
+        }
+
+        const index = this._nextIndex();
+
+        // remove from queue
+        this.remove(index);
+
+        // create and submit data
+        submitUpload({
+            url: this.opts.url,
+            data: this.opts.initialize(index),
+            success: (message) => {
+                this.opts.success(index, message);
+                this._process();
+            },
+            warning: (message) => {
+                this.opts.warning(index, message);
+            },
+            error: (message) => {
+                this.opts.error(index, message);
+                this._process();
+            },
+            progress: (percentage) => {
+                this.opts.progress(index, percentage);
+            },
+        });
+    }
+
+
+    _nextIndex() {
+        var index = -1;
+        for (const key in this.queue) {
+            index = key;
+            break;
+        }
+        return index;
+    }
+
+    get nextIndex() {
+        return this.queue_index;
     }
 }

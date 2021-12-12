@@ -125,7 +125,6 @@ describe('UploadQueue', () => {
         expect(q.isPaused).toBe(true);
     });
 
-
 // TODO test what happens in _process
 // TODO test adding/removing/resetting after start and after stop
 // TODO maybe test start when queue is not in sequenctial order
@@ -176,7 +175,7 @@ describe('UploadQueue', () => {
             const q = TestUploadQueue();
             q.add([new StubFile('a'), new StubFile('b')])
             expect(q.size).toEqual(2);
-            q.remove();
+            q.remove(0);
             expect(q.size).toEqual(1);
         });
         
@@ -193,19 +192,17 @@ describe('UploadQueue', () => {
             expect(q.queue.get(1)).toBeUndefined();
             expect(q.queue.get(2)).toBe(file3);
         });
-        
-        test('removing a file without providing an index, obeys FIFO protocol', () => {
+
+        test('removing a file via _firstItemIndex, obeys FIFO protocol', () => {
             const q = TestUploadQueue();
-            const file1 = new StubFile('a',)
-            const file2 = new StubFile('b',)
-            q.add([file1]);  // file1 added first
-            q.add([file2]);
-            expect(q.size).toEqual(2);
-            q.remove();
-            expect(q.size).toEqual(1);
-            expect(q.queue.get(0)).toBeUndefined();  // first in - first out.
-            expect(q.queue.get(1)).toBe(file2);
+            q.add([new StubFile('a'), new StubFile('b')])
+            let nextIndex = q._firstItemIndex()
+            expect(nextIndex).toEqual(0);
+            q.remove(nextIndex);
+            nextIndex = q._firstItemIndex()
+            expect(nextIndex).toEqual(1);
+            q.remove(nextIndex);
+            expect(q._firstItemIndex()).toBeUndefined();
         });
     });
-    
 });
