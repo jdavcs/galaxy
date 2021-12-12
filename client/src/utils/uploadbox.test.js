@@ -1,5 +1,5 @@
-//import { UploadQueue } from "./uploadbox";
-import { UploadQueue } from "./uploadbox_backup";
+import { UploadQueue } from "./uploadbox";
+//import { UploadQueue } from "./uploadbox_backup";
 
 describe('UploadQueue', () => {
 
@@ -143,11 +143,11 @@ describe('UploadQueue', () => {
             expect(q.size).toEqual(3);
         });
         
-        test.only('adding files increases the next index by the number of files', () => {
+        test('adding files increases the next index by the number of files', () => {
             const q = TestUploadQueue();
             expect(q.nextIndex).toEqual(0);
-        //    q.add([new StubFile('a'), new StubFile('b')])
-        //    expect(q.nextIndex).toEqual(2);
+            q.add([new StubFile('a'), new StubFile('b')])
+            expect(q.nextIndex).toEqual(2);
         });
     
         test('duplicate files are not added to the queue', () => {

@@ -313,4 +313,8 @@ export class UploadQueue {
         }
         return index;
     }
+
+    get nextIndex() {
+        return this.queue_index;
+    }
 }
