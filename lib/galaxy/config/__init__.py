@@ -1399,14 +1399,8 @@ class ConfiguresGalaxyMixin:
             dbv = DatabaseVerifier(engine, install_engine, self.config)
             dbv.verify()
 
-        self.model = mapping.configure_model_mapping(
-            self.config.file_path,
-            self.object_store,
-            self.config.use_pbkdf2,
-            engine,
-            combined_install_database,
-            self.config.thread_local_log,
-        )
+        self.model = self._this_should_be_inlined(engine, combined_install_database)
+
         if combined_install_database:
             log.info("Install database targeting Galaxy's database configuration.")  # TODO this message is ambiguous
             self.install_model = self.model
