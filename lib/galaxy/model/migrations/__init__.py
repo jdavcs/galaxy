@@ -11,7 +11,7 @@ from galaxy.model.database_utils import create_database, database_exists
 from galaxy.model.mapping import create_additional_database_objects
 from galaxy.model.tool_shed_install import Base as tsi_base
 
-# These identifiers are used throughout the migrations system to distinquish
+# These identifiers are used throughout the migrations system to distinguish
 # between the two models; they refer to version directories, branch labels, etc.
 # (if you rename these, you need to rename branch labels in alembic version directories)
 GXY = 'gxy'  # galaxy model identifier
@@ -52,7 +52,9 @@ class AlembicManager:
         _alembic_file = os.path.join(alembic_root, 'alembic.ini')
         config = Config(_alembic_file)
         url = str(self.engine.url)
-        config.set_main_option('sqlalchemy.url', url)
+        # TODO or maybe config.attributes['url'] = url ??
+        #config.set_main_option('sqlalchemy.url', url)
+        config.attributes['sqlalchemy.url'] = url
         if config_dict:
             for key, value in config_dict.items():
                 config.set_main_option(key, value)
@@ -76,6 +78,16 @@ class AlembicManager:
             context = migration.MigrationContext.configure(conn)
             db_version_heads = context.get_current_heads()
             return set(revision) <= set(db_version_heads)
+
+
+
+    def get_current_revision_for_model(self, model):
+        return None
+
+    def current_version(self, model):
+        return command.current(self.alembic_cfg, f'{model}@head')  # TODO will this work?
+
+
 
     def is_up_to_date(self, model):
         """
@@ -161,32 +173,48 @@ class DatabaseVerifier:
         return db
 
     def verify(self):
-        # 1. Check if database exists; if not, create new database.
-        is_gxy_new, is_tsi_new = self._handle_no_databases()
+        """
+        Check that the database is up-to-date, creating it if it does not exit,
+        and loading dababase objects if it is empty (this is the only time we
+        automatically create database objects; otherwise we force the user to do it using
+        the management script so they can create backups).
 
-        # 2. Now we can load database state.
+        If the database is not up-to-date and the `database_auto_migrate` configuration
+        option is set, Galaxy will attempt to upgrade automatically. If the
+        `database_auto_migrate` option is not set or the database cannot be upgraded
+        automatically, Galaxy will fail with an informative message, and the user will
+        need to run "sh manage_db.sh upgrade".
+
+        For different scenarios (initial database(s) state >> expected behavior), see comments in
+        test/unit/data/model/migrations/test_migrations.py (TestNoDatabaseState, TestDatabaseState[0-6]).
+        """
+        # Step 1: check if database exists; if not, create new database.
+        is_gxy_new, is_tsi_new = self._handle_no_databases()  # TODO return values not used!!!!!!
+
+        # Step 2: load database state.
         self.db_state = self._load_database_state()
 
-        # 3. If database is empty, initialize it, upgrade to current, and mark as done.
+        # Step 3: if database is empty, initialize it, upgrade to latest revision, and mark as done.
         gxy_done, tsi_done = self._handle_empty_databases()
 
-        # 4: Handle nonempty databases that were not initialized in the previous step.
+        # Step 4: handle nonempty databases that were not initialized in the previous step.
         if not gxy_done:
             self._handle_nonempty_database(GXY)
         if not tsi_done:
-            if self.is_combined:  # If same database, Alembic has been initialized in the previous step.
+            if self.is_combined:  
+                # If it's the same database, Alembic has been initialized in the previous step,
+                # so we can skip all pre-Alembic checks.
                 self._handle_with_alembic(TSI)
             else:
                 self._handle_nonempty_database(TSI)
 
     def _handle_no_databases(self):
-        # If galaxy-model database doesn't exist: create it and set is_gxy_new.
-        # If database not combined and install-model database doesn't exist: create it and set is_tsi_new.
-        # Return "is new" status for both databases
+        # If galaxy-model database doesn't exist: create it and set is_gxy_new (mark galaxy database as new)
+        # If database not combined and install-model database doesn't exist: create it and set is_tsi_new
+        # (mark install database as new).
         gxy_url = str(self.gxy_engine.url)
         tsi_url = str(self.tsi_engine.url)
         is_gxy_new = is_tsi_new = False
-
         if not database_exists(gxy_url):
             template = self.app_config.database_template if self.app_config else None
             encoding = self.app_config.database_encoding if self.app_config else None
@@ -198,7 +226,7 @@ class DatabaseVerifier:
         return is_gxy_new, is_tsi_new
 
     def _handle_empty_databases(self):
-        # For each database: True if it has been initialized.
+        # For each database: mark as done if it has been initialized.
         gxy_done = tsi_done = False
         if self.is_combined:
             if self._is_database_empty(GXY):
@@ -215,10 +243,12 @@ class DatabaseVerifier:
         return gxy_done, tsi_done
 
     def _handle_nonempty_database(self, model):
+        # Handle all possible scenarios for a nonempty database.
         if self._has_alembic(model):
             self._handle_with_alembic(model)
         elif self._has_sqlalchemymigrate(model):
             if self._is_last_sqlalchemymigrate_version(model):
+                # No need to check the version: we know this database is outdated.
                 self._handle_with_alembic(model, skip_version_check=True)
             else:
                 self._handle_version_too_old(model)
@@ -235,11 +265,13 @@ class DatabaseVerifier:
         return self.db_state[model].is_last_sqlalchemymigrate_version()
 
     def _handle_with_alembic(self, model, skip_version_check=False):
+        # Handle cases when db is under alembic version control, or can be safely placed under it.
         engine = self.gxy_engine if model == GXY else self.tsi_engine
         am = get_alembic_manager(engine)
-        # first check if this model is up to date
+        # Check if this model is up to date.
         if not skip_version_check and am.is_up_to_date(model):
-            # TODO: log message: db is up-to-date
+            version = am.current_version(model) # TODO get current version!!!!
+            log.info(f'At database version {version}')
             return
         # is outdated: try to upgrade
         if not self._is_automigrate_set():

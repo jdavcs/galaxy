@@ -1,5 +1,5 @@
 from alembic import context
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, create_engine
 from sqlalchemy import pool
 
 # this is the Alembic Config object, which provides
@@ -30,7 +30,11 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    print('i am invoked offline')
+    url = config.attributes.get('sqlalchemy.url', None)
+    #url = config.get_main_option("sqlalchemy.url")
+    # TODO: get the correct url based on galaxy's configuration
+    # TODO how do i get the branch label?
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -49,11 +53,19 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    print('i am invoked online')
+    breakpoint()
+    # TODO: get the correct url based on galaxy's configuration
+    url = config.attributes.get('sqlalchemy.url', None)
+
+# TODO but this bypasses alembic.ini
+    connectable = create_engine(url)
+
+    #connectable = engine_from_config(
+    #    config.get_section(config.config_ini_section),
+    #    prefix="sqlalchemy.",
+    #    poolclass=pool.NullPool,
+    #)
 
     with connectable.connect() as connection:
         context.configure(
