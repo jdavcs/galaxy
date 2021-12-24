@@ -123,6 +123,20 @@ class TestAlembicManager:
                 assert am.is_up_to_date(GXY)  # True
                 assert not am.is_up_to_date(TSI)  # False: only one is up-to-date
 
+    def test_is_under_version_control(self, url_factory):
+        db_url = url_factory()
+        with create_and_drop_database(db_url):
+            with disposing_engine(db_url) as engine:
+                am = AlembicManagerForTests(engine)
+                assert not am.is_under_version_control(GXY)
+                assert not am.is_under_version_control(TSI)
+                am.stamp_revision(GXY_REVISION_0)
+                assert am.is_under_version_control(GXY)
+                assert not am.is_under_version_control(TSI)
+                am.stamp_revision(TSI_REVISION_0)
+                assert am.is_under_version_control(GXY)
+                assert am.is_under_version_control(TSI)
+
 
 class TestDatabaseStateCache:
 
@@ -289,7 +303,19 @@ class TestDatabaseFixtures:
                 db = DatabaseStateCache(engine)
                 assert not db.has_sqlalchemymigrate_version_table()
                 assert db.has_alembic_version_table()
-                assert AlembicManagerForTests.is_at_revision(engine, revision)
+
+
+    class TestState6GxyState3TsiNoSam:
+
+        def test_database_combined(self, db_state6_gxy_state3_tsi_no_sam, metadata_state6_gxy_state3_tsi_no_sam):
+            db_url = db_state6_gxy_state3_tsi_no_sam
+            metadata = metadata_state6_gxy_state3_tsi_no_sam
+            assert is_metadata_loaded(db_url, metadata)
+            with disposing_engine(db_url) as engine:
+                db = DatabaseStateCache(engine)
+                assert not db.has_sqlalchemymigrate_version_table()
+                assert db.has_alembic_version_table()
+                assert AlembicManagerForTests.is_at_revision(engine, GXY_REVISION_2)
 
 
 class TestDatabaseStates:
@@ -352,250 +378,248 @@ class TestDatabaseStates:
                     assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
     
     
-#    class TestState1:
-#        """
-#        Initial state: non-empty database, no version table.
-#        Expect: fail with appropriate message.
-#        """
-#        def test_combined_database(self, db_state1_combined):
-#            with pytest.raises(NoVersionTableError):
-#                with disposing_engine(db_state1_combined) as engine:
-#                    db = DatabaseVerifier(engine)
-#                    db.verify()
-#    
-#        def test_separate_databases_gxy_raises_error(self, db_state1_gxy, db_state6_tsi):
-#            with pytest.raises(NoVersionTableError):
-#                with disposing_engine(db_state1_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#        def test_separate_databases_tsi_raises_error(self, db_state6_gxy, db_state1_tsi):
-#            with pytest.raises(NoVersionTableError):
-#                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state1_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#    
-#    class TestState2:
-#        """
-#        Initial state: non-empty database, SQLAlchemy Migrate version table present; however,
-#        the stored version is not the latest after which we could transition to Alembic.
-#        Expect: fail with appropriate message.
-#        """
-#        def test_combined_database(self, db_state2_combined):
-#            with pytest.raises(VersionTooOldError):
-#                with disposing_engine(db_state2_combined) as engine:
-#                    db = DatabaseVerifier(engine)
-#                    db.verify()
-#    
-#        def test_separate_databases_gxy_raises_error(self, db_state2_gxy, db_state6_tsi):
-#            with pytest.raises(VersionTooOldError):
-#                with disposing_engine(db_state2_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#        def test_separate_databases_tsi_raises_error(self, db_state6_gxy, db_state2_tsi):
-#            with pytest.raises(VersionTooOldError):
-#                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state2_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#    
-#    class TestState3:
-#        """
-#        Initial state: non-empty database, SQLAlchemy Migrate version table contains latest version
-#        under SQLAlchemy Migrate.
-#        Expect:
-#        a) auto-migrate enabled: alembic version table added, database upgraded to current version.
-#        b) auto-migrate disabled: fail with appropriate message.
-#        """
-#        def test_combined_database_automigrate(
-#            self,
-#            db_state3_combined,
-#            metadata_state6_combined,
-#            set_automigrate,
-#        ):
-#            db_url = db_state3_combined
-#            with disposing_engine(db_state3_combined) as engine:
-#                db = DatabaseVerifier(engine)
-#                db.verify()
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
-#    
-#        def test_separate_databases_automigrate(
-#            self,
-#            db_state3_gxy,
-#            db_state3_tsi,
-#            metadata_state6_gxy,
-#            metadata_state6_tsi,
-#            set_automigrate,
-#        ):
-#            db1_url, db2_url = db_state3_gxy, db_state3_tsi
-#            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-#                db = DatabaseVerifier(engine1, engine2)
-#                db.verify()
-#                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-#                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
-#    
-#        def test_combined_database_no_automigrate(self, db_state3_combined):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state3_combined) as engine:
-#                    db = DatabaseVerifier(engine)
-#                    db.verify()
-#    
-#        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state3_gxy, db_state6_tsi):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state3_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state3_tsi):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state3_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#    
-#    class TestState4:
-#        """
-#        Initial state: non-empty database, SQLAlchemy Migrate version table present, Alembic version table present.
-#        Oldest Alembic revision.
-#        Expect:
-#        a) auto-migrate enabled: database upgraded to current version.
-#        b) auto-migrate disabled: fail with appropriate message.
-#        """
-#        def test_combined_database_automigrate(
-#            self,
-#            db_state4_combined,
-#            metadata_state6_combined,
-#            set_automigrate,
-#        ):
-#            db_url = db_state4_combined
-#            with disposing_engine(db_url) as engine:
-#                db = DatabaseVerifier(engine)
-#                db.verify()
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
-#    
-#        def test_separate_databases_automigrate(
-#            self,
-#            db_state4_gxy,
-#            db_state4_tsi,
-#            metadata_state6_gxy,
-#            metadata_state6_tsi,
-#            set_automigrate,
-#        ):
-#            db1_url, db2_url = db_state4_gxy, db_state4_tsi
-#            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-#                db = DatabaseVerifier(engine1, engine2)
-#                db.verify()
-#                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-#                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
-#    
-#        def test_combined_database_no_automigrate(self, db_state4_combined):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state4_combined) as engine:
-#                    db = DatabaseVerifier(engine)
-#                    db.verify()
-#    
-#        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state4_gxy, db_state6_tsi):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state4_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state4_tsi):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state4_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#    
-#    class TestState5:
-#        """
-#        Initial state: non-empty database, Alembic version table present.
-#        Oldest Alembic revision that does not include SQLAlchemy Migrate version table.
-#        Expect:
-#        a) auto-migrate enabled: database upgraded to current version.
-#        b) auto-migrate disabled: fail with appropriate message.
-#        """
-#        def test_combined_database_automigrate(
-#            self,
-#            db_state5_combined,
-#            metadata_state6_combined,
-#            set_automigrate
-#        ):
-#            db_url = db_state5_combined
-#            with disposing_engine(db_url) as engine:
-#                db = DatabaseVerifier(engine)
-#                db.verify()
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
-#    
-#        def test_separate_databases_automigrate(
-#            self,
-#            db_state5_gxy,
-#            db_state5_tsi,
-#            metadata_state6_gxy,
-#            metadata_state6_tsi,
-#            set_automigrate
-#        ):
-#            db1_url, db2_url = db_state5_gxy, db_state5_tsi
-#            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-#                db = DatabaseVerifier(engine1, engine2)
-#                db.verify()
-#                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-#                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
-#    
-#        def test_combined_database_no_automigrate(self, db_state5_combined):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state5_combined) as engine:
-#                    db = DatabaseVerifier(engine)
-#                    db.verify()
-#    
-#        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state5_gxy, db_state6_tsi):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state5_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state5_tsi):
-#            with pytest.raises(OutdatedDatabaseError):
-#                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state5_tsi) as engine2:
-#                    db = DatabaseVerifier(engine1, engine2)
-#                    db.verify()
-#    
-#    
-#    class TestState6:
-#        """
-#        Initial state: non-empty database, Alembic version table present, database up-to-date.
-#        Expect: do nothing.
-#        """
-#        def test_combined_database(self, db_state6_combined, metadata_state6_combined):
-#            db_url = db_state6_combined
-#            with disposing_engine(db_url) as engine:
-#                db = DatabaseVerifier(engine)
-#                #breakpoint()
-#                db.verify()
-#                #breakpoint()
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-#                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
-#    
-#        def test_separate_databases(
-#            self,
-#            db_state6_gxy,
-#            db_state6_tsi,
-#            metadata_state6_gxy,
-#            metadata_state6_tsi
-#        ):
-#            db1_url, db2_url = db_state6_gxy, db_state6_tsi
-#            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-#                db = DatabaseVerifier(engine1, engine2)
-#                db.verify()
-#                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-#                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
-#
-#
+    class TestState1:
+        """
+        Initial state: non-empty database, no version table.
+        Expect: fail with appropriate message.
+        """
+        def test_combined_database(self, db_state1_combined):
+            with pytest.raises(NoVersionTableError):
+                with disposing_engine(db_state1_combined) as engine:
+                    db = DatabaseVerifier(engine)
+                    db.verify()
+    
+        def test_separate_databases_gxy_raises_error(self, db_state1_gxy, db_state6_tsi):
+            with pytest.raises(NoVersionTableError):
+                with disposing_engine(db_state1_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+        def test_separate_databases_tsi_raises_error(self, db_state6_gxy, db_state1_tsi):
+            with pytest.raises(NoVersionTableError):
+                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state1_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+    
+    class TestState2:
+        """
+        Initial state: non-empty database, SQLAlchemy Migrate version table present; however,
+        the stored version is not the latest after which we could transition to Alembic.
+        Expect: fail with appropriate message.
+        """
+        def test_combined_database(self, db_state2_combined):
+            with pytest.raises(VersionTooOldError):
+                with disposing_engine(db_state2_combined) as engine:
+                    db = DatabaseVerifier(engine)
+                    db.verify()
+    
+        def test_separate_databases_gxy_raises_error(self, db_state2_gxy, db_state6_tsi):
+            with pytest.raises(VersionTooOldError):
+                with disposing_engine(db_state2_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+        def test_separate_databases_tsi_raises_error(self, db_state6_gxy, db_state2_tsi):
+            with pytest.raises(VersionTooOldError):
+                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state2_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+    
+    class TestState3:
+        """
+        Initial state: non-empty database, SQLAlchemy Migrate version table contains latest version
+        under SQLAlchemy Migrate.
+        Expect:
+        a) auto-migrate enabled: alembic version table added, database upgraded to current version.
+        b) auto-migrate disabled: fail with appropriate message.
+        """
+        def test_combined_database_automigrate(
+            self,
+            db_state3_combined,
+            metadata_state6_combined,
+            set_automigrate,
+        ):
+            db_url = db_state3_combined
+            with disposing_engine(db_state3_combined) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+    
+        def test_separate_databases_automigrate(
+            self,
+            db_state3_gxy,
+            db_state3_tsi,
+            metadata_state6_gxy,
+            metadata_state6_tsi,
+            set_automigrate,
+        ):
+            db1_url, db2_url = db_state3_gxy, db_state3_tsi
+            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                db = DatabaseVerifier(engine1, engine2)
+                db.verify()
+                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+    
+        def test_combined_database_no_automigrate(self, db_state3_combined):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state3_combined) as engine:
+                    db = DatabaseVerifier(engine)
+                    db.verify()
+    
+        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state3_gxy, db_state6_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state3_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state3_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state3_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+    
+    class TestState4:
+        """
+        Initial state: non-empty database, SQLAlchemy Migrate version table present, Alembic version table present.
+        Oldest Alembic revision.
+        Expect:
+        a) auto-migrate enabled: database upgraded to current version.
+        b) auto-migrate disabled: fail with appropriate message.
+        """
+        def test_combined_database_automigrate(
+            self,
+            db_state4_combined,
+            metadata_state6_combined,
+            set_automigrate,
+        ):
+            db_url = db_state4_combined
+            with disposing_engine(db_url) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+    
+        def test_separate_databases_automigrate(
+            self,
+            db_state4_gxy,
+            db_state4_tsi,
+            metadata_state6_gxy,
+            metadata_state6_tsi,
+            set_automigrate,
+        ):
+            db1_url, db2_url = db_state4_gxy, db_state4_tsi
+            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                db = DatabaseVerifier(engine1, engine2)
+                db.verify()
+                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+    
+        def test_combined_database_no_automigrate(self, db_state4_combined):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state4_combined) as engine:
+                    db = DatabaseVerifier(engine)
+                    db.verify()
+    
+        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state4_gxy, db_state6_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state4_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state4_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state4_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+    
+    class TestState5:
+        """
+        Initial state: non-empty database, Alembic version table present.
+        Oldest Alembic revision that does not include SQLAlchemy Migrate version table.
+        Expect:
+        a) auto-migrate enabled: database upgraded to current version.
+        b) auto-migrate disabled: fail with appropriate message.
+        """
+        def test_combined_database_automigrate(
+            self,
+            db_state5_combined,
+            metadata_state6_combined,
+            set_automigrate
+        ):
+            db_url = db_state5_combined
+            with disposing_engine(db_url) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+    
+        def test_separate_databases_automigrate(
+            self,
+            db_state5_gxy,
+            db_state5_tsi,
+            metadata_state6_gxy,
+            metadata_state6_tsi,
+            set_automigrate
+        ):
+            db1_url, db2_url = db_state5_gxy, db_state5_tsi
+            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                db = DatabaseVerifier(engine1, engine2)
+                db.verify()
+                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+    
+        def test_combined_database_no_automigrate(self, db_state5_combined):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state5_combined) as engine:
+                    db = DatabaseVerifier(engine)
+                    db.verify()
+    
+        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state5_gxy, db_state6_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state5_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state5_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state5_tsi) as engine2:
+                    db = DatabaseVerifier(engine1, engine2)
+                    db.verify()
+    
+    
+    class TestState6:
+        """
+        Initial state: non-empty database, Alembic version table present, database up-to-date.
+        Expect: do nothing.
+        """
+        def test_combined_database(self, db_state6_combined, metadata_state6_combined):
+            db_url = db_state6_combined
+            with disposing_engine(db_url) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+    
+        def test_separate_databases(
+            self,
+            db_state6_gxy,
+            db_state6_tsi,
+            metadata_state6_gxy,
+            metadata_state6_tsi
+        ):
+            db1_url, db2_url = db_state6_gxy, db_state6_tsi
+            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                db = DatabaseVerifier(engine1, engine2)
+                db.verify()
+                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+
+
     class TestPartiallyUpgradedCombinedDatabase:
         """
         This only applies to an EXISTING, NONEMPTY database, that is COMBINED (both GXY and TSI models 
@@ -604,64 +628,74 @@ class TestDatabaseStates:
         This may happen for a variety of reasons:
         - a database is being upgraded to Alembic: the GXY model is processed first,
           so GXY will become up-to-date before TSI;
-        - a database is changed to "combined" (via setting install_database_connection: so TSI will be nonexistant.
+        - a database is changed to "combined" (via setting install_database_connection): so TSI has not
+          been initialized in this database.
         - a glitch in the Matrix, an act of god, etc.
-        These tests verify the system's handling of such cases for a variery of TSI states. 
+        These tests verify the system's handling of such cases for 2 TSI states:
+        - Database has no TSI tables: assume new TSI install.
+        - Database has some TSI tables: assume TSI is at last pre-alembic state and can be migrated.
+        (We expect a severly outdated TSI model to have been upgraded manually together with the GXY model;
+        for there is no reasonable way to determine its state automatically without a version table.)
    
         Initial state for all tests:
         - combined database
         - GXY model: up-to-date 
         - TSI model: not in Alembic version table
         """
-#        def test_case1_automigrate(self, db_state6_gxy, metadata_state6_combined, set_automigrate):
-#            """
-#            Initial state:
-#            - no TSI tables exist
-#            - auto-migrate enabled
-#            Expect: database is up-to-date
-#            """
-#            db_url = db_state6_gxy
-#            with disposing_engine(db_url) as engine:
-#                db = DatabaseVerifier(engine)
-#                #breakpoint()
-#                #db.verify()
-#                #breakpoint()
-#                #assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-#                #assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
-#            # TODO
-#
-#            # TODO same with no automigrate
-#
-#        def test_case2(self, db_state6_combined, metadata_state6_combined):
-#            """
-#            TSI model: at least one TSI table exists; no SQLAlchemy Migrate table.
-#            Expect: fail with appropriate message.
-#            """
-#            # TODO
-#
-#        def test_case3(self, db_state6_combined, metadata_state6_combined):
-#            """
-#            TSI model: at least one TSI table exists; SQLAlchemy Migrate table
-#            does not contain latest version of TSI model.
-#            Expect: fail with appropriate message.
-#            """
-#            # TODO
-#
-#        def test_case4(self, db_state6_combined, metadata_state6_combined):
-#            """
-#            TSI model: all TSI tables exist; SQLAlchemy Migrate table contains latest version of TSI model;
-#            auto-migrate enabled.
-#            Expect: TSI model added to alembic version table, upgraded to current version.
-#            """
-#            # TODO
-#
-#        def test_case5(self, db_state6_combined, metadata_state6_combined):
-#            """
-#            TSI model: all TSI tables exist; SQLAlchemy Migrate table contains latest version of TSI model;
-#            auto-migrate not enabled.
-#            Expect: fail with appropriate message.
-#            """
-#            # TODO
+        def test_case1_automigrate(self, db_state6_gxy, metadata_state6_combined, set_automigrate):
+            """
+            Initial state:
+            - no TSI tables exist
+            - auto-migrate enabled
+            Expect: database is up-to-date
+            """
+            db_url = db_state6_gxy
+            with disposing_engine(db_url) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        def test_case1_no_automigrate(self, db_state6_gxy, metadata_state6_combined):
+            """
+            Initial state:
+            - no TSI tables exist
+            - auto-migrate not enabled
+            Expect: database is up-to-date (same as auto-migrate enabled)
+            """
+            db_url = db_state6_gxy
+            with disposing_engine(db_url) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        def test_case2_automigrate(self, db_state6_gxy_state3_tsi_no_sam, metadata_state6_combined, set_automigrate):
+            """
+            Initial state:
+            - all pre-alembic TSI tables exist
+            - auto-migrate enabled
+            Expect: database is up-to-date
+            """
+            db_url = db_state6_gxy_state3_tsi_no_sam
+            with disposing_engine(db_url) as engine:
+                db = DatabaseVerifier(engine)
+                db.verify()
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        def test_case2_automigrate(self, db_state6_gxy_state3_tsi_no_sam):
+            """
+            Initial state:
+            - all pre-alembic TSI tables exist
+            - auto-migrate not enabled
+            Expect: fail with appropriate message
+            """
+            db_url = db_state6_gxy_state3_tsi_no_sam
+            with pytest.raises(OutdatedDatabaseError):
+                with disposing_engine(db_url) as engine:
+                    db = DatabaseVerifier(engine)
+                    db.verify()
 
 
 # Test helpers + their tests, misc. fixtures
@@ -679,7 +713,7 @@ def set_automigrate(monkeypatch):
 @pytest.fixture(autouse=True)  # always override AlembicManager
 def set_alembic_manager(monkeypatch):
     monkeypatch.setattr(
-        migrations, 'get_alembic_manager', lambda engine, model: AlembicManagerForTests(engine))
+        migrations, 'get_alembic_manager', lambda engine: AlembicManagerForTests(engine))
 
 
 @pytest.fixture(autouse=True)  # always override gxy_metadata
@@ -1057,4 +1091,17 @@ def _setup_db_state6(db_url, metadata, model=None):
             am = AlembicManagerForTests(engine)
             am.stamp_revision(revisions)
 
+            yield db_url
+
+
+# state 6+3
+@pytest.fixture
+def db_state6_gxy_state3_tsi_no_sam(url_factory, metadata_state6_gxy_state3_tsi_no_sam):  # noqa F811
+    db_url = url_factory()
+    metadata = metadata_state6_gxy_state3_tsi_no_sam
+    with create_and_drop_database(db_url):
+        with disposing_engine(db_url) as engine:
+            load_metadata(metadata, engine)
+            am = AlembicManagerForTests(engine)
+            am.stamp_revision(GXY_REVISION_2)
             yield db_url
