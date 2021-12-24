@@ -41,7 +41,7 @@ class OutdatedDatabaseError(Exception):
 
 class AlembicManager:
     """
-    Alembic operations on one database and one model.
+    Alembic operations on one database.
     """
     @staticmethod
     def is_at_revision(engine, revision):
@@ -54,9 +54,8 @@ class AlembicManager:
             db_version_heads = context.get_current_heads()
             return set(revision) <= set(db_version_heads)
 
-    def __init__(self, engine, model, config_dict=None):
+    def __init__(self, engine, config_dict=None):
         self.engine = engine
-        self.model = model
         self.alembic_cfg = self._load_config(config_dict)
         self.script_directory = script.ScriptDirectory.from_config(self.alembic_cfg)
 
@@ -66,24 +65,28 @@ class AlembicManager:
         config = Config(_alembic_file)
         url = get_url_string(self.engine)
         config.set_main_option('sqlalchemy.url', url)  # TODO this is only needed if env.py accesses it this way
-        if config_dict:  # TODO when do we use this?
+        if config_dict:
             for key, value in config_dict.items():
                 config.set_main_option(key, value)
         return config
 
-    def stamp(self, revisions=None):  # TODO: ugly, for tests
+    def stamp_model_head(self, model):
         """Partial proxy to alembic's stamp command."""
-        revision = revisions or f'{self.model}@head'
+        command.stamp(self.alembic_cfg, f'{model}@head')
+
+    def stamp_revision(self, revision):
+        """Partial proxy to alembic's stamp command."""
         command.stamp(self.alembic_cfg, revision)
 
-    def upgrade(self):
+    def upgrade(self, model):
         """Partial proxy to alembic's upgrade command."""
         # This works with or without an existing alembic version table.
-        command.upgrade(self.alembic_cfg, f'{self.model}@head')
+        command.upgrade(self.alembic_cfg, f'{model}@head')
 
-    def is_model_under_version_control(self):  # TODO this needs test(s)
+# TODO this method should use a model! So it's wrong!
+    def is_model_under_version_control(self, model):  # TODO this needs test(s)
         # true if the version table exists and contains a head that represents the model
-        with self.engine.connect() as conn:
+        with self.engine.connect() as conn: 
             context = migration.MigrationContext.configure(conn)
             db_heads = context.get_current_heads()
             if db_heads:
@@ -94,7 +97,7 @@ class AlembicManager:
 
 
 
-    def is_up_to_date(self):
+    def is_up_to_date(self, model):
         """
         True if the `model` version head stored in the database is in the heads
         stored in the script directory. Neither can be empty because the
@@ -115,7 +118,7 @@ class AlembicManager:
             # this should return False.
             for head in db_version_heads:
                 revision = self.script_directory.get_revision(head)
-                if self.model in revision.branch_labels and head in version_heads:
+                if model in revision.branch_labels and head in version_heads:
                     return True
             return False
 
@@ -247,6 +250,8 @@ def verify_databases(engine, install_engine=None, app_config=None):
     tsi_dsv = DatabaseStateVerifier(install_engine, TSI, app_config, is_new_database)
     tsi_dsv.run()
 
+    # and only now run alembic upgrade if needed TODO
+
 
 class DatabaseStateVerifier:
 
@@ -294,12 +299,14 @@ class DatabaseStateVerifier:
         return False
 
     def _handle_nonempty_database(self):
+        #breakpoint()
         if self._has_alembic_version_table():
             am = self.alembic_manager
             if am.is_model_under_version_control():
                 self._handle_with_alembic()
             else:
                 raise # TODO not sure what to do here
+            #maybe this is when we switch to combined after having 2 dbs under alembic. test this.kkk
                 #self._initialize_database()  # non-empty db, but model is not under alembic?????  NO.
         elif self._has_sqlalchemymigrate_version_table():
             if self._is_last_sqlalchemymigrate_version():
@@ -365,8 +372,7 @@ class DatabaseStateVerifier:
         self.is_new_database = True
 
     def _init_alembic_for_model(self):
-        self.alembic_manager.stamp()
-        #self.alembic_manager.stamp(f'{self.model}@head')  # TODO: call w/o args: move this logic to alembicmanager
+        self.alembic_manager.stamp_model_head(self.model)
 
     def _create_additional_database_objects(self):
         create_additional_database_objects(self.engine)
