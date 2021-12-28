@@ -63,7 +63,7 @@ class AlembicManager:
         _alembic_file = os.path.join(alembic_root, 'alembic.ini')  # TODO can we make this more flexible so we can call it from multiple locations?
         config = Config(_alembic_file)
         url = get_url_string(self.engine)
-        config.set_main_option('sqlalchemy.url', url)  # TODO this is only needed if env.py accesses it this way
+        config.set_main_option('sqlalchemy.url', url)
         if config_dict:
             for key, value in config_dict.items():
                 config.set_main_option(key, value)

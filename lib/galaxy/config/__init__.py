@@ -630,6 +630,7 @@ class GalaxyAppConfiguration(BaseAppConfiguration, CommonConfigurationMixin):
         elif not os.path.exists(config_schema_path):
             # Not a package, but cwd is not galaxy_root
             config_schema_path = os.path.join(self.root, GALAXY_CONFIG_SCHEMA_PATH)
+            breakpoint()
         return AppSchema(config_schema_path, GALAXY_APP_NAME)
 
     def _override_tempdir(self, kwargs):
