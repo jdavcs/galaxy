@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 
 def invoke_alembic():
-    _add_db_urls_to_command_arguments()
+    #    _add_db_urls_to_command_arguments()
 
     # Accept 'heads' as the target revision argument to enable upgrading both gxy and tsi in one command.
     # This is consistent with Alembic's CLI, which allows `upgrade heads`. However, this would not work for
