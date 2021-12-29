@@ -24,14 +24,42 @@ target_metadata = None  # TODO need this for reflection (not critical for protot
 # ... etc.
 
 def _get_db_url():
+
+
+    # TODO see this sample logic:
+    if 'current' in sys.argv:
+        print('current: run for both')
+    else:
+        revision_arg = context.get_revision_argument()  # TODO can be a tuple or none
+        if revision_arg is None:
+            print('base? what do we do here?')
+        elif type(revision_arg) is tuple:
+            print('heads: run for both')
+        elif '+' in revision_arg or '-' in revision_arg:
+            print('relative migration. use sys.argv to get the branch label')
+        else:
+            print('we might have a rev. try to get it; if yes - get branch, then engine. done. Else: raise error')
+
+        foo = context.get_revision_argument()
+    breakpoint()
+
+
+
     if not context.get_x_argument():  # called not from script
         return config.get_main_option("sqlalchemy.url")
 
     script_directory = script.ScriptDirectory.from_config(config)
-    revision_str = context.get_revision_argument()  # TODO can be a tuple or none
-    if not revision_str:
+    revision_arg = context.get_revision_argument()  # TODO can be a tuple or none
+
+    if type(revision_arg) is tuple:  # probably heads?
+        # loop over both!
+        pass
+
+    if not revision_arg:  # assume base???
+
         raise Exception('No revision supplied')  # TODO handle tuple or None?
-    revision = script_directory.get_revision(revision_str)
+
+    revision = script_directory.get_revision(revision_str)  # TODO if using relative syntax, this breaks: i.e., "head-1" is not a revision id
     if not revision:
         raise Exception('Revision not found')  # TODO do i need to handle this?
 
@@ -56,16 +84,10 @@ def run_migrations_offline():
     Calls to context.execute() here emit the given string to the
     script output.
     """
-    url = _get_db_url()
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
-
-    with context.begin_transaction():
-        context.run_migrations()
+    if not config.cmd_opts:
+        _run_migrations_offline_programmatic()
+    else:
+        _run_migrations_offline_script()
 
 
 def run_migrations_online():
@@ -73,24 +95,157 @@ def run_migrations_online():
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
-    url = _get_db_url()
-    connectable = create_engine(url)
+    if not config.cmd_opts:
+        _run_migrations_online_programmatic()
+    else:
+        _run_migrations_online_script()
 
-    #connectable = engine_from_config(
-    #    config.get_section(config.config_ini_section),
-    #    prefix="sqlalchemy.",
-    #    poolclass=pool.NullPool,
-    #)
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
 
+
+
+
+    #breakpoint()
+    #urls = _get_urls()
+
+    #engines = {}
+    #for name, url in urls.items():
+    #    engines[name] = record = {}
+    #    record['engine'] = create_engine(url)
+
+    #for name, record in engines.items():
+    #    engine = record['engine']
+    #    record['connection'] = conn = engine.connect()  # TODO: do not connect if it's the same engine!!!
+    #    record['transaction'] = conn.begin()
+
+    #try:
+    #    for name, record in engines.items():
+    #        # TODO log maybe?  logger.info("Migrating database %s" % name)
+    #        context.configure(
+    #            connection=conn, target_metadata=target_metadata
+    #        )
+    #        print('calling for ', name )
+    #        #context.run_migrations()
+    #        #context.run_migrations(engine_name=name)  # kwds are passed to upgrade/downgrade (see template in maco file)
+
+    #    for name, record in engines.items():
+    #        record["transaction"].commit()
+    #except:
+    #    for record in engines.values():
+    #        record["transaction"].rollback()
+    #    raise
+    #finally:
+    #    for record in engines.values():
+    #        record["connection"].close()
+
+
+
+    #raise # not ready
+    #url = _get_db_url()
+    #connectable = create_engine(url)
+
+    ##connectable = engine_from_config(
+    ##    config.get_section(config.config_ini_section),
+    ##    prefix="sqlalchemy.",
+    ##    poolclass=pool.NullPool,
+    ##)
+
+    #with connectable.connect() as connection:
+    #    context.configure(
+    #        connection=connection, target_metadata=target_metadata
+    #    )
+
+    #    with context.begin_transaction():
+    #        context.run_migrations()
+
+def _run_migrations_online_programmatic():
+    # invoked programmatically
+    url = config.get_main_option("sqlalchemy.url")
+    engine = create_engine(url)
+    with engine.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
+    engine.dispose()  # TODO make sure this doesn't break things
+
+
+def _run_migrations_online_script():
+    # invoked via script
+    urls = _get_migration_urls()
+    for url in urls:
+        engine = create_engine(url)
+        with engine.connect() as connection:
+            context.configure(connection=connection, target_metadata=target_metadata)
+            with context.begin_transaction():
+                context.run_migrations()
+        engine.dispose()  # TODO make sure this doesn't break things
+
+
+
+
+def _run_migrations_offline_programmatic():
+    # invoked programmatically
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def _run_migrations_offline_script():
+    # invoked via script
+    urls = _get_migration_urls()
+    for url in urls:
+        context.configure(
+            url=url,
+            target_metadata=target_metadata,  # TODO we can fix this
+            literal_binds=True,
+            dialect_opts={"paramstyle": "named"},
+        )
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+def _get_migration_urls():
+    urls = _get_urls()
+    migration_urls = []
+
+    revision_str = config.cmd_opts.revision
+    if revision_str == 'heads' or revision_str == 'base':   # TODO what about "downgrade -1"?
+        migration_urls = (urls['gxy'], urls['tsi'])
+        #raise # TODO: run for each url. Verify that this is correct
+    elif revision_str.startswith('-') and config.cmd_opts.fn.__name__ == 'downgrade':
+        migration_urls = (urls['gxy'], urls['tsi'])
+        raise # TODO: run for each url. Verify that this is correct
+    elif revision_str.startswith('gxy@'):
+        migration_urls = (urls['gxy'],)
+    elif revision_str.startswith('tsi@'):
+        migration_urls = (urls['tsi'],)
+    else:
+        revision_id = context.get_revision_argument()
+        script_directory = script.ScriptDirectory.from_config(config)
+        revision = script_directory.get_revision(revision_id)
+        if not revision:
+            raise Exception('Revision not found')  # TODO: more specific error?
+        if 'gxy' in revision.branch_labels:
+            migration_urls = (urls['gxy'],)
+        elif 'tsi' in revision.branch_labels:
+            migration_urls = (urls['tsi'],)
+
+    return migration_urls   
+
+
+def _get_urls():
+    # TODO: this should come from galaxy's config, or at least from the x arg
+    return {
+        'gxy': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/universe.sqlite?isolation_level=IMMEDIATE',
+        'tsi': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/installuniverse.sqlite?isolation_level=IMMEDIATE',
+    }
 
 
 if context.is_offline_mode():

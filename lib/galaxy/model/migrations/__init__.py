@@ -66,7 +66,7 @@ class AlembicManager:
         config.set_main_option('sqlalchemy.url', url)
         if config_dict:
             for key, value in config_dict.items():
-                config.set_main_option(key, value)
+                config.set_main_option(key, value)  # TODO consider: can also use config.attributes dictionary
         return config
 
     def stamp_model_head(self, model):
