@@ -1,3 +1,5 @@
+import re
+
 from alembic import context
 from alembic import script
 from sqlalchemy import engine_from_config
@@ -23,55 +25,11 @@ target_metadata = None  # TODO need this for reflection (not critical for protot
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-def _get_db_url():
-
-
-    # TODO see this sample logic:
-    if 'current' in sys.argv:
-        print('current: run for both')
-    else:
-        revision_arg = context.get_revision_argument()  # TODO can be a tuple or none
-        if revision_arg is None:
-            print('base? what do we do here?')
-        elif type(revision_arg) is tuple:
-            print('heads: run for both')
-        elif '+' in revision_arg or '-' in revision_arg:
-            print('relative migration. use sys.argv to get the branch label')
-        else:
-            print('we might have a rev. try to get it; if yes - get branch, then engine. done. Else: raise error')
-
-        foo = context.get_revision_argument()
-    breakpoint()
-
-
-
-    if not context.get_x_argument():  # called not from script
-        return config.get_main_option("sqlalchemy.url")
-
-    script_directory = script.ScriptDirectory.from_config(config)
-    revision_arg = context.get_revision_argument()  # TODO can be a tuple or none
-
-    if type(revision_arg) is tuple:  # probably heads?
-        # loop over both!
-        pass
-
-    if not revision_arg:  # assume base???
-
-        raise Exception('No revision supplied')  # TODO handle tuple or None?
-
-    revision = script_directory.get_revision(revision_str)  # TODO if using relative syntax, this breaks: i.e., "head-1" is not a revision id
-    if not revision:
-        raise Exception('Revision not found')  # TODO do i need to handle this?
-
-    gxy_url = context.get_x_argument(as_dictionary=True).get('gxy_url')
-    tsi_url = context.get_x_argument(as_dictionary=True).get('tsi_url')
-
-    # TODO: export these, don't duplicate
-    if 'gxy' in revision.branch_labels:
-        return gxy_url
-    elif 'tsi' in revision.branch_labels:
-        return tsi_url
-
+# TODO: this should come from galaxy's config, or at least from the x arg
+URLS = {
+    'gxy': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/universe.sqlite?isolation_level=IMMEDIATE',
+    'tsi': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/installuniverse.sqlite?isolation_level=IMMEDIATE',
+}
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
@@ -102,9 +60,212 @@ def run_migrations_online():
         _run_migrations_online_script()
 
 
+def _run_migrations_online_programmatic():
+    # invoked programmatically
+    url = config.get_main_option("sqlalchemy.url")
+    engine = create_engine(url)
+    with engine.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
+    engine.dispose()  # TODO make sure this doesn't break things
+
+
+def _run_migrations_online_script():
+    # invoked via script
+    print('MY DEBUG: Running migrations ONLINE, invoked via script')
+    cmd_name = config.cmd_opts.cmd[0].__name__
+
+    if cmd_name == 'current':
+        for url in URLS.values():
+            engine = create_engine(url)
+            with engine.connect() as connection:
+                context.configure(connection=connection, target_metadata=target_metadata)
+                with context.begin_transaction():
+                    context.run_migrations()
+            engine.dispose()  # TODO make sure this doesn't break things
+        return  # we're done
+
+    assert cmd_name in ('upgrade', 'downgrade')  # sanity check
+
+    revision_str = config.cmd_opts.revision
+
+    if revision_str.startswith('gxy@'):  # gxy label followed by anything
+        url = URLS['gxy']
+    elif revision_str.startswith('tsi@'):  # tsi label followed by anything
+        url = URLS['tsi']
+    else:
+        p = re.compile('([0-9A-Fa-f]+)([+-]\d)?')  # matches a full or partial revision id, or a relative migration identifier
+        m = p.match(revision_str)
+        if not m:
+            raise Exception('invalid revision identifier')  # TODO edit error message
+        revision_id = m.group(1)
+
+        script_directory = script.ScriptDirectory.from_config(config)
+        revision = script_directory.get_revision(revision_id)
+        if not revision:
+            raise Exception('Revision not found')  # TODO: more specific error?
+        if 'gxy' in revision.branch_labels:
+            url = URLS['gxy']
+        elif 'tsi' in revision.branch_labels:
+            url = URLS['tsi']
+
+    engine = create_engine(url)
+    with engine.connect() as conn:
+        context.configure(connection=conn, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
+    engine.dispose()
+
+
+def _run_migrations_offline_programmatic():
+    # invoked programmatically
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def _run_migrations_offline_script():
+    # invoked via script
+    print('MY DEBUG: Running migrations OFFLINE, invoked via script')
+
+    cmd_name = config.cmd_opts.cmd[0].__name__
+
+    if cmd_name == 'current':
+        for url in URLS.values():
+            engine = create_engine(url)
+            with engine.connect() as connection:
+                context.configure(connection=connection, target_metadata=target_metadata)
+                with context.begin_transaction():
+                    context.run_migrations()
+            engine.dispose()  # TODO make sure this doesn't break things
+        return  # we're done
+
+    assert cmd_name in ('upgrade', 'downgrade')  # sanity check
+
+    revision_str = config.cmd_opts.revision
+
+    if revision_str.startswith('gxy@'):  # gxy label followed by anything
+        url = URLS['gxy']
+    elif revision_str.startswith('tsi@'):  # tsi label followed by anything
+        url = URLS['tsi']
+    else:
+        p = re.compile('([0-9A-Fa-f]+)([+-]\d)?')  # matches a full or partial revision id, or a relative migration identifier
+        m = p.match(revision_str)
+        if not m:
+            raise Exception('invalid revision identifier')  # TODO edit error message
+        revision_id = m.group(1)
+
+        script_directory = script.ScriptDirectory.from_config(config)
+        revision = script_directory.get_revision(revision_id)
+        if not revision:
+            raise Exception('Revision not found')  # TODO: more specific error?
+        if 'gxy' in revision.branch_labels:
+            url = URLS['gxy']
+        elif 'tsi' in revision.branch_labels:
+            url = URLS['tsi']
+
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,  # TODO we can fix this
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def _get_migration_urls():
+    urls = URLS
+    migration_urls = []
+
+    revision_str = config.cmd_opts.revision
+    if revision_str == 'heads' or revision_str == 'base':   # TODO what about "downgrade -1"?
+        migration_urls = (urls['gxy'], urls['tsi'])
+        #raise # TODO: run for each url. Verify that this is correct
+    elif revision_str.startswith('-') and config.cmd_opts.fn.__name__ == 'downgrade':
+        migration_urls = (urls['gxy'], urls['tsi'])
+        raise # TODO: run for each url. Verify that this is correct
+    elif revision_str.startswith('gxy@'):
+        migration_urls = (urls['gxy'],)
+    elif revision_str.startswith('tsi@'):
+        migration_urls = (urls['tsi'],)
+    else:
+        revision_id = context.get_revision_argument()
+        script_directory = script.ScriptDirectory.from_config(config)
+        revision = script_directory.get_revision(revision_id)
+        if not revision:
+            raise Exception('Revision not found')  # TODO: more specific error?
+        if 'gxy' in revision.branch_labels:
+            migration_urls = (urls['gxy'],)
+        elif 'tsi' in revision.branch_labels:
+            migration_urls = (urls['tsi'],)
+
+    #breakpoint()
+    return migration_urls   
 
 
 
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+
+
+
+
+
+def _get_db_url():
+    raise
+    # TODO see this sample logic:
+    if 'current' in sys.argv:
+        print('current: run for both')
+    else:
+        revision_arg = context.get_revision_argument()  # TODO can be a tuple or none
+        if revision_arg is None:
+            print('base? what do we do here?')
+        elif type(revision_arg) is tuple:
+            print('heads: run for both')
+        elif '+' in revision_arg or '-' in revision_arg:
+            print('relative migration. use sys.argv to get the branch label')
+        else:
+            print('we might have a rev. try to get it; if yes - get branch, then engine. done. Else: raise error')
+
+        foo = context.get_revision_argument()
+
+    if not context.get_x_argument():  # called not from script
+        return config.get_main_option("sqlalchemy.url")
+
+    script_directory = script.ScriptDirectory.from_config(config)
+    revision_arg = context.get_revision_argument()  # TODO can be a tuple or none
+
+    if type(revision_arg) is tuple:  # probably heads?
+        # loop over both!
+        pass
+
+    if not revision_arg:  # assume base???
+
+        raise Exception('No revision supplied')  # TODO handle tuple or None?
+
+    revision = script_directory.get_revision(revision_str)  # TODO if using relative syntax, this breaks: i.e., "head-1" is not a revision id
+    if not revision:
+        raise Exception('Revision not found')  # TODO do i need to handle this?
+
+    gxy_url = context.get_x_argument(as_dictionary=True).get('gxy_url')
+    tsi_url = context.get_x_argument(as_dictionary=True).get('tsi_url')
+
+    # TODO: export these, don't duplicate
+    if 'gxy' in revision.branch_labels:
+        return gxy_url
+    elif 'tsi' in revision.branch_labels:
+        return tsi_url
 
     #breakpoint()
     #urls = _get_urls()
@@ -159,96 +320,3 @@ def run_migrations_online():
     #    with context.begin_transaction():
     #        context.run_migrations()
 
-def _run_migrations_online_programmatic():
-    # invoked programmatically
-    url = config.get_main_option("sqlalchemy.url")
-    engine = create_engine(url)
-    with engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
-        with context.begin_transaction():
-            context.run_migrations()
-    engine.dispose()  # TODO make sure this doesn't break things
-
-
-def _run_migrations_online_script():
-    # invoked via script
-    urls = _get_migration_urls()
-    for url in urls:
-        engine = create_engine(url)
-        with engine.connect() as connection:
-            context.configure(connection=connection, target_metadata=target_metadata)
-            with context.begin_transaction():
-                context.run_migrations()
-        engine.dispose()  # TODO make sure this doesn't break things
-
-
-
-
-def _run_migrations_offline_programmatic():
-    # invoked programmatically
-    url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
-    with context.begin_transaction():
-        context.run_migrations()
-
-
-def _run_migrations_offline_script():
-    # invoked via script
-    urls = _get_migration_urls()
-    for url in urls:
-        context.configure(
-            url=url,
-            target_metadata=target_metadata,  # TODO we can fix this
-            literal_binds=True,
-            dialect_opts={"paramstyle": "named"},
-        )
-        with context.begin_transaction():
-            context.run_migrations()
-
-
-def _get_migration_urls():
-    urls = _get_urls()
-    migration_urls = []
-
-    revision_str = config.cmd_opts.revision
-    if revision_str == 'heads' or revision_str == 'base':   # TODO what about "downgrade -1"?
-        migration_urls = (urls['gxy'], urls['tsi'])
-        #raise # TODO: run for each url. Verify that this is correct
-    elif revision_str.startswith('-') and config.cmd_opts.fn.__name__ == 'downgrade':
-        migration_urls = (urls['gxy'], urls['tsi'])
-        raise # TODO: run for each url. Verify that this is correct
-    elif revision_str.startswith('gxy@'):
-        migration_urls = (urls['gxy'],)
-    elif revision_str.startswith('tsi@'):
-        migration_urls = (urls['tsi'],)
-    else:
-        revision_id = context.get_revision_argument()
-        script_directory = script.ScriptDirectory.from_config(config)
-        revision = script_directory.get_revision(revision_id)
-        if not revision:
-            raise Exception('Revision not found')  # TODO: more specific error?
-        if 'gxy' in revision.branch_labels:
-            migration_urls = (urls['gxy'],)
-        elif 'tsi' in revision.branch_labels:
-            migration_urls = (urls['tsi'],)
-
-    return migration_urls   
-
-
-def _get_urls():
-    # TODO: this should come from galaxy's config, or at least from the x arg
-    return {
-        'gxy': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/universe.sqlite?isolation_level=IMMEDIATE',
-        'tsi': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/installuniverse.sqlite?isolation_level=IMMEDIATE',
-    }
-
-
-if context.is_offline_mode():
-    run_migrations_offline()
-else:
-    run_migrations_online()
