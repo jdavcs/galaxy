@@ -5,43 +5,21 @@ from alembic import script
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool, create_engine
 
+from galaxy.config import GalaxyAppConfiguration
+from galaxy.model.migrations import GXY, TSI
 
 config = context.config
+target_metadata = None  # Not implemented: used for autogenerate, which we don't use here.
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None  # TODO need this for reflection (not critical for prototype)
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
-
-# TODO: this should come from galaxy's config, or at least from the x arg
+galaxy_config = GalaxyAppConfiguration()
 URLS = {
-    'gxy': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/universe.sqlite?isolation_level=IMMEDIATE',
-   # 'tsi': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/universe.sqlite?isolation_level=IMMEDIATE',
-    'tsi': 'sqlite:////home/sergey/0dev/galaxy/_galaxy/dev/database/installuniverse.sqlite?isolation_level=IMMEDIATE',
+    GXY: galaxy_config.database_connection,
+    TSI: galaxy_config.install_database_connection or galaxy_config.database_connection,
 }
 
-#URLS = {
-#    'gxy': 'postgresql://galaxy:42@localhost/alembic_gxy',
-#    'tsi': 'postgresql://galaxy:42@localhost/alembic_tsi',
-#}
 
 def run_migrations_offline():
-    """Run migrations in 'offline' mode.
-
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-    """
+    """Run migrations in offline mode; database url required."""
     if not config.cmd_opts:
         _run_migrations_offline_programmatic()
     else:
@@ -49,11 +27,7 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-    """
+    """Run migrations in online mode: engine and connection required."""
     if not config.cmd_opts:
         _run_migrations_online_programmatic()
     else:
@@ -61,30 +35,33 @@ def run_migrations_online():
 
 
 def _run_migrations_online_programmatic():
-    # invoked programmatically
+    # Invoked programmatically
     url = config.get_main_option("sqlalchemy.url")
+
     engine = create_engine(url)
     with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()
-    engine.dispose()  # TODO make sure this doesn't break things
+    engine.dispose()
 
 
 def _run_migrations_online_script():
-    # invoked via script
+    # Invoked via script
     print('MY DEBUG: Running migrations ONLINE, invoked via script')
     cmd_name = config.cmd_opts.cmd[0].__name__
 
     if cmd_name == 'current':
         for url in URLS.values():
+
             engine = create_engine(url)
             with engine.connect() as connection:
                 context.configure(connection=connection, target_metadata=target_metadata)
                 with context.begin_transaction():
                     context.run_migrations()
-            engine.dispose()  # TODO make sure this doesn't break things
-        return  # we're done
+            engine.dispose()
+
+        return
 
     assert cmd_name in ('upgrade', 'downgrade')  # sanity check
 
@@ -118,9 +95,8 @@ def _run_migrations_online_script():
     engine.dispose()
 
 
-def _run_migrations_offline_programmatic():
-    # invoked programmatically
-    url = config.get_main_option("sqlalchemy.url")
+
+def _configure_and_run_migrations_offline(url):
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -131,20 +107,21 @@ def _run_migrations_offline_programmatic():
         context.run_migrations()
 
 
+def _run_migrations_offline_programmatic():
+    # Invoked programmatically
+    url = config.get_main_option("sqlalchemy.url")
+    _configure_and_run_migrations_offline(url)
+
+
 def _run_migrations_offline_script():
-    # invoked via script
+    # Invoked via script
     print('MY DEBUG: Running migrations OFFLINE, invoked via script')
 
     cmd_name = config.cmd_opts.cmd[0].__name__
 
     if cmd_name == 'current':
         for url in URLS.values():
-            engine = create_engine(url)
-            with engine.connect() as connection:
-                context.configure(connection=connection, target_metadata=target_metadata)
-                with context.begin_transaction():
-                    context.run_migrations()
-            engine.dispose()  # TODO make sure this doesn't break things
+            _configure_and_run_migrations_offline(url)
         return  # we're done
 
     assert cmd_name in ('upgrade', 'downgrade')  # sanity check
@@ -171,14 +148,7 @@ def _run_migrations_offline_script():
         elif 'tsi' in revision.branch_labels:
             url = URLS['tsi']
 
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,  # TODO we can fix this
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
-    with context.begin_transaction():
-        context.run_migrations()
+    _configure_and_run_migrations_offline(url)
 
 
 if context.is_offline_mode():
