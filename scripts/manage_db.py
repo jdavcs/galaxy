@@ -1,7 +1,4 @@
-#TODO: add description
-""" 
-TODO: add description
-"""
+"""This script invokes the Alembic console runner."""
 import logging
 import os.path
 import sys
