@@ -1,4 +1,4 @@
-""" This script parses Galaxy or Tool Shed config file for database connection
+""" This script parses the Tool Shed config file for database connection
 and then delegates to sqlalchemy_migrate shell main function in
 migrate.versioning.shell. """
 import logging

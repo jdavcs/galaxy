@@ -1,8 +1,11 @@
 #!/bin/sh
 
 #######
-# NOTE: To downgrade to a specific version, use something like:
-# sh manage_db.sh downgrade --version=3 <tool_shed if using that webapp - galaxy is the default>
+# Use this script to manage Tool Shed migrations.
+# Use migrate.sh to manage Galaxy and Tool Shed Install migrations.
+#
+# To downgrade to a specific version, use something like:
+# sh manage_db.sh downgrade --version=3 tool_shed
 #######
 
 cd `dirname $0`
