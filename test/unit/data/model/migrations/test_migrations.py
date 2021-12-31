@@ -1,6 +1,7 @@
 import os
 from typing import Union
 
+import alembic
 import pytest
 from sqlalchemy import MetaData
 
@@ -139,6 +140,32 @@ class TestAlembicManager:
                 am.stamp_revision(TSI_REVISION_0)
                 assert am.is_under_version_control(GXY)
                 assert am.is_under_version_control(TSI)
+
+    def test_get_revision_raises_error_if_revision_not_found(self, url_factory):  # noqa: F811
+        db_url = url_factory()
+        with create_and_drop_database(db_url):
+            with disposing_engine(db_url) as engine:
+                am = AlembicManagerForTests(engine)
+                with pytest.raises(alembic.util.exc.CommandError):
+                    am._get_revision('invalid')
+
+    def test_get_model_db_head(self, url_factory):  # noqa: F811
+        db_url = url_factory()
+        with create_and_drop_database(db_url):
+            with disposing_engine(db_url) as engine:
+                am = AlembicManagerForTests(engine)
+                revisions = [GXY_REVISION_1, TSI_REVISION_2]
+                am.stamp_revision(revisions)
+                db_head = am.get_model_db_head(GXY)
+                assert db_head == GXY_REVISION_1  # We stamped the db with this GXY revision
+
+    def test_get_model_script_head(self, url_factory):  # noqa: F811
+        db_url = url_factory()
+        with create_and_drop_database(db_url):
+            with disposing_engine(db_url) as engine:
+                am = AlembicManagerForTests(engine)
+                script_head = am.get_model_script_head(GXY)
+                assert script_head == GXY_REVISION_2  # That's the latest GXY revision in our script directory
 
 
 class TestDatabaseStateCache:
@@ -675,7 +702,7 @@ def set_create_additional(monkeypatch):
 
 @pytest.fixture
 def set_automigrate(monkeypatch):
-    monkeypatch.setattr(DatabaseStateVerifier, '_is_automigrate_set', lambda _: True)
+    monkeypatch.setattr(DatabaseStateVerifier, 'is_auto_migrate', True)
 
 
 @pytest.fixture(autouse=True)  # always override AlembicManager
