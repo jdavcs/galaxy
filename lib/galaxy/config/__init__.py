@@ -1357,11 +1357,6 @@ class ConfiguresGalaxyMixin:
         else:
             self.tool_shed_registry = galaxy.tool_shed.tool_shed_registry.Registry()
 
-    def _is_one_database(self, db_url, install_db_url):
-        # TODO: Consider more aggressive check here that this is not the same
-        # database file under the hood.
-        return not(db_url and install_db_url and install_db_url != db_url)
-
     def _configure_engines(self, db_url, install_db_url, combined_install_database):
         trace_logger = getattr(self, "trace_logger", None)
         engine = build_engine(
@@ -1387,7 +1382,7 @@ class ConfiguresGalaxyMixin:
 
         db_url = get_database_url(self.config)
         install_db_url = self.config.install_database_connection
-        combined_install_database = self._is_one_database(db_url, install_db_url)
+        combined_install_database = is_one_database(db_url, install_db_url)
         engine, install_engine = self._configure_engines(db_url, install_db_url, combined_install_database)
 
         if self.config.database_wait:
@@ -1436,3 +1431,9 @@ class ConfiguresGalaxyMixin:
     @property
     def tool_dependency_dir(self):
         return self.toolbox.dependency_manager.default_base_path
+
+
+def is_one_database(db_url: str, install_db_url: Optional[str]):
+    # TODO: Consider more aggressive check here that this is not the same
+    # database file under the hood.
+    return not(db_url and install_db_url and install_db_url != db_url)
