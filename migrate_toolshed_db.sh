@@ -2,10 +2,10 @@
 
 #######
 # Use this script to manage Tool Shed migrations.
-# Use migrate.sh to manage Galaxy and Tool Shed Install migrations.
+# (Use migrate_db.sh to manage Galaxy and Tool Shed Install migrations.)
 #
 # To downgrade to a specific version, use something like:
-# sh manage_db.sh downgrade --version=3 tool_shed
+# sh manage_toolshed_db.sh downgrade --version=3 tool_shed
 #######
 
 cd `dirname $0`
@@ -15,4 +15,4 @@ cd `dirname $0`
 setup_python
 
 find lib/galaxy/model/migrate/versions -name '*.pyc' -delete
-python ./scripts/manage_db.py $@
+python ./scripts/migrate_toolshed_db.py $@

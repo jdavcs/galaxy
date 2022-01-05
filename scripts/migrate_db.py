@@ -1,4 +1,8 @@
-"""This script invokes the Alembic console runner."""
+"""
+This script retrieves relevant configuration values and invokes
+the Alembic console runner.
+It is wrapped by migrate_db.sh (see that file for usage).
+"""
 import logging
 import os.path
 import sys
@@ -8,7 +12,7 @@ import alembic.config
 sys.path.insert(1, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'lib')))
 
 from galaxy.model.migrations import GXY, TSI
-from galaxy.model.orm.scripts import get_config_for_alembic
+from galaxy.model.migrations.scripts import get_configuration
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -32,9 +36,9 @@ def invoke_alembic():
 
 
 def _add_db_urls_to_command_arguments():
-    gxy_url, tsi_url = get_config_for_alembic(sys.argv, os.getcwd())
-    _insert_x_argument('tsi_url', tsi_url)
-    _insert_x_argument('gxy_url', gxy_url)
+    gxy_config, tsi_config, _ = get_configuration(sys.argv, os.getcwd())
+    _insert_x_argument('tsi_url', tsi_config.url)
+    _insert_x_argument('gxy_url', gxy_config.url)
 
 
 def _insert_x_argument(key, value):
