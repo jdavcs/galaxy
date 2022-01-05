@@ -61,7 +61,6 @@ class MinimalToolApp(BasicApp):
 
 class MinimalApp(BasicSharedApp):
     is_webapp: bool  # is_webapp will be set to true when building WSGI app
-    new_installation: bool
     tag_handler: GalaxyTagHandler
     model: GalaxyModelMapping
     install_model: ModelMapping
@@ -103,7 +102,6 @@ class StructuredApp(MinimalManagerApp):
     Any.
     """
     is_webapp: bool  # is_webapp will be set to true when building WSGI app
-    new_installation: bool
     tag_handler: GalaxyTagHandler
     amqp_internal_connection_obj: Optional[Connection]
     dependency_resolvers_view: DependencyResolversView
