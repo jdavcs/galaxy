@@ -25,13 +25,6 @@ DEFAULT_DATABASE = 'galaxy'
 DATABASE = {
     "galaxy":
         {
-            'repo': 'galaxy/model/migrate',
-            'default_sqlite_file': 'universe.sqlite',
-            'config_override': 'GALAXY_CONFIG_',
-        },
-    "tools":
-        {
-            'repo': 'galaxy/model/tool_shed_install/migrate',
             'default_sqlite_file': 'universe.sqlite',
             'config_override': 'GALAXY_CONFIG_',
         },
@@ -45,7 +38,6 @@ DATABASE = {
         },
     "install":
         {
-            'repo': 'galaxy/model/tool_shed_install/migrate',
             'config_prefix': 'install_',
             'default_sqlite_file': 'install.sqlite',
             'config_override': 'GALAXY_INSTALL_CONFIG_',
@@ -108,8 +100,6 @@ def get_config(argv, use_argparse=True, cwd=None):
     >>> uri_with_env = os.getenv("GALAXY_TEST_DBURI", "sqlite:////moo/universe.sqlite?isolation_level=IMMEDIATE")
     >>> config['db_url'] == uri_with_env
     True
-    >>> config['repo'].endswith('galaxy/model/migrate')
-    True
     >>> rmtree(config_dir)
     """
     config_file, config_section, database = _read_model_arguments(argv, use_argparse=use_argparse)
@@ -122,7 +112,10 @@ def get_config(argv, use_argparse=True, cwd=None):
             cwd = [DEFAULT_CONFIG_DIR]
         config_file = find_config_file(config_names, dirs=cwd)
 
-    repo = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir, database_defaults['repo'])
+    repo = database_defaults.get('repo')
+    if repo:
+        repo = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir, repo)
+
     config_prefix = database_defaults.get('config_prefix', DEFAULT_CONFIG_PREFIX)
     config_override = database_defaults.get('config_override', 'GALAXY_CONFIG_')
     default_sqlite_file = database_defaults['default_sqlite_file']
