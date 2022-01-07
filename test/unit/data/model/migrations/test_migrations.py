@@ -22,8 +22,10 @@ from galaxy.model.migrations import (
     SQLALCHEMYMIGRATE_TABLE,
     TSI,
     verify_databases,
+    verify_databases_via_script,
     VersionTooOldError,
 )
+from galaxy.model.migrations.scripts import DatabaseConfig
 from .common import (  # noqa: F401  (url_factory is a fixture we have to import explicitly)
     create_and_drop_database,
     disposing_engine,
@@ -348,93 +350,154 @@ class TestDatabaseFixtures:
                 assert AlembicManagerForTests.is_at_revision(engine, GXY_REVISION_2)
 
 
+def db_config(db_url, template=None, encoding=None):
+    return DatabaseConfig(db_url, template, encoding)
+
+
 class TestDatabaseStates:
-    # Tests of primary function under different scenarios and database state.
+    # Tests of primary functionality under different scenarios and database state.
+    # Each test function is parametrized to execute in the context of 2 use cases:
+    # 1) invocation with engine(s) and app.config, during normal Galaxy runtime; and
+    # 2) invocation with individual configuration values (e.g. from a script like create_db.sh).
 
     class TestNoState:
         # Initial state: database does not exist.
         # Expect: database created, initialized, versioned w/alembic.
         # (we use `metadata_state6_{gxy|tsi|combined}` for final database schema)
-        def test_combined_database(self, url_factory, metadata_state6_combined):  # noqa: F811
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database(self, via_script, url_factory, metadata_state6_combined):  # noqa: F811
             db_url = url_factory()
             with drop_database(db_url):
                 assert not database_exists(db_url)
-                with disposing_engine(db_url) as engine:
-                    verify_databases(engine)
-                    assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                    assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
-        def test_separate_databases(self, url_factory, metadata_state6_gxy, metadata_state6_tsi):  # noqa: F811
+                if via_script:
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_url) as engine:
+                        verify_databases(engine)
+
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases(self, via_script, url_factory, metadata_state6_gxy, metadata_state6_tsi):  # noqa: F811
             db1_url, db2_url = url_factory(), url_factory()
             assert not database_exists(db1_url)
             assert not database_exists(db2_url)
             with drop_database(db1_url), drop_database(db2_url):
-                with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-                    verify_databases(engine1, engine2)
-                    assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-                    assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+
+                if via_script:
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                        verify_databases(engine1, engine2)
+
+                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
 
     class TestState0:
         # Initial state: database is empty.
         # Expect: database created, initialized, versioned w/alembic.
-        def test_combined_database(self, url_factory, metadata_state6_combined):  # noqa: F811
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database(self, via_script, url_factory, metadata_state6_combined):  # noqa: F811
             db_url = url_factory()
             with create_and_drop_database(db_url):
-                with disposing_engine(db_url) as engine:
-                    assert database_exists(db_url)
-                    assert database_is_empty(db_url)
-                    verify_databases(engine)
-                    assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                    assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+                assert database_exists(db_url)
+                assert database_is_empty(db_url)
 
-        def test_separate_databases(self, url_factory, metadata_state6_gxy, metadata_state6_tsi):  # noqa: F811
+                if via_script:
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_url) as engine:
+                        verify_databases(engine)
+
+                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases(self, via_script, url_factory, metadata_state6_gxy, metadata_state6_tsi):  # noqa: F811
             db1_url, db2_url = url_factory(), url_factory()
             with create_and_drop_database(db1_url), create_and_drop_database(db2_url):
-                with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-                    assert database_exists(db1_url)
-                    assert database_exists(db2_url)
-                    assert database_is_empty(db1_url)
-                    assert database_is_empty(db2_url)
-                    verify_databases(engine1, engine2)
+                assert database_exists(db1_url)
+                assert database_exists(db2_url)
+                assert database_is_empty(db1_url)
+                assert database_is_empty(db2_url)
+
+                if via_script:
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                        verify_databases(engine1, engine2)
+
                     assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
                     assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
 
     class TestState1:
         # Initial state: non-empty database, no version table.
         # Expect: fail with appropriate message.
-        def test_combined_database(self, db_state1_combined):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database(self, via_script, db_state1_combined):
             with pytest.raises(NoVersionTableError):
-                with disposing_engine(db_state1_combined) as engine:
-                    verify_databases(engine)
+                if via_script:
+                    db_url = db_state1_combined
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_state1_combined) as engine:
+                        verify_databases(engine)
 
-        def test_separate_databases_gxy_raises_error(self, db_state1_gxy, db_state6_tsi):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_gxy_raises_error(self, via_script, db_state1_gxy, db_state6_tsi):
             with pytest.raises(NoVersionTableError):
-                with disposing_engine(db_state1_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db1_url, db2_url = db_state1_gxy, db_state6_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state1_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
-        def test_separate_databases_tsi_raises_error(self, db_state6_gxy, db_state1_tsi):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_tsi_raises_error(self, via_script, db_state6_gxy, db_state1_tsi):
             with pytest.raises(NoVersionTableError):
-                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state1_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db1_url, db2_url = db_state6_gxy, db_state1_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state1_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
     class TestState2:
         # Initial state: non-empty database, SQLAlchemy Migrate version table present; however,
         # the stored version is not the latest after which we could transition to Alembic.
         # Expect: fail with appropriate message.
-        def test_combined_database(self, db_state2_combined):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database(self, via_script, db_state2_combined):
             with pytest.raises(VersionTooOldError):
-                with disposing_engine(db_state2_combined) as engine:
-                    verify_databases(engine)
+                if via_script:
+                    db_url = db_state2_combined
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_state2_combined) as engine:
+                        verify_databases(engine)
 
-        def test_separate_databases_gxy_raises_error(self, db_state2_gxy, db_state6_tsi):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_gxy_raises_error(self, via_script, db_state2_gxy, db_state6_tsi):
             with pytest.raises(VersionTooOldError):
-                with disposing_engine(db_state2_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db1_url, db2_url = db_state2_gxy, db_state6_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state2_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
-        def test_separate_databases_tsi_raises_error(self, db_state6_gxy, db_state2_tsi):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_tsi_raises_error(self, via_script, db_state6_gxy, db_state2_tsi):
             with pytest.raises(VersionTooOldError):
-                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state2_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db1_url, db2_url = db_state6_gxy, db_state2_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state2_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
     class TestState3:
         # Initial state: non-empty database, SQLAlchemy Migrate version table contains latest version
@@ -442,20 +505,27 @@ class TestDatabaseStates:
         # Expect:
         # a) auto-migrate enabled: alembic version table added, database upgraded to current version.
         # b) auto-migrate disabled: fail with appropriate message.
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_combined_database_automigrate(
-            self,
+            self, via_script,
             db_state3_combined,
             metadata_state6_combined,
             set_automigrate,
         ):
             db_url = db_state3_combined
-            with disposing_engine(db_state3_combined) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_state3_combined) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_separate_databases_automigrate(
-            self,
+            self, via_script,
             db_state3_gxy,
             db_state3_tsi,
             metadata_state6_gxy,
@@ -463,25 +533,45 @@ class TestDatabaseStates:
             set_automigrate,
         ):
             db1_url, db2_url = db_state3_gxy, db_state3_tsi
-            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-                verify_databases(engine1, engine2)
-                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
 
-        def test_combined_database_no_automigrate(self, db_state3_combined):
-            with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state3_combined) as engine:
-                    verify_databases(engine)
-
-        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state3_gxy, db_state6_tsi):
-            with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state3_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+            if via_script:
+                verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+            else:
+                with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
                     verify_databases(engine1, engine2)
 
-        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state3_tsi):
+            assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+            assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database_no_automigrate(self, via_script, db_state3_combined):
             with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state3_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db_url = db_state3_combined
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_state3_combined) as engine:
+                        verify_databases(engine)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_no_automigrate_gxy_raises_error(self, via_script, db_state3_gxy, db_state6_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                if via_script:
+                    db1_url, db2_url = db_state3_gxy, db_state6_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state3_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                        verify_databases(engine1, engine2)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_no_automigrate_tsi_raises_error(self, via_script, db_state6_gxy, db_state3_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                if via_script:
+                    db1_url, db2_url = db_state6_gxy, db_state3_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state3_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
     class TestState4:
         # Initial state: non-empty database, SQLAlchemy Migrate version table present, Alembic version table present.
@@ -489,20 +579,27 @@ class TestDatabaseStates:
         # Expect:
         # a) auto-migrate enabled: database upgraded to current version.
         # b) auto-migrate disabled: fail with appropriate message.
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_combined_database_automigrate(
-            self,
+            self, via_script,
             db_state4_combined,
             metadata_state6_combined,
             set_automigrate,
         ):
             db_url = db_state4_combined
-            with disposing_engine(db_url) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_url) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_separate_databases_automigrate(
-            self,
+            self, via_script,
             db_state4_gxy,
             db_state4_tsi,
             metadata_state6_gxy,
@@ -510,25 +607,45 @@ class TestDatabaseStates:
             set_automigrate,
         ):
             db1_url, db2_url = db_state4_gxy, db_state4_tsi
-            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-                verify_databases(engine1, engine2)
-                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
 
-        def test_combined_database_no_automigrate(self, db_state4_combined):
-            with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state4_combined) as engine:
-                    verify_databases(engine)
-
-        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state4_gxy, db_state6_tsi):
-            with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state4_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+            if via_script:
+                verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+            else:
+                with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
                     verify_databases(engine1, engine2)
 
-        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state4_tsi):
+            assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+            assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database_no_automigrate(self, via_script, db_state4_combined):
             with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state4_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db_url = db_state4_combined
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_state4_combined) as engine:
+                        verify_databases(engine)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_no_automigrate_gxy_raises_error(self, via_script, db_state4_gxy, db_state6_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                if via_script:
+                    db1_url, db2_url = db_state4_gxy, db_state6_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state4_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                        verify_databases(engine1, engine2)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_no_automigrate_tsi_raises_error(self, via_script, db_state6_gxy, db_state4_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                if via_script:
+                    db1_url, db2_url = db_state6_gxy, db_state4_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state4_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
     class TestState5:
         # Initial state: non-empty database, Alembic version table present.
@@ -536,20 +653,27 @@ class TestDatabaseStates:
         # Expect:
         # a) auto-migrate enabled: database upgraded to current version.
         # b) auto-migrate disabled: fail with appropriate message.
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_combined_database_automigrate(
-            self,
+            self, via_script,
             db_state5_combined,
             metadata_state6_combined,
             set_automigrate
         ):
             db_url = db_state5_combined
-            with disposing_engine(db_url) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_url) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_separate_databases_automigrate(
-            self,
+            self, via_script,
             db_state5_gxy,
             db_state5_tsi,
             metadata_state6_gxy,
@@ -557,48 +681,80 @@ class TestDatabaseStates:
             set_automigrate
         ):
             db1_url, db2_url = db_state5_gxy, db_state5_tsi
-            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-                verify_databases(engine1, engine2)
-                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
 
-        def test_combined_database_no_automigrate(self, db_state5_combined):
-            with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state5_combined) as engine:
-                    verify_databases(engine)
-
-        def test_separate_databases_no_automigrate_gxy_raises_error(self, db_state5_gxy, db_state6_tsi):
-            with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state5_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+            if via_script:
+                verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+            else:
+                with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
                     verify_databases(engine1, engine2)
 
-        def test_separate_databases_no_automigrate_tsi_raises_error(self, db_state6_gxy, db_state5_tsi):
+            assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+            assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database_no_automigrate(self, via_script, db_state5_combined):
             with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state5_tsi) as engine2:
-                    verify_databases(engine1, engine2)
+                if via_script:
+                    db_url = db_state5_combined
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_state5_combined) as engine:
+                        verify_databases(engine)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_no_automigrate_gxy_raises_error(self, via_script, db_state5_gxy, db_state6_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                if via_script:
+                    db1_url, db2_url = db_state5_gxy, db_state6_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state5_gxy) as engine1, disposing_engine(db_state6_tsi) as engine2:
+                        verify_databases(engine1, engine2)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_separate_databases_no_automigrate_tsi_raises_error(self, via_script, db_state6_gxy, db_state5_tsi):
+            with pytest.raises(OutdatedDatabaseError):
+                if via_script:
+                    db1_url, db2_url = db_state6_gxy, db_state5_tsi
+                    verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+                else:
+                    with disposing_engine(db_state6_gxy) as engine1, disposing_engine(db_state5_tsi) as engine2:
+                        verify_databases(engine1, engine2)
 
     class TestState6:
         # Initial state: non-empty database, Alembic version table present, database up-to-date.
         # Expect: do nothing.
-        def test_combined_database(self, db_state6_combined, metadata_state6_combined):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_combined_database(self, via_script, db_state6_combined, metadata_state6_combined):
             db_url = db_state6_combined
-            with disposing_engine(db_url) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_url) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
         def test_separate_databases(
-            self,
+            self, via_script,
             db_state6_gxy,
             db_state6_tsi,
             metadata_state6_gxy,
             metadata_state6_tsi
         ):
             db1_url, db2_url = db_state6_gxy, db_state6_tsi
-            with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
-                verify_databases(engine1, engine2)
-                assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
-                assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
+
+            if via_script:
+                verify_databases_via_script(db_config(db1_url), db_config(db2_url))
+            else:
+                with disposing_engine(db1_url) as engine1, disposing_engine(db2_url) as engine2:
+                    verify_databases(engine1, engine2)
+
+            assert database_is_up_to_date(db1_url, metadata_state6_gxy, GXY)
+            assert database_is_up_to_date(db2_url, metadata_state6_tsi, TSI)
 
     class TestPartiallyUpgradedCombinedDatabase:
         # This only applies to an EXISTING, NONEMPTY database, that is COMBINED (both GXY and TSI models
@@ -620,48 +776,70 @@ class TestDatabaseStates:
         # - combined database
         # - GXY model: up-to-date
         # - TSI model: not in Alembic version table
-        def test_case1_automigrate(self, db_state6_gxy, metadata_state6_combined, set_automigrate):
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_case1_automigrate(self, via_script, db_state6_gxy, metadata_state6_combined, set_automigrate):
             # Initial state:
             # - no TSI tables exist
             # - auto-migrate enabled
             # Expect: database is up-to-date
             db_url = db_state6_gxy
-            with disposing_engine(db_url) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
-        def test_case1_no_automigrate(self, db_state6_gxy, metadata_state6_combined):
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_url) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_case1_no_automigrate(self, via_script, db_state6_gxy, metadata_state6_combined):
             # Initial state:
             # - no TSI tables exist
             # - auto-migrate not enabled
             # Expect: database is up-to-date (same as auto-migrate enabled)
             db_url = db_state6_gxy
-            with disposing_engine(db_url) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
-        def test_case2_automigrate(self, db_state6_gxy_state3_tsi_no_sam, metadata_state6_combined, set_automigrate):
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_url) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_case2_automigrate(self, via_script, db_state6_gxy_state3_tsi_no_sam, metadata_state6_combined, set_automigrate):
             # Initial state:
             # - all pre-alembic TSI tables exist
             # - auto-migrate enabled
             # Expect: database is up-to-date
             db_url = db_state6_gxy_state3_tsi_no_sam
-            with disposing_engine(db_url) as engine:
-                verify_databases(engine)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
-                assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
 
-        def test_case2_no_automigrate(self, db_state6_gxy_state3_tsi_no_sam):
+            if via_script:
+                verify_databases_via_script(db_config(db_url), db_config(db_url))
+            else:
+                with disposing_engine(db_url) as engine:
+                    verify_databases(engine)
+
+            assert database_is_up_to_date(db_url, metadata_state6_combined, GXY)
+            assert database_is_up_to_date(db_url, metadata_state6_combined, TSI)
+
+        @pytest.mark.parametrize('via_script', (0, 1))
+        def test_case2_no_automigrate(self, via_script, db_state6_gxy_state3_tsi_no_sam):
             # Initial state:
             # - all pre-alembic TSI tables exist
             # - auto-migrate not enabled
             # Expect: fail with appropriate message
             db_url = db_state6_gxy_state3_tsi_no_sam
             with pytest.raises(OutdatedDatabaseError):
-                with disposing_engine(db_url) as engine:
-                    verify_databases(engine)
+                if via_script:
+                    verify_databases_via_script(db_config(db_url), db_config(db_url))
+                else:
+                    with disposing_engine(db_url) as engine:
+                        verify_databases(engine)
 
 
 # Test helpers + their tests, misc. fixtures
