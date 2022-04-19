@@ -23,9 +23,11 @@ function tusUpload(data, index, tusEndpoint, cnf) {
     const startTime = performance.now();
     const chunkSize = cnf.chunkSize;
     const file = data.files[index];
+
+  // TODO this logic is incorrect if we use tus for pasted content!!
     if (!file) {
         // We've uploaded all files, delete files from data and submit fetch payload
-        delete data["files"];
+        delete data["files"];  //TODO so that they are not uploaded by galaxy again (legacy upload api)? Maybe just change the endpoint???
         return submitPayload(data, cnf);
     }
     console.debug(`Starting chunked upload for ${file.name} [chunkSize=${chunkSize}].`);
@@ -66,6 +68,80 @@ function tusUpload(data, index, tusEndpoint, cnf) {
     });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function tusPastedUpload(blob, data, tusEndpoint, cnf) {
+  console.log('data: ', data);
+  console.log('cnf: ', cnf);
+
+  const startTime = performance.now();
+  const chunkSize = cnf.chunkSize;
+
+  const upload = new tus.Upload(blob, {
+    endpoint: tusEndpoint,
+    chunkSize: chunkSize,
+    metadata: data.payload,
+    onError: function (error) {
+        console.log("Failed because: " + error);
+        cnf.error(error);
+    },
+    onProgress: function (bytesUploaded, bytesTotal) {
+        var percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+        console.log(bytesUploaded, bytesTotal, percentage + "%");
+        cnf.progress(percentage);
+    },
+    onSuccess: function () {
+        console.log(
+            `Upload of blob to ${upload.url} took ${(performance.now() - startTime) / 1000} seconds`
+        );
+        data[`files_0|file_data`] = {
+            session_id: upload.url.split("/").at(-1),
+            name: upload.file.name,
+        };
+      console.log('updated data: ', data);
+        //tusUpload(data, index + 1, tusEndpoint, cnf);
+    },
+    });
+
+    upload.findPreviousUploads().then(function (previousUploads) {
+        // Found previous uploads so we select the first one.
+        if (previousUploads.length) {
+            console.log("previous Upload", previousUploads);
+            upload.resumeFromPreviousUpload(previousUploads[0]);
+        }
+        // Start the upload
+        upload.start();
+    });
+  console.log('this is working!');
+}
+
+
+
+
+
+
 // Posts chunked files to the API.
 export function submitUpload(config) {
     // set options
@@ -91,13 +167,62 @@ export function submitUpload(config) {
         cnf.error(data.error_message);
         return;
     }
-    if (!data.files.length) {
-        // No files attached, don't need to use TUS uploader
-        return submitPayload(data, cnf);
+
+
+    if (isPasted(data)) {
+      if (data.targets.length && data.targets[0].elements.length) {
+          const pasted_item = data.targets[0].elements[0];
+          if (isUrl(pasted_item)) {
+            return submitPayload(data, cnf);
+          }
+          else {
+            const content = new Blob([pasted_item.paste_content]);   // paste_content, NOT pasteD_content!
+            console.log('pasted item', pasted_item);
+            console.log('blob: ', content);
+
+            //cnf.data = content;
+            //data = cnf.data;
+            
+            const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
+            tusPastedUpload(content, data, tusEndpoint, cnf);
+
+            //const formData = new FormData();
+            //formData.append('file', content);
+          }
+          // No files attached, don't need to use TUS uploader
+        //
+        //const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
+        //tusUpload(foo, 0, tusEndpoint, cnf);
+        //
+        //
+        //
+        //
+    //      return submitPayload(data, cnf);
+      }
     }
+
+    // if (!data.files.length) {
+    //     // No files attached, don't need to use TUS uploader
+    //     return submitPayload(data, cnf);
+    // }
+    //console.log('cnf: ', cnf);    
+  // cnf.data.targets[0].elements[0] : dvkey, ext, name, space_to_tabb, src
+  // cnf.data.files_0|file_data ?
+
     const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
     tusUpload(data, 0, tusEndpoint, cnf);
 }
+
+
+function isPasted(data) {
+    return !data.files.length;
+}
+
+
+function isUrl(pasted_item) {
+    return pasted_item.src == "url";
+}
+
 
 (($) => {
     // add event properties
