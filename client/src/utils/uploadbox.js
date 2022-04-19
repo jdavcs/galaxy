@@ -171,32 +171,16 @@ export function submitUpload(config) {
 
     if (isPasted(data)) {
       if (data.targets.length && data.targets[0].elements.length) {
-          const pasted_item = data.targets[0].elements[0];
-          if (isUrl(pasted_item)) {
+          const content = data.targets[0].elements[0];  // TODO var name bad?
+          console.log('data: ', data);
+          if (isUrl(content)) {
             return submitPayload(data, cnf);
           }
           else {
-            const content = new Blob([pasted_item.paste_content]);   // paste_content, NOT pasteD_content!
-            console.log('pasted item', pasted_item);
-            console.log('blob: ', content);
-
-            //cnf.data = content;
-            //data = cnf.data;
-            
+            const blob = new Blob([content.paste_content]);
             const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
-            tusPastedUpload(content, data, tusEndpoint, cnf);
-
-            //const formData = new FormData();
-            //formData.append('file', content);
+            tusPastedUpload(blob, data, tusEndpoint, cnf);
           }
-          // No files attached, don't need to use TUS uploader
-        //
-        //const tusEndpoint = `${getAppRoot()}api/upload/resumable_upload/`;
-        //tusUpload(foo, 0, tusEndpoint, cnf);
-        //
-        //
-        //
-        //
     //      return submitPayload(data, cnf);
       }
     }
