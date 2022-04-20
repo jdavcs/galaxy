@@ -20,6 +20,7 @@ function submitPayload(payload, cnf) {
 }
 
 function tusUpload(uploadables, index, data, tusEndpoint, cnf) {
+    // uploadables must be an array of files or blobs with a name property
   const startTime = performance.now();
   const chunkSize = cnf.chunkSize;
 
@@ -30,7 +31,6 @@ function tusUpload(uploadables, index, data, tusEndpoint, cnf) {
     return submitPayload(data, cnf);
   }
 
-  //console.debug(`Starting chunked upload for ${uploadable.type} ${uploadable.name} [chunkSize=${chunkSize}].`);
   console.debug(`Starting chunked upload for ${uploadable.name} [chunkSize=${chunkSize}].`);
 
   const upload = new tus.Upload(uploadable, {
@@ -48,7 +48,6 @@ function tusUpload(uploadables, index, data, tusEndpoint, cnf) {
     },
     onSuccess: function () {
         console.log(
-            //`Upload of ${uploadable.type} ${uploadable.name} to ${upload.url} took ${(performance.now() - startTime) / 1000} seconds`
             `Upload of ${uploadable.name} to ${upload.url} took ${(performance.now() - startTime) / 1000} seconds`
         );
         data[`files_${index}|file_data`] = {
@@ -69,128 +68,6 @@ function tusUpload(uploadables, index, data, tusEndpoint, cnf) {
     upload.start();
   });
 }
-
-
-//function tusUpload(data, index, tusEndpoint, cnf) {
-//    const startTime = performance.now();
-//    const chunkSize = cnf.chunkSize;
-//
-//    const file = data.files[index];
-//    if (!file) {
-//        // We've uploaded all files, delete files from data and submit fetch payload
-//        delete data["files"];
-//        return submitPayload(data, cnf);
-//    }
-//    console.debug(`Starting chunked upload for ${file.name} [chunkSize=${chunkSize}].`);
-//
-//    const upload = new tus.Upload(file, {
-//        endpoint: tusEndpoint,
-//        chunkSize: chunkSize,
-//        metadata: data.payload,
-//        onError: function (error) {
-//            console.log("Failed because: " + error);
-//            cnf.error(error);
-//        },
-//        onProgress: function (bytesUploaded, bytesTotal) {
-//            var percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-//            console.log(bytesUploaded, bytesTotal, percentage + "%");
-//            cnf.progress(percentage);
-//        },
-//        onSuccess: function () {
-//            console.log(
-//                `Upload of ${upload.file.name} to ${upload.url} took ${(performance.now() - startTime) / 1000} seconds`
-//            );
-//            data[`files_${index}|file_data`] = {
-//                session_id: upload.url.split("/").at(-1),
-//                name: upload.file.name,
-//            };
-//            tusUpload(data, index + 1, tusEndpoint, cnf);
-//        },
-//    });
-//    // Check if there are any previous uploads to continue.
-//    upload.findPreviousUploads().then(function (previousUploads) {
-//        // Found previous uploads so we select the first one.
-//        if (previousUploads.length) {
-//            console.log("previous Upload", previousUploads);
-//            upload.resumeFromPreviousUpload(previousUploads[0]);
-//        }
-//
-//        // Start the upload
-//        upload.start();
-//    });
-//}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//function tusPastedUpload(blob, data, tusEndpoint, cnf, uploadName) {
-//  const startTime = performance.now();
-//  const chunkSize = cnf.chunkSize;
-//
-//  console.debug(`Starting chunked upload for blob "${uploadName}" [chunkSize=${chunkSize}].`);
-//
-//  const upload = new tus.Upload(blob, {
-//    endpoint: tusEndpoint,
-//    chunkSize: chunkSize,
-//    metadata: data.payload,
-//    onError: function (error) {
-//        console.log("Failed because: " + error);
-//        cnf.error(error);
-//    },
-//    onProgress: function (bytesUploaded, bytesTotal) {
-//        var percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-//        console.log(bytesUploaded, bytesTotal, percentage + "%");
-//        cnf.progress(percentage);
-//    },
-//    onSuccess: function () {
-//        console.log(
-//            `Upload of blob to ${upload.url} took ${(performance.now() - startTime) / 1000} seconds`
-//        );
-//        data[`files_0|file_data`] = {
-//            session_id: upload.url.split("/").at(-1),
-//            name: uploadName
-//        };
-//        delete data["files"];
-//        return submitPayload(data, cnf);  // we're done!
-//    },
-//  });
-//
-//  upload.findPreviousUploads().then(function (previousUploads) {  // still need this if there was an error
-//      // Found previous uploads so we select the first one.
-//      if (previousUploads.length) {
-//          console.log("previous Upload", previousUploads);
-//          upload.resumeFromPreviousUpload(previousUploads[0]);
-//      }
-//      // Start the upload
-//      upload.start();
-//  });
-//}
-
-
-
-
-
 
 // Posts chunked files to the API.
 export function submitUpload(config) {
@@ -227,23 +104,13 @@ export function submitUpload(config) {
         }
         else {
           const blob = new Blob([pasted.paste_content]);
-          const uploadName = data.targets[0].elements[0].name || 'default';
-
-          blob.name = uploadName;
+          blob.name = data.targets[0].elements[0].name || 'default';
           return tusUpload([blob], 0, data, tusEndpoint, cnf);
-
-          //return tusPastedUpload(blob, data, tusEndpoint, cnf, uploadName);
-          //uploadable = {type: 'blob', name: uploadName, data: blob};
-          //return tusUpload([uploadable], 0, data, tusEndpoint, cnf);
         }
       }
     }
     else {
-      //return tusUpload(data, 0, tusEndpoint, cnf);
       return tusUpload(data.files, 0, data, tusEndpoint, cnf);
-        //
-//      uploadable = {type: 'file', name: file.name, data: file};
- //     return tusUpload(uploadable, 0, data, tusEndpoint, cnf);
     }
 }
 
