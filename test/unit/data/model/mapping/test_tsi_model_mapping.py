@@ -19,7 +19,14 @@ from ..testing_utils import (
     get_stored_obj,
 )
 
+import os
 model_fixtures = get_plugin_full_name("mapping.testing_utils.tsi_model_fixtures")
+print()
+print('__file__: ', __file__)
+print('__name__: ', __name__)
+print('model_fixtures: ', model_fixtures)
+print()
+
 pytest_plugins = [model_fixtures]
 
 
