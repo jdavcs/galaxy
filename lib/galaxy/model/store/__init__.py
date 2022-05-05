@@ -317,7 +317,7 @@ class ModelImportStore(metaclass=abc.ABCMeta):
                     "peek",
                     "designation",
                     "visible",
-                    "metadata",
+                    "metadata_",
                     "tool_version",
                     "validated_state",
                     "validated_state_message",
@@ -325,13 +325,13 @@ class ModelImportStore(metaclass=abc.ABCMeta):
                 for attribute in attributes:
                     if attribute in dataset_attrs:
                         value = dataset_attrs.get(attribute)
-                        if attribute == "metadata":
+                        if attribute == "metadata_":
                             value = replace_metadata_file(value, dataset_instance, self.sa_session)
                         setattr(dataset_instance, attribute, value)
 
                 handle_dataset_object_edit(dataset_instance)
             else:
-                metadata = dataset_attrs["metadata"]
+                metadata = dataset_attrs["metadata_"]
 
                 model_class = dataset_attrs.get("model_class", "HistoryDatasetAssociation")
                 dataset_instance: model.DatasetInstance
@@ -1351,7 +1351,7 @@ class DirectoryModelExportStore(ModelExportStore):
 
     def push_metadata_files(self):
         for dataset in self.included_datasets:
-            for metadata_element in dataset.metadata.values():
+            for metadata_element in dataset.metadata_.values():
                 if isinstance(metadata_element, model.MetadataFile):
                     metadata_element.update_from_file(metadata_element.file_name)
 
