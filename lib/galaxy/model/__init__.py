@@ -3801,7 +3801,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         tool_version=None,
         extension=None,
         dbkey=None,
-        metadata_=None,
+        metadata=None,
         history=None,
         dataset=None,
         deleted=False,
@@ -3827,7 +3827,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         # set private variable to None here, since the attribute may be needed in by MetadataCollection.__init__
         self._metadata = None
         # Note the trailing underscore! ('metadata' is reserved by SQLAlchemy for the MetaData instance when using a declarative base class)
-        self.metadata_ = metadata_ or dict()
+        self.metadata_ = metadata or dict()
         self.extended_metadata = extended_metadata
         if (
             dbkey
