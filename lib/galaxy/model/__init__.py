@@ -4350,7 +4350,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
             blurb=self.blurb,
             peek=self.peek,
             extension=self.extension,
-            metadata=metadata,
+            metadata_=metadata,
             designation=self.designation,
             deleted=self.deleted,
             visible=self.visible,
