@@ -430,6 +430,9 @@ def database_conf(db_path, prefix="GALAXY", prefer_template_database=False):
         config["database_engine_option_pool_size"] = "10"
     if template_name:
         config["database_template"] = template_name
+
+    #breakpoint()
+
     return config
 
 
@@ -1062,6 +1065,7 @@ class GalaxyTestDriver(TestDriver):
         return functional.test_toolbox
 
     def run_tool_test(self, tool_id, index=0, resource_parameters=None, **kwd):
+        #breakpoint()
         if resource_parameters is None:
             resource_parameters = {}
         host, port, url = target_url_parts()

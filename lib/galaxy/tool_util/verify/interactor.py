@@ -264,6 +264,9 @@ class GalaxyInteractorApi:
         `dbkey` and `tags` all map to the API description directly. Other metadata attributes
         are assumed to be datatype-specific and mapped with a prefix of `metadata_`.
         """
+
+        #breakpoint()
+
         metadata = attributes.get("metadata", {}).copy()
         for key in metadata.copy().keys():
             if key not in ["name", "info", "tags", "created_from_basename"]:
@@ -280,9 +283,15 @@ class GalaxyInteractorApi:
         if metadata:
 
             def wait_for_content():
+
+                # TODO this api call returns the wrong metadata!
                 response = self._get(f"histories/{history_id}/contents/{hid}")
+
+                #breakpoint()
+
                 try:
                     response.raise_for_status()
+                    #breakpoint()
                     return response.json()
                 except requests.exceptions.HTTPError:
                     return None
@@ -292,6 +301,15 @@ class GalaxyInteractorApi:
             for key, value in metadata.items():
                 try:
                     dataset_value = dataset.get(key, None)
+
+
+
+                    # TODO Here. bad branch value != dataset_value; dev branch: ==
+                    # value is metadata from test definition
+                    # dataset_value is the generated result.
+                    #breakpoint()
+
+
 
                     def compare(val, expected):
                         if str(val) != str(expected):
@@ -436,6 +454,7 @@ class GalaxyInteractorApi:
             "dbkey": test_data["dbkey"],
         }
         metadata = test_data.get("metadata", {})
+        #bbreakpointreakpoint()
         if not hasattr(metadata, "items"):
             raise Exception(f"Invalid metadata description found for input [{fname}] - [{metadata}]")
         for name, value in test_data.get("metadata", {}).items():
@@ -533,6 +552,10 @@ class GalaxyInteractorApi:
             else:
                 break
         submit_response_object = ensure_tool_run_response_okay(submit_response, "execute tool", inputs_tree)
+
+        #breakpoint()
+        # TODO both branches: submit_response_object['outputs'][0]['metadata_dbkey'] = '?'
+
         try:
             return Bunch(
                 inputs=inputs_tree,
@@ -1144,6 +1167,7 @@ def verify_tool(
     skip_with_reference_data=False,
     skip_on_dynamic_param_errors=False,
 ):
+    #breakpoint()
     if resource_parameters is None:
         resource_parameters = {}
     if client_test_config is None:
@@ -1214,11 +1238,12 @@ def verify_tool(
                 maxseconds=maxseconds,
                 tool_version=tool_version,
             )
+            #breakpoint() #her is ok
         except Exception as e:
             input_staging_exception = e
             raise
         try:
-            tool_response = galaxy_interactor.run_tool(testdef, test_history, resource_parameters=resource_parameters)
+            tool_response = galaxy_interactor.run_tool(testdef, test_history, resource_parameters=resource_parameters)  # bad branch still ok here
             data_list, jobs, tool_inputs = tool_response.outputs, tool_response.jobs, tool_response.inputs
             data_collection_list = tool_response.output_collections
         except RunToolException as e:
@@ -1240,6 +1265,7 @@ def verify_tool(
                     testdef, test_history, jobs, data_list, data_collection_list, galaxy_interactor, quiet=quiet
                 )
             except JobOutputsError as e:
+                #breakpoint()  # TODO bad branch is here!
                 job_stdio = e.job_stdio
                 job_output_exceptions = e.output_exceptions
                 raise e
@@ -1306,6 +1332,9 @@ def _verify_outputs(testdef, history, jobs, data_list, data_collection_list, gal
     maxseconds = testdef.maxseconds
     # Wait for the job to complete and register expections if the final
     # status was not what test was expecting.
+
+    #breakpoint()
+
     job_failed = False
     try:
         galaxy_interactor.wait_for_job(job["id"], history, maxseconds)
@@ -1336,6 +1365,7 @@ def _verify_outputs(testdef, history, jobs, data_list, data_collection_list, gal
             register_exception(error)
 
     for output_index, output_dict in enumerate(testdef.outputs):
+        #breakpoint()
         # Get the correct hid
         name = output_dict["name"]
         outfile = output_dict["value"]
@@ -1352,6 +1382,9 @@ def _verify_outputs(testdef, history, jobs, data_list, data_collection_list, gal
             else:
                 output_data = data_list[len(data_list) - len(testdef.outputs) + output_index]
         assert output_data is not None
+
+        #breakpoint()
+
         try:
             galaxy_interactor.verify_output(
                 history,

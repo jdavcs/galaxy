@@ -1094,6 +1094,8 @@ class HistoriesContentsService(ServiceBase):
         serialization_params: SerializationParams,
     ):
         serialization_params.default_view = "detailed"
+        #breakpoint()
+        # TODO if we iter over hda.metadata_.items(), we get dbkey:? So the problem happens before this!
         hda = self.hda_manager.get_accessible(self.decode_id(id), trans.user)
         return self.hda_serializer.serialize_to_view(hda, user=trans.user, trans=trans, **serialization_params.dict())
 

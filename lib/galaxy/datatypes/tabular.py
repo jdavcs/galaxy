@@ -1377,6 +1377,14 @@ class BaseCSV(TabularData):
         return True
 
     def set_meta(self, dataset, **kwd):
+
+        #with open('/home/sergey/2sandbox/a1/metadata', 'a') as f:
+        #    f.write("\n1\n")
+        #    f.write(str(dataset))
+        #    for key, val in dataset.metadata_.items():
+        #        f.write(f'\nkey={key}, val={val}')
+        #    f.write('\n\n')
+
         column_types = []
         header_row = []
         data_row = []
@@ -1409,6 +1417,12 @@ class BaseCSV(TabularData):
         dataset.metadata_.column_names = header_row
         dataset.metadata_.delimiter = self.dialect.delimiter
 
+        #with open('/home/sergey/2sandbox/a1/metadata', 'a') as f:
+        #    f.write("\n2\n")
+        #    f.write(str(dataset))
+        #    for key, val in dataset.metadata_.items():
+        #        f.write(f'\nkey={key}, val={val}')
+        #    f.write('\n\n')
 
 @dataproviders.decorators.has_dataproviders
 class CSV(BaseCSV):
