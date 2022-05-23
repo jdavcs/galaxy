@@ -231,6 +231,7 @@ class ModelImportStore(metaclass=abc.ABCMeta):
             self._flush()
 
     def perform_import(self, history=None, new_history=False, job=None):
+
         object_import_tracker = ObjectImportTracker()
 
         datasets_attrs = self.datasets_properties()
@@ -272,9 +273,16 @@ class ModelImportStore(metaclass=abc.ABCMeta):
                 dataset_instance.dataset.sources.append(source_obj)
 
     def _import_datasets(self, object_import_tracker, datasets_attrs, history, new_history, job):
+
+
+        #breakpoint()
+        ACCUM = []
+
         object_key = self.object_key
 
         for dataset_attrs in datasets_attrs:
+
+            ACCUM.append(dataset_attrs)
 
             if "state" not in dataset_attrs:
                 self.dataset_state_serialized = False
@@ -491,6 +499,15 @@ class ModelImportStore(metaclass=abc.ABCMeta):
                     else:
                         assert "id" in dataset_attrs
                         object_import_tracker.lddas_by_key[dataset_attrs["id"]] = dataset_instance
+
+
+        with open('/home/sergey/2sandbox/metadata/xx', 'a') as f:
+            f.write('EXTENDED\n')
+            for item in ACCUM:
+                f.write(f'{item}\n')
+            f.write('\n\n')
+
+
 
     def _import_libraries(self, object_import_tracker):
         object_key = self.object_key

@@ -271,28 +271,28 @@ class PortableDirectoryMetadataGenerator(MetadataCollectionStrategy):
 
 
 class ExtendedDirectoryMetadataGenerator(PortableDirectoryMetadataGenerator):
-    extended = True
-    write_object_store_conf = True
-
-    def __init__(self, job_id):
-        self.job_id = job_id
-
-    def setup_external_metadata(self, datasets_dict, out_collections, sa_session, **kwd):
-        command = super().setup_external_metadata(datasets_dict, out_collections, sa_session, **kwd)
-        return command
-
-    def load_metadata(self, dataset, name, sa_session, working_directory, remote_metadata_directory=None):
-        # This method shouldn't really be called one-at-a-time dataset-wise like this and
-        # isn't in job_wrapper.finish, instead finish just executes perform_import() on
-        # the target model store within the context of a session to bring in all the changed objects.
-        # However, this method is part of the metadata interface and is used by unit tests,
-        # so we allow a sessionless import and loading of individual dataset as below.
-        import_model_store = store.imported_store_for_metadata(
-            os.path.join(working_directory, "metadata", "outputs_populated")
-        )
-        imported_dataset = import_model_store.sa_session.query(galaxy.model.HistoryDatasetAssociation).find(dataset.id)
-        dataset.metadata_ = imported_dataset.metadata_
-        return dataset
+        extended = True  # TODO this causes the test to fail
+        write_object_store_conf = True
+    
+        def __init__(self, job_id):
+            self.job_id = job_id
+    
+        def setup_external_metadata(self, datasets_dict, out_collections, sa_session, **kwd):
+            command = super().setup_external_metadata(datasets_dict, out_collections, sa_session, **kwd)
+            return command
+    
+        def load_metadata(self, dataset, name, sa_session, working_directory, remote_metadata_directory=None):
+            # This method shouldn't really be called one-at-a-time dataset-wise like this and
+            # isn't in job_wrapper.finish, instead finish just executes perform_import() on
+            # the target model store within the context of a session to bring in all the changed objects.
+            # However, this method is part of the metadata interface and is used by unit tests,
+            # so we allow a sessionless import and loading of individual dataset as below.
+            import_model_store = store.imported_store_for_metadata(
+                os.path.join(working_directory, "metadata", "outputs_populated")
+            )
+            imported_dataset = import_model_store.sa_session.query(galaxy.model.HistoryDatasetAssociation).find(dataset.id)
+            dataset.metadata_ = imported_dataset.metadata_
+            return dataset
 
 
 def _initialize_metadata_inputs(dataset, path_for_part, tmp_dir, kwds, real_metadata_object=True):

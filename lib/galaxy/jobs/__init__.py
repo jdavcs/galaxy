@@ -1768,6 +1768,7 @@ class JobWrapper(HasResourceParameters):
             # the tasks failed. So include the stderr, stdout, and exit code:
             return fail()
 
+        #raise
         extended_metadata = self.external_output_metadata.extended and not self.tool.tool_type == "interactive"
 
         # We collect the stderr from tools that write their stderr to galaxy.json
@@ -1794,6 +1795,7 @@ class JobWrapper(HasResourceParameters):
         else:
             final_job_state = job.states.ERROR
 
+        # TODO this if is irrelevant for current error
         if not extended_metadata and self.outputs_to_working_directory and not self.__link_file_check():
             # output will be moved by job if metadata_strategy is extended_metadata, so skip moving here
             for dataset_path in self.job_io.get_output_fnames():
@@ -1815,6 +1817,8 @@ class JobWrapper(HasResourceParameters):
                         return self.fail(f"Job {job.id}'s output dataset(s) could not be read")
 
         job_context = ExpressionContext(dict(stdout=job.stdout, stderr=job.stderr))
+
+        # TODO this if stmt triggers the error!
         if extended_metadata:
             try:
                 import_options = store.ImportOptions(allow_dataset_object_edit=True, allow_edit=True)
