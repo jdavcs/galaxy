@@ -58,8 +58,6 @@ if TYPE_CHECKING:
         HistoryDatasetAssociation,
         HistoryDatasetCollectionAssociation,
     )
-    from galaxy.tools import Tool
-    from galaxy.webapps.galaxy.base import GalaxyWebTransaction
 
 XSS_VULNERABLE_MIME_TYPES = [
     "image/svg+xml",  # Unfiltered by Galaxy and may contain JS that would be executed by some browsers.
@@ -114,7 +112,7 @@ def validate(dataset_instance: "DatasetInstance") -> DatatypeValidation:
 
 
 def get_params_and_input_name(
-    converter: "Tool", deps: Optional[Dict], target_context: Optional[Dict] = None
+    converter, deps: Optional[Dict], target_context: Optional[Dict] = None
 ) -> Tuple[Dict, str]:
     # Generate parameter dictionary
     params = {}
@@ -347,7 +345,7 @@ class Data(metaclass=DataMeta):
         return error, msg, messagetype
 
     def _archive_composite_dataset(
-        self, trans: "GalaxyWebTransaction", data: "DatasetInstance", headers: Headers, do_action: str = "zip"
+        self, trans, data: "DatasetInstance", headers: Headers, do_action: str = "zip"
     ) -> Tuple[Union[ZipstreamWrapper, str], Headers]:
         # save a composite object into a compressed archive for downloading
         outfname = data.name[0:150]
@@ -433,7 +431,7 @@ class Data(metaclass=DataMeta):
 
     def display_data(
         self,
-        trans: "GalaxyWebTransaction",
+        trans,
         data: "HistoryDatasetAssociation",
         preview: bool = False,
         filename: Optional[str] = None,
@@ -571,9 +569,7 @@ class Data(metaclass=DataMeta):
                 result += MarkdownFormatHelpers.indicate_data_truncated()
         return result
 
-    def _yield_user_file_content(
-        self, trans: "GalaxyWebTransaction", from_dataset: "DatasetInstance", filename: str, headers: Headers
-    ) -> IO:
+    def _yield_user_file_content(self, trans, from_dataset: "DatasetInstance", filename: str, headers: Headers) -> IO:
         """This method is responsible for sanitizing the HTML if needed."""
         if trans.app.config.sanitize_all_html and headers.get("content-type", None) == "text/html":
             # Sanitize anytime we respond with plain text/html content.
@@ -699,9 +695,7 @@ class Data(metaclass=DataMeta):
     def get_display_application(self, key: str, default: Optional["DisplayApplication"] = None) -> "DisplayApplication":
         return self.display_applications.get(key, default)
 
-    def get_display_applications_by_dataset(
-        self, dataset: "DatasetInstance", trans: "GalaxyWebTransaction"
-    ) -> Dict[str, "DisplayApplication"]:
+    def get_display_applications_by_dataset(self, dataset: "DatasetInstance", trans) -> Dict[str, "DisplayApplication"]:
         rval = {}
         for key, value in self.display_applications.items():
             value = value.filter_by_dataset(dataset, trans)
@@ -773,7 +767,7 @@ class Data(metaclass=DataMeta):
 
     def convert_dataset(
         self,
-        trans: "GalaxyWebTransaction",
+        trans,
         original_dataset: "HistoryDatasetAssociation",
         target_type: str,
         return_output: bool = False,
