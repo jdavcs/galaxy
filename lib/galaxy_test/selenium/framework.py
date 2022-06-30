@@ -538,6 +538,11 @@ class UsesHistoryItemAssertions(NavigatesGalaxyMixin):
         hid_text = item_body.hid.wait_for_text()
         assert hid_text == str(hid), hid_text
 
+    def assert_item_body_includes(self, hid, expected_text):
+        item_body = self.history_panel_item_component(hid=hid)
+        body_text = item_body.wait_for_text()
+        assert expected_text in body_text, f"Expected text [{expected_text}] not found in [{body_text}]."
+
 
 EXAMPLE_WORKFLOW_URL_1 = (
     "https://raw.githubusercontent.com/galaxyproject/galaxy/release_19.09/test/base/data/test_workflow_1.ga"
