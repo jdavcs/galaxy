@@ -68,7 +68,7 @@ jobs:
           yarn-lock-file: 'galaxy root/client/yarn.lock'
       - uses: nanasess/setup-chromedriver@v1
       - name: Run tests
-        run: ./run_tests.sh --coverage -selenium lib/galaxy_test/selenium -- --num-shards=3 --shard-id=${{ matrix.chunk }}
+        run: ./run_tests.sh --coverage -selenium lib/galaxy_test/selenium/test_uploads.py
         working-directory: 'galaxy root'
       - uses: codecov/codecov-action@v2
         with:
