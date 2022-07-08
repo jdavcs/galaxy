@@ -62,6 +62,10 @@ def patch_allowlist(monkeypatch):
 def patch_blocklist(monkeypatch):
     monkeypatch.setattr(validation_module, "get_email_domain_blocklist_content", lambda a: None)
 
+@pytest.fixture
+def patch_check_existing(monkeypatch):
+    monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: False)
+
 class MockTransaction:
     def __init__(self):
         pass
@@ -84,6 +88,9 @@ def test_validate_email__check_existing(monkeypatch, patch_allowlist, patch_bloc
     result = validate_email(None, "unique_email@example.com")
     assert result == ""
 
-#def test_validate_email__allowlist(monkeypatch):
+#def test_validate_email__allowlist(monkeypatch, patch_blocklist, patch_check_existing):
 #    allowlist = ['foo@example.com']
+#    monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: allowlist)
+#    result = validate_email(None, "email@example.com")
+#    breakpoint()
 
