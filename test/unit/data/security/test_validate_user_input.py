@@ -51,9 +51,7 @@ import pytest
 
 
 
-class MockUser:
-    pass
-
+    
 @pytest.fixture
 def patch_allowlist(monkeypatch):
     monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: None)
@@ -66,31 +64,33 @@ def patch_blocklist(monkeypatch):
 def patch_check_existing(monkeypatch):
     monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: False)
 
-class MockTransaction:
-    def __init__(self):
+
+class TestValidateEmail:
+    
+    class MockUser:
         pass
 
-def test_validate_email__empty():
-    assert validate_email(None, "", allow_empty=True) == ""
-
-    my_email = "foo"
-    my_user = MockUser()
-    my_user.email = my_email
-    assert validate_email(None, my_email, user=my_user) == ""
-
-
-def test_validate_email__check_existing(monkeypatch, patch_allowlist, patch_blocklist):
-    monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: True)
-    result = validate_email(None, "duplicate_email@example.com")
-    assert "exists" in result
-
-    monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: False)
-    result = validate_email(None, "unique_email@example.com")
-    assert result == ""
-
-def test_validate_email__allowlist_not_empty(monkeypatch, patch_blocklist, patch_check_existing):
-    allowlist = ['good_domain.com']
-    monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: allowlist)
-    assert validate_email(None, "email@good_domain.com") == ""
-    assert "enter an allowed domain" in validate_email(None, "email@bad_domain.com")
+    def test_email_is_empty(self):
+        assert validate_email(None, "", allow_empty=True) == ""
+    
+    def test_email_is_user_email(self):
+        my_email = "foo"
+        my_user = self.MockUser()
+        my_user.email = my_email
+        assert validate_email(None, my_email, user=my_user) == ""
+    
+    def test_check_existing(self, monkeypatch, patch_allowlist, patch_blocklist):
+        monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: True)
+        result = validate_email(None, "duplicate_email@example.com")
+        assert "exists" in result
+    
+        monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: False)
+        result = validate_email(None, "unique_email@example.com")
+        assert result == ""
+    
+    def test_allowlist_not_empty(self, monkeypatch, patch_blocklist, patch_check_existing):
+        allowlist = ['good_domain.com']
+        monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: allowlist)
+        assert validate_email(None, "email@good_domain.com") == ""
+        assert "enter an allowed domain" in validate_email(None, "email@bad_domain.com")
 
