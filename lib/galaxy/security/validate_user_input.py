@@ -70,6 +70,14 @@ def check_for_existing_email(trans, email):
     return bool(user_record)
 
 
+def get_email_domain_allowlist_content(trans):
+    return trans.app.config.email_domain_allowlist_content
+
+
+def get_email_domain_blocklist_content(trans):
+    return trans.app.config.email_domain_blocklist_content
+
+
 def validate_email(trans, email, user=None, check_dup=True, allow_empty=False, validate_domain=False):
     """
     Validates the email format, also checks whether the domain is blocklisted in the disposable domains configuration.
@@ -85,17 +93,20 @@ def validate_email(trans, email, user=None, check_dup=True, allow_empty=False, v
         if check_for_existing_email(trans, email):
             message = f"User with email '{email}' already exists."
 
-    #if not message:
-    #    # If the allowlist is not empty filter out any domain not in the list and ignore blocklist.
-    #    if trans.app.config.email_domain_allowlist_content is not None:
-    #        domain = extract_domain(email)
-    #        if domain not in trans.app.config.email_domain_allowlist_content:
-    #            message = "Please enter an allowed domain email address for this server."
-    #    # If the blocklist is not empty filter out the disposable domains.
-    #    elif trans.app.config.email_domain_blocklist_content is not None:
-    #        domain = extract_domain(email, base_only=True)
-    #        if domain in trans.app.config.email_domain_blocklist_content:
-    #            message = "Please enter your permanent email address."
+    email_domain_allowlist_content = get_email_domain_allowlist_content(trans)
+    email_domain_blocklist_content = get_email_domain_blocklist_content(trans)
+
+    if not message:
+        # If the allowlist is not empty filter out any domain not in the list and ignore blocklist.
+        if email_domain_allowlist_content is not None:
+            domain = extract_domain(email)
+            if domain not in email_domain_allowlist_content:
+                message = "Please enter an allowed domain email address for this server."
+        # If the blocklist is not empty filter out the disposable domains.
+        elif email_domain_blocklist_content is not None:
+            domain = extract_domain(email, base_only=True)
+            if domain in email_domain_blocklist_content:
+                message = "Please enter your permanent email address."
 
     return message
 
