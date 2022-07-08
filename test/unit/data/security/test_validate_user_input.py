@@ -3,6 +3,7 @@ from galaxy.security.validate_user_input import (
     validate_domain_resolves,
     validate_email_str,
     validate_publicname_str,
+    validate_email,
 )
 
 
@@ -48,5 +49,13 @@ def test_validate_email_str():
     assert validate_email_str(too_long_email) != ""
 
 
-def test_validate_email():
+class MockUser:
     pass
+
+def test_validate_email__empty():
+    assert validate_email(None, "", allow_empty=True) == ""
+
+    my_email = "foo"
+    my_user = MockUser()
+    my_user.email = my_email
+    assert validate_email(None, my_email, user=my_user) == ""
