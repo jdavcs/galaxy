@@ -103,3 +103,8 @@ class TestValidateEmail:
         monkeypatch.setattr(validation_module, "get_email_domain_blocklist_content", lambda a: blocklist)
 
         assert validate_email(None, "email@good_domain.com") == ""  # we expect blocklist to be ignored
+
+    def test_blocklist_when_allowlist_is_empty(self, monkeypatch, patch_allowlist, patch_check_existing):
+        blocklist = ['bad_domain.com']
+        monkeypatch.setattr(validation_module, "get_email_domain_blocklist_content", lambda a: blocklist)
+        assert "enter your permanent email" in validate_email(None, "email@bad_domain.com")
