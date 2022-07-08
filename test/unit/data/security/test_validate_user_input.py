@@ -88,9 +88,9 @@ def test_validate_email__check_existing(monkeypatch, patch_allowlist, patch_bloc
     result = validate_email(None, "unique_email@example.com")
     assert result == ""
 
-#def test_validate_email__allowlist(monkeypatch, patch_blocklist, patch_check_existing):
-#    allowlist = ['foo@example.com']
-#    monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: allowlist)
-#    result = validate_email(None, "email@example.com")
-#    breakpoint()
+def test_validate_email__allowlist_not_empty(monkeypatch, patch_blocklist, patch_check_existing):
+    allowlist = ['good_domain.com']
+    monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: allowlist)
+    assert validate_email(None, "email@good_domain.com") == ""
+    assert "enter an allowed domain" in validate_email(None, "email@bad_domain.com")
 
