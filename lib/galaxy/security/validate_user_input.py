@@ -102,7 +102,7 @@ def validate_email(trans, email, user=None, check_dup=True, allow_empty=False, v
             domain = extract_domain(email)
             if domain not in email_domain_allowlist_content:
                 message = "Please enter an allowed domain email address for this server."
-        # If the blocklist is not empty filter out the disposable domains.
+       # If the blocklist is not empty filter out the disposable domains.
         elif email_domain_blocklist_content is not None:
             domain = extract_domain(email, base_only=True)
             if domain in email_domain_blocklist_content:

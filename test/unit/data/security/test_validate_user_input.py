@@ -5,8 +5,8 @@ from galaxy.security.validate_user_input import (
     validate_publicname_str,
     validate_email,
 )
-from galaxy.security import  validate_user_input
-
+from galaxy.security import  validate_user_input as validation_module
+import pytest
 
 #def test_extract_full_domain():
 #    assert extract_domain("jack@foo.com") == "foo.com"
@@ -54,6 +54,17 @@ from galaxy.security import  validate_user_input
 class MockUser:
     pass
 
+@pytest.fixture
+def patch_allowlist(monkeypatch):
+    monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: None)
+
+@pytest.fixture
+def patch_blocklist(monkeypatch):
+    monkeypatch.setattr(validation_module, "get_email_domain_blocklist_content", lambda a: None)
+
+class MockTransaction:
+    def __init__(self):
+        pass
 
 def test_validate_email__empty():
     assert validate_email(None, "", allow_empty=True) == ""
@@ -64,11 +75,15 @@ def test_validate_email__empty():
     assert validate_email(None, my_email, user=my_user) == ""
 
 
-def test_validate_email__duplicate(monkeypatch):
-    monkeypatch.setattr(validate_user_input, "check_for_existing_email", lambda a, b: True)
+def test_validate_email__check_existing(monkeypatch, patch_allowlist, patch_blocklist):
+    monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: True)
     result = validate_email(None, "duplicate_email@example.com")
     assert "exists" in result
 
-    monkeypatch.setattr(validate_user_input, "check_for_existing_email", lambda a, b: False)
+    monkeypatch.setattr(validation_module, "check_for_existing_email", lambda a, b: False)
     result = validate_email(None, "unique_email@example.com")
     assert result == ""
+
+#def test_validate_email__allowlist(monkeypatch):
+#    allowlist = ['foo@example.com']
+
