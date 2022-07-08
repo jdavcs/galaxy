@@ -94,3 +94,12 @@ class TestValidateEmail:
         assert validate_email(None, "email@good_domain.com") == ""
         assert "enter an allowed domain" in validate_email(None, "email@bad_domain.com")
 
+    def test_ignore_blocklist_if_allowlist_not_empty(self, monkeypatch, patch_check_existing):
+        allowlist = ['good_domain.com']
+        monkeypatch.setattr(validation_module, "get_email_domain_allowlist_content", lambda a: allowlist)
+
+        # but add that domain to blocklist too!
+        blocklist = ['good_domain.com']
+        monkeypatch.setattr(validation_module, "get_email_domain_blocklist_content", lambda a: blocklist)
+
+        assert validate_email(None, "email@good_domain.com") == ""  # we expect blocklist to be ignored
