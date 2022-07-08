@@ -46,3 +46,7 @@ def test_validate_email_str():
     assert validate_email_str('"i-like-to-break-email-valid@tors"@foo.com') != ""
     too_long_email = "N" * 255 + "@foo.com"
     assert validate_email_str(too_long_email) != ""
+
+
+def test_validate_email():
+    pass
