@@ -18,6 +18,12 @@ SECTION_XML = """<?xml version="1.0" ?>
 </section>
 """
 
+def test_str_as_bool():
+    for value in ('true', 'yes', 'on', '1', 'True', 'Yes', 'On','TRUE', 'YES', 'ON'):
+        assert util.str_as_bool(value)
+    for value in ('false', '0', 'something else'):
+        assert not util.str_as_bool(value)
+
 
 def test_strip_control_characters():
     s = "\x00bla"
