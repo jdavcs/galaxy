@@ -131,7 +131,7 @@ class Idat(Binary):
     edam_format = "format_2058"
     edam_data = "data_2603"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         try:
             header = open(filename, "rb").read(4)
             if header == b"IDAT":
@@ -155,7 +155,7 @@ class Cel(Binary):
         name="version", default="3", desc="Version", readonly=True, visible=True, optional=True, no_value="3"
     )
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         """
         Try to guess if the file is a Cel file.
         >>> from galaxy.datatypes.sniff import get_test_fname
@@ -252,7 +252,7 @@ class Meryldb(CompressedArchive):
 
     file_ext = "meryldb"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         """
         Try to guess if the file is a Cel file.
         >>> from galaxy.datatypes.sniff import get_test_fname
@@ -362,7 +362,7 @@ class CompressedZipArchive(CompressedArchive):
         except Exception:
             return f"Compressed zip file ({nice_size(dataset.get_size())})"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         with zipfile.ZipFile(filename) as zf:
             zf_files = zf.infolist()
             count = 0
@@ -371,6 +371,7 @@ class CompressedZipArchive(CompressedArchive):
                     count += 1
                 if count > 1:
                     return True
+        return False
 
 
 class GenericAsn1Binary(Binary):
@@ -507,7 +508,7 @@ class BamNative(CompressedArchive, _BamOrSam):
     def init_meta(self, dataset: "DatasetInstance", copy_from: Optional["DatasetInstance"] = None) -> None:
         Binary.init_meta(self, dataset, copy_from=copy_from)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return BamNative.is_bam(filename)
 
     @classmethod
@@ -963,7 +964,7 @@ class CRAM(Binary):
             dataset.peek = "file does not exist"
             dataset.blurb = "file purged from disk"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         try:
             header = open(filename, "rb").read(4)
             if header == b"CRAM":
@@ -996,7 +997,7 @@ class Bcf(BaseBcf):
         optional=True,
     )
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # BCF is compressed in the BGZF format, and must not be uncompressed in Galaxy.
         try:
             header = gzip.open(filename).read(3)
@@ -1051,7 +1052,7 @@ class BcfUncompressed(BaseBcf):
     file_ext = "bcf_uncompressed"
     compressed = False
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         try:
             header = open(filename, mode="rb").read(3)
             # The first 3 bytes of any BCF file are 'BCF', and the file is binary.
@@ -1082,7 +1083,7 @@ class H5(Binary):
         super().__init__(**kwd)
         self._magic = binascii.unhexlify("894844460d0a1a0a")
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # The first 8 bytes of any hdf5 file are 0x894844460d0a1a0a
         try:
             header = open(filename, "rb").read(8)
@@ -1184,7 +1185,7 @@ class Loom(H5):
         readonly=True,
     )
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             with h5py.File(filename, "r") as loom_file:
                 # Check the optional but distinctive LOOM_SPEC_VERSION attribute
@@ -1347,7 +1348,7 @@ class Anndata(H5):
         no_value=(0, 0),
     )
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             try:
                 with h5py.File(filename, "r") as f:
@@ -1697,7 +1698,7 @@ class Biom2(H5):
     file_ext = "biom2"
     edam_format = "format_3746"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         """
         >>> from galaxy.datatypes.sniff import get_test_fname
         >>> fname = get_test_fname('biom2_sparse_otu_table_hdf5.biom2')
@@ -1767,7 +1768,7 @@ class Cool(H5):
 
     file_ext = "cool"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         """
         >>> from galaxy.datatypes.sniff import get_test_fname
         >>> fname = get_test_fname('matrix.cool')
@@ -1820,7 +1821,7 @@ class MCool(H5):
 
     file_ext = "mcool"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         """
         >>> from galaxy.datatypes.sniff import get_test_fname
         >>> fname = get_test_fname('matrix.mcool')
@@ -1915,7 +1916,7 @@ class H5MLM(H5):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             keys = ["-model_config-"]
             with h5py.File(filename, "r") as handle:
@@ -2055,7 +2056,7 @@ class HexrdMaterials(H5):
         no_value={},
     )
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             req = {"AtomData", "Atomtypes", "CrystalSystem", "LatticeParameters"}
             with h5py.File(filename, "r") as mat_file:
@@ -2287,7 +2288,7 @@ class SQlite(Binary):
         except Exception as exc:
             log.warning("%s, set_meta Exception: %s", self, exc)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # The first 16 bytes of any SQLite3 database file is 'SQLite format 3\0', and the file is binary. For details
         # about the format, see http://www.sqlite.org/fileformat.html
         try:
@@ -2383,7 +2384,7 @@ class GeminiSQLite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = [
                 "gene_detailed",
@@ -2422,7 +2423,7 @@ class ChiraSQLite(SQlite):
     def set_meta(self, dataset: "DatasetInstance", overwrite: bool = True, **kwd) -> None:
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             self.sniff_table_names(filename, ["Chimeras"])
         return False
@@ -2479,7 +2480,7 @@ class CuffDiffSQlite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             # These tables should be in any CuffDiff SQLite output.
             table_names = ["CDS", "genes", "isoforms", "replicates", "runInfo", "samples", "TSS"]
@@ -2509,7 +2510,7 @@ class MzSQlite(SQlite):
     def set_meta(self, dataset: "DatasetInstance", overwrite: bool = True, **kwd) -> None:
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = [
                 "DBSequence",
@@ -2546,7 +2547,7 @@ class PQP(SQlite):
     def set_meta(self, dataset: "DatasetInstance", overwrite: bool = True, **kwd) -> None:
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         """
         table definition according to https://github.com/grosenberger/OpenMS/blob/develop/src/openms/source/ANALYSIS/OPENSWATH/TransitionPQPFile.cpp#L264
         for now VERSION GENE PEPTIDE_GENE_MAPPING are excluded, since
@@ -2588,7 +2589,7 @@ class OSW(SQlite):
     def set_meta(self, dataset: "DatasetInstance", overwrite: bool = True, **kwd) -> None:
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # osw seems to be an extension of pqp (few tables are added)
         # see also here https://github.com/OpenMS/OpenMS/issues/4365
         if not super().sniff(filename):
@@ -2631,7 +2632,7 @@ class SQmass(SQlite):
     def set_meta(self, dataset: "DatasetInstance", overwrite: bool = True, **kwd) -> None:
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = ["CHROMATOGRAM", "PRECURSOR", "RUN", "SPECTRUM", "DATA", "PRODUCT", "RUN_EXTRA"]
             return self.sniff_table_names(filename, table_names)
@@ -2663,7 +2664,7 @@ class BlibSQlite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = [
                 "IonMobilityTypes",
@@ -2716,7 +2717,7 @@ class DlibSQlite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = ["entries", "metadata", "peptidetoprotein"]
             return self.sniff_table_names(filename, table_names)
@@ -2760,7 +2761,7 @@ class ElibSQlite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = [
                 "entries",
@@ -2803,7 +2804,7 @@ class IdpDB(SQlite):
     def set_meta(self, dataset: "DatasetInstance", overwrite: bool = True, **kwd) -> None:
         super().set_meta(dataset, overwrite=overwrite, **kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = [
                 "About",
@@ -2860,7 +2861,7 @@ class GAFASQLite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = frozenset({"gene", "gene_family", "gene_family_member", "meta", "transcript"})
             return self.sniff_table_names(filename, table_names)
@@ -2909,7 +2910,7 @@ class NcbiTaxonomySQlite(SQlite):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             table_names = frozenset({"__diesel_schema_migrations", "taxonomy"})
             return self.sniff_table_names(filename, table_names)
@@ -3211,7 +3212,7 @@ class OxliCountGraph(OxliBinary):
 
     file_ext = "oxlicg"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return OxliBinary._sniff(filename, b"01")
 
 
@@ -3237,7 +3238,7 @@ class OxliNodeGraph(OxliBinary):
 
     file_ext = "oxling"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return OxliBinary._sniff(filename, b"02")
 
 
@@ -3264,7 +3265,7 @@ class OxliTagSet(OxliBinary):
 
     file_ext = "oxlits"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return OxliBinary._sniff(filename, b"03")
 
 
@@ -3286,7 +3287,7 @@ class OxliStopTags(OxliBinary):
 
     file_ext = "oxlist"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return OxliBinary._sniff(filename, b"04")
 
 
@@ -3313,7 +3314,7 @@ class OxliSubset(OxliBinary):
 
     file_ext = "oxliss"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return OxliBinary._sniff(filename, b"05")
 
 
@@ -3341,7 +3342,7 @@ class OxliGraphLabels(OxliBinary):
 
     file_ext = "oxligl"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         return OxliBinary._sniff(filename, b"06")
 
 
@@ -3379,7 +3380,7 @@ class PostgresqlArchive(CompressedArchive):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, util.unicodify(e))
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if filename and tarfile.is_tarfile(filename):
             with tarfile.open(filename, "r") as temptar:
                 return "postgresql/db/PG_VERSION" in temptar.getnames()
@@ -3424,7 +3425,7 @@ class Fast5Archive(CompressedArchive):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         try:
             if filename and tarfile.is_tarfile(filename):
                 with tarfile.open(filename, "r") as temptar:
@@ -3472,7 +3473,7 @@ class Fast5ArchiveGz(Fast5Archive):
 
     file_ext = "fast5.tar.gz"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if not is_gzip(filename):
             return False
         return Fast5Archive.sniff(self, filename)
@@ -3496,7 +3497,7 @@ class Fast5ArchiveBz2(Fast5Archive):
 
     file_ext = "fast5.tar.bz2"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if not is_bz2(filename):
             return False
         return Fast5Archive.sniff(self, filename)
@@ -3538,7 +3539,7 @@ class SearchGuiArchive(CompressedArchive):
         except Exception as e:
             log.warning("%s, set_meta Exception: %s", self, e)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         try:
             if filename and zipfile.is_zipfile(filename):
                 with zipfile.ZipFile(filename, "r") as tempzip:
@@ -3609,7 +3610,7 @@ class Dcd(Binary):
         super().__init__(**kwd)
         self._magic_number = b"CORD"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # Match the keyword 'CORD' at position 4 or 8 - intsize dependent
         # Not checking for endianness
         try:
@@ -3661,7 +3662,7 @@ class Vel(Binary):
         super().__init__(**kwd)
         self._magic_number = b"VELD"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # Match the keyword 'VELD' at position 4 or 8 - intsize dependent
         # Not checking for endianness
         try:
@@ -3837,7 +3838,7 @@ class BafTar(CompressedArchive):
     def get_signature_file(self):
         return "analysis.baf"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if tarfile.is_tarfile(filename):
             with tarfile.open(filename) as rawtar:
                 return self.get_signature_file() in [os.path.basename(f).lower() for f in rawtar.getnames()]
@@ -3926,7 +3927,7 @@ class WiffTar(BafTar):
 
     file_ext = "wiff.tar"
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if tarfile.is_tarfile(filename):
             with tarfile.open(filename) as rawtar:
                 return ".wiff" in [os.path.splitext(os.path.basename(f).lower())[1] for f in rawtar.getnames()]
@@ -3987,7 +3988,7 @@ class JP2(Binary):
         super().__init__(**kwd)
         self._magic = binascii.unhexlify("0000000C6A5020200D0A870A")
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         # The first 12 bytes of any jp2 file are 0000000C6A5020200D0A870A
         try:
             header = open(filename, "rb").read(12)
@@ -4034,7 +4035,7 @@ class Npz(CompressedArchive):
     def __init__(self, **kwd):
         super().__init__(**kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         try:
             npz = np.load(filename)
             if isinstance(npz, np.lib.npyio.NpzFile):
@@ -4102,7 +4103,7 @@ class HexrdImagesNpz(Npz):
     def __init__(self, **kwd):
         super().__init__(**kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             try:
                 req_files = {"0_row", "0_col", "0_data", "shape", "nframes", "dtype"}
@@ -4168,7 +4169,7 @@ class HexrdEtaOmeNpz(Npz):
     def __init__(self, **kwd):
         super().__init__(**kwd)
 
-    def sniff(self, filename):
+    def sniff(self, filename: str) -> bool:
         if super().sniff(filename):
             try:
                 req_files = {"dataStore", "etas", "etaEdges", "iHKLList", "omegas", "omeEdges", "planeData_hkls"}
