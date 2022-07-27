@@ -79,6 +79,6 @@ class HDF5SummarizedExperiment(Data):
         """Not sure whether this is necessary (or possible) with binaries."""
         pass
 
-    def get_mime(self):
+    def get_mime(self) -> str:
         """Return the mime type of the datatype."""
         return "text/html"
