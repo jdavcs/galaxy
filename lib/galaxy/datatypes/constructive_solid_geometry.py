@@ -61,7 +61,7 @@ class Ply:
     def __init__(self, **kwd):
         raise NotImplementedError
 
-    def sniff_prefix(self, file_prefix: FilePrefix):
+    def sniff_prefix(self, file_prefix: FilePrefix) -> bool:
         """
         The structure of a typical PLY file:
         Header, Vertex List, Face List, (lists of other elements)
@@ -249,7 +249,7 @@ class Vtk:
     def __init__(self, **kwd):
         raise NotImplementedError
 
-    def sniff_prefix(self, file_prefix: FilePrefix):
+    def sniff_prefix(self, file_prefix: FilePrefix) -> bool:
         """
         VTK files can be either ASCII or binary, with two different
         styles of file formats: legacy or XML.  We'll assume if the
@@ -562,7 +562,7 @@ class NeperTess(data.Text):
     def __init__(self, **kwd):
         data.Text.__init__(self, **kwd)
 
-    def sniff_prefix(self, file_prefix: FilePrefix):
+    def sniff_prefix(self, file_prefix: FilePrefix) -> bool:
         """
         Neper tess format startswith:***tess
         >>> from galaxy.datatypes.sniff import get_test_fname
@@ -637,7 +637,7 @@ class NeperTesr(Binary):
     def __init__(self, **kwd):
         Binary.__init__(self, **kwd)
 
-    def sniff_prefix(self, file_prefix: FilePrefix):
+    def sniff_prefix(self, file_prefix: FilePrefix) -> bool:
         """
         Neper tesr format startswith:***tesr
         >>> from galaxy.datatypes.sniff import get_test_fname
@@ -793,7 +793,7 @@ class GmshMsh(Binary):
     def __init__(self, **kwd):
         Binary.__init__(self, **kwd)
 
-    def sniff_prefix(self, file_prefix: FilePrefix):
+    def sniff_prefix(self, file_prefix: FilePrefix) -> bool:
         """
         Gmsh msh format startswith:$MeshFormat
         >>> from galaxy.datatypes.sniff import get_test_fname
