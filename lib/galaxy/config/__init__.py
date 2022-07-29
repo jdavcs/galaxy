@@ -2,7 +2,7 @@
 Universe configuration builder.
 """
 # absolute_import needed for tool_shed package.
-from proxima import ProximaConfig
+import proxima
 
 import configparser
 import ipaddress
@@ -218,16 +218,21 @@ class BaseAppConfiguration(HasDynamicProperties):
         First look for name in self._proximaconfig.name. If it's not there,
         proceed as normal: self.name.
         """
-        proxima_config = object.__getattribute__(self, '_proximaconfig')
-        if name == '_proximaconfig':
+        proxima_config = object.__getattribute__(self, '_BaseAppConfiguration__proximaconfig')
+        if name == '__proximaconfig':
             return proxima_config
         try:
             return object.__getattribute__(proxima_config, name)
         except AttributeError:
             return object.__getattribute__(self, name)
 
-    def __init__(self, **kwargs):
-        self._proximaconfig = ProximaConfig()
+    def __init__(self, proxima_manager=None, **kwargs):
+        if proxima_manager:
+            proxima_manager.load_schema()  # pass file name?
+            proxima_manager.load_config()  # pass file name?
+            self.__proximaconfig = proxima_manager.config
+        else:
+            self.__proximaconfig = proxima.Proxima().config  # just use a blank one
 
         self._preprocess_kwargs(kwargs)
         self._kwargs = kwargs  # Save these as a record of explicitly set options

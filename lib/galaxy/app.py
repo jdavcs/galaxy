@@ -18,6 +18,8 @@ from typing import (
 from beaker.cache import CacheManager
 from beaker.util import parse_cache_config_options
 
+import proxima
+
 import galaxy.model
 import galaxy.model.security
 import galaxy.queues
@@ -473,9 +475,13 @@ class MinimalGalaxyApplication(BasicSharedApp, ConfiguresGalaxyMixin, HaltableCo
         log.debug("python path is: %s", ", ".join(sys.path))
         self.name = "galaxy"
         self.is_webapp = False
+
+        _proxima = proxima.Proxima()
+        self.config: Any = self._register_singleton(config.Configuration, config.Configuration(proxima_manager=_proxima, **kwargs))
+
         # Read config file and check for errors
-        self.config: Any = self._register_singleton(config.Configuration, config.Configuration(**kwargs))
         self.config.check()
+
         self._configure_object_store(fsmon=True)
         self._register_singleton(BaseObjectStore, self.object_store)
         config_file = kwargs.get("global_conf", {}).get("__file__", None)
