@@ -30,6 +30,7 @@ from typing import (
     Union,
 )
 
+import proxima
 import yaml
 
 from galaxy.config.schema import AppSchema
@@ -212,7 +213,14 @@ class BaseAppConfiguration(HasDynamicProperties):
     listify_options: Set[str] = set()  # values for these options are processed as lists of values
     object_store_store_by: str
 
-    def __init__(self, **kwargs):
+    def __init__(self, proxima_manager=None, **kwargs):
+        if proxima_manager:
+            #proxima_manager.load_schema()  # pass file name?
+            proxima_manager.load_config()  # pass file name?
+            self.__proximaconfig = proxima_manager.config
+        else:
+            self.__proximaconfig = proxima.Proxima().config  # just use a blank one
+
         self._preprocess_kwargs(kwargs)
         self._kwargs = kwargs  # Save these as a record of explicitly set options
         self.config_dict = kwargs
@@ -225,6 +233,19 @@ class BaseAppConfiguration(HasDynamicProperties):
         self._preprocess_paths_to_resolve()  # Any preprocessing steps that need to happen before paths are resolved
         self._resolve_paths()  # Overwrite attribute values with resolved paths
         self._postprocess_paths_to_resolve()  # Any steps that need to happen after paths are resolved
+
+    def __getattribute__(self, name):
+        """
+        First look for name in self._proximaconfig.name. If it's not there,
+        proceed as normal: self.name.
+        """
+        proxima_config = object.__getattribute__(self, '_BaseAppConfiguration__proximaconfig')
+        if name == '__proximaconfig':
+            return proxima_config
+        try:
+            return object.__getattribute__(proxima_config, name)
+        except AttributeError:
+            return object.__getattribute__(self, name)
 
     def _preprocess_kwargs(self, kwargs):
         self._process_renamed_options(kwargs)
