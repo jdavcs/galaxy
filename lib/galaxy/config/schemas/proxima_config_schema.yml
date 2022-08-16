@@ -539,9 +539,7 @@ mapping:
           Configured FileSource plugins.
 
       file_sources:
-        type: seq
-        sequence:
-          - type: any
+        type: seq[any]
         desc: |
           FileSource plugins described embedded into Galaxy's config.
 
@@ -567,9 +565,7 @@ mapping:
           For available options see config/container_resolvers_conf.xml.sample.
 
       container_resolvers:
-        type: seq
-        sequence:
-          - type: any
+        type: seq[any]
         desc: |
           Rather than specifying a container_resolvers_config_file, the definition of the
           resolvers to enable can be embedded into Galaxy's config with this option.
@@ -2619,9 +2615,7 @@ mapping:
           comma-separated list.
 
       panel_views:
-        type: seq
-        sequence:
-          - type: any
+        type: seq[any]
         required: false
         desc: |
           Definitions of static toolbox panel views embedded directly in the config instead of reading
@@ -2967,9 +2961,7 @@ mapping:
           #  !include job_config_schema.yml
 
       dependency_resolvers:
-        type: seq
-        sequence:
-          - type: any
+        type: seq[any]
         desc: |
           Rather than specifying a dependency_resolvers_config_file, the definition of the
           resolvers to enable can be embedded into Galaxy's config with this option.
