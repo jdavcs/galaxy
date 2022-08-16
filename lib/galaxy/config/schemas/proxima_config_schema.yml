@@ -2963,8 +2963,8 @@ mapping:
           the system on which Galaxy is started.  Advanced job running capabilities can
           be configured through the job configuration file.
 
-      job_config:
-        !include job_config_schema.yml
+          #job_config:
+          #  !include job_config_schema.yml
 
       dependency_resolvers:
         type: seq
