@@ -9,6 +9,7 @@ from typing import (
 )
 
 import alembic.config
+from alembic import command
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
@@ -373,3 +374,34 @@ def get_alembic_cfg():
 
 def get_alembic_manager(engine: Engine) -> AlembicManager:
     return AlembicManager(engine)
+
+
+class DbScript:
+    def __init__(self, config_file=None) -> None:
+        self.alembic_config = get_alembic_cfg()
+        self._set_dburl()
+
+    def upgrade(self, args: argparse.Namespace) -> None:
+        command.upgrade(self.alembic_config, args.revision, args.sql)
+
+    def downgrade(self, args: argparse.Namespace) -> None:
+        command.downgrade(self.alembic_config, args.revision, args.sql)
+
+    def revision(self, args: argparse.Namespace) -> None:
+        command.revision(self.alembic_config, message=args.message, head="gxy@head")
+
+    def version(self, args: argparse.Namespace) -> None:
+        command.heads(self.alembic_config, verbose=args.verbose)
+
+    def dbversion(self, args: argparse.Namespace) -> None:
+        command.current(self.alembic_config, verbose=args.verbose)
+
+    def history(self, args: argparse.Namespace) -> None:
+        command.history(self.alembic_config, verbose=args.verbose)
+
+    def show(self, args: argparse.Namespace) -> None:
+        command.show(self.alembic_configargs.verbose, args.revision)
+
+    def _set_dburl(self):
+        gxy_config, _, _ = get_configuration(sys.argv, os.getcwd())
+        self.alembic_config.set_main_option("sqlalchemy.url", gxy_config.url)
