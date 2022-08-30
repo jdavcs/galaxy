@@ -56,7 +56,7 @@ def main() -> None:
         return parser
 
     revision_arg_parser = ArgumentParser(add_help=False)
-    revision_arg_parser.add_argument("revision", help="Revision identifier")
+    revision_arg_parser.add_argument("revision", help="Revision identifier", nargs="?", default="heads")
 
     config_arg_parser = ArgumentParser(add_help=False)
     # TODO: after refactoring legacy scripts, this can be changed to "-c, --config"
@@ -88,13 +88,14 @@ def main() -> None:
         parents=[revision_arg_parser, config_arg_parser, sql_arg_parser],
     )
 
-    add_parser(
+    downgrade_cmd_parser = add_parser(
         "downgrade",
         exec_downgrade,
         "Revert to a previous version",
         aliases=["d"],
-        parents=[revision_arg_parser, config_arg_parser, sql_arg_parser],
+        parents=[config_arg_parser, sql_arg_parser],
     )
+    downgrade_cmd_parser.add_argument("revision", help="Revision identifier")
 
     add_parser(
         "version",

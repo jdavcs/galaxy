@@ -400,8 +400,10 @@ class DbScript:
         command.history(self.alembic_config, verbose=args.verbose)
 
     def show(self, args: argparse.Namespace) -> None:
-        command.show(self.alembic_configargs.verbose, args.revision)
+        command.show(self.alembic_config, args.revision)
 
     def _set_dburl(self):
         gxy_config, _, _ = get_configuration(sys.argv, os.getcwd())
-        self.alembic_config.set_main_option("sqlalchemy.url", gxy_config.url)
+        self.alembic_config.set_main_option(
+            "sqlalchemy.url", gxy_config.url
+        )  # TODO this is incorrect for the 'upgrade heads' command!
