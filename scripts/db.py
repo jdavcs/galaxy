@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 
 
 def exec_upgrade(args: Namespace) -> None:
+    # TODO this might need to be done twice: once for each branch.
+    # because we upgrade tsi implicitly to hide complexity.
     _exec_command("upgrade", args)
 
 
@@ -124,17 +126,18 @@ def main() -> None:
         parents=[config_arg_parser, verbose_arg_parser],
     )
 
-    add_parser(
-        "show",
-        help="Show the revision(s) denoted by the given symbol",
-        parents=[revision_arg_parser, config_arg_parser],
-        func=exec_show,
-    )
+    #add_parser(
+    #    "show",
+    #    help="Show the revision(s) denoted by the given symbol",
+    #    parents=[revision_arg_parser, config_arg_parser],
+    #    func=exec_show,
+    #)
 
     revision_cmd_parser = add_parser(
         "revision", aliases=["r"], help="Create a new revision file", parents=[config_arg_parser], func=exec_revision
     )
-    revision_cmd_parser.add_argument("message", help="Message string to use with 'revision'")
+    revision_cmd_parser.add_argument("--message", help="Message string to use with 'revision'")
+    revision_cmd_parser.add_argument("--rev-id", help="Specify a revision id instead of generating one")
 
     args = parser.parse_args()
     args.func(args)
