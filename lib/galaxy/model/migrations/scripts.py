@@ -388,17 +388,19 @@ class DbScript:
         self._set_dburl(config_file)
 
     def upgrade(self, args: argparse.Namespace) -> None:
+        breakpoint()
         command.upgrade(self.alembic_config, args.revision, args.sql)
-        self._set_url(self.tsi_url)  # temporarily set tsi url to run upgrade
-        command.upgrade(self.alembic_config, args.revision, args.sql)
-        self._set_url(self.gxy_url)  # restore gxy url
+        #self._set_url(self.tsi_url)  # temporarily set tsi url to run upgrade
+        #command.upgrade(self.alembic_config, args.revision, args.sql)
+        #self._set_url(self.gxy_url)  # restore gxy url
 
     def downgrade(self, args: argparse.Namespace) -> None:
         command.downgrade(self.alembic_config, args.revision, args.sql)
 
     def revision(self, args: argparse.Namespace) -> None:
-        breakpoint()
-        command.revision(self.alembic_config, message=args.message, head="gxy@head")  # TODO head breaks on test!
+        #breakpoint()
+        command.revision(self.alembic_config, message=args.message, head="gxy@head")  # TODO head breaks second revision when testing.
+        #command.revision(self.alembic_config, message=args.message) #, head="gxy@head")  # no head - does not break
 
     def version(self, args: argparse.Namespace) -> None:
         command.heads(self.alembic_config, verbose=args.verbose)

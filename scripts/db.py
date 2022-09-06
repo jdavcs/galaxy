@@ -12,7 +12,7 @@ from argparse import (
 
 sys.path.insert(1, os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, "lib")))
 
-from galaxy.model.migrations.scripts import DbScript
+from galaxy.model.migrations.dbscript import DbScript
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 def exec_upgrade(args: Namespace) -> None:
     # TODO this might need to be done twice: once for each branch.
     # because we upgrade tsi implicitly to hide complexity.
+    #breakpoint()
     _exec_command("upgrade", args)
 
 
@@ -61,9 +62,6 @@ def main() -> None:
         parser.set_defaults(func=func)
         return parser
 
-    revision_arg_parser = ArgumentParser(add_help=False)
-    revision_arg_parser.add_argument("revision", help="Revision identifier", nargs="?", default="heads")
-
     config_arg_parser = ArgumentParser(add_help=False)
     # TODO: after refactoring legacy scripts, this can be changed to "-c, --config"
     config_arg_parser.add_argument("--galaxy-config", help="Alternate Galaxy configuration file", dest="config")
@@ -86,13 +84,14 @@ def main() -> None:
 
     subparsers = parser.add_subparsers(required=True)
 
-    add_parser(
+    upgrade_cmd_parser = add_parser(
         "upgrade",
         exec_upgrade,
         "Upgrade to a later version",
         aliases=["u"],
-        parents=[revision_arg_parser, config_arg_parser, sql_arg_parser],
+        parents=[config_arg_parser, sql_arg_parser],
     )
+    upgrade_cmd_parser.add_argument("revision", help="Revision identifier", nargs="?", default="heads")
 
     downgrade_cmd_parser = add_parser(
         "downgrade",
@@ -119,24 +118,26 @@ def main() -> None:
         parents=[config_arg_parser, verbose_arg_parser],
     )
 
-    add_parser(
+    history_cmd_parser = add_parser(
         "history",
         exec_history,
         "List revision scripts in chronological order",
         parents=[config_arg_parser, verbose_arg_parser],
     )
+    history_cmd_parser.add_argument("-i", "--indicate-current", help="Indicate current revision", action="store_true")
 
-    #add_parser(
-    #    "show",
-    #    help="Show the revision(s) denoted by the given symbol",
-    #    parents=[revision_arg_parser, config_arg_parser],
-    #    func=exec_show,
-    #)
+    show_cmd_parser = add_parser(
+        "show",
+        help="Show the revision(s) denoted by the given symbol",
+        parents=[config_arg_parser],
+        func=exec_show,
+    )
+    show_cmd_parser.add_argument("revision", help="Revision identifier")
 
     revision_cmd_parser = add_parser(
         "revision", aliases=["r"], help="Create a new revision file", parents=[config_arg_parser], func=exec_revision
     )
-    revision_cmd_parser.add_argument("--message", help="Message string to use with 'revision'")
+    revision_cmd_parser.add_argument("-m", "--message", help="Message string to use with 'revision'", required=True)
     revision_cmd_parser.add_argument("--rev-id", help="Specify a revision id instead of generating one")
 
     args = parser.parse_args()
