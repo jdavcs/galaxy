@@ -19,9 +19,6 @@ log = logging.getLogger(__name__)
 
 
 def exec_upgrade(args: Namespace) -> None:
-    # TODO this might need to be done twice: once for each branch.
-    # because we upgrade tsi implicitly to hide complexity.
-    #breakpoint()
     _exec_command("upgrade", args)
 
 

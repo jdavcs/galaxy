@@ -1,6 +1,5 @@
 import argparse
 import os
-import re
 import sys
 from typing import (
     List,
@@ -54,19 +53,15 @@ class DbScript:
         self._set_dburl(config_file)
 
     def upgrade(self, args: argparse.Namespace) -> None:
-        #breakpoint()
-        command.upgrade(self.alembic_config, args.revision, args.sql)
-        #self._set_url(self.tsi_url)  # temporarily set tsi url to run upgrade
-        #command.upgrade(self.alembic_config, args.revision, args.sql)
-        #self._set_url(self.gxy_url)  # restore gxy url
+        revision = self._parse_revision(args.revision)
+        command.upgrade(self.alembic_config, revision, args.sql)
 
     def downgrade(self, args: argparse.Namespace) -> None:
         command.downgrade(self.alembic_config, args.revision, args.sql)
 
     def revision(self, args: argparse.Namespace) -> None:
         """ Create revision script for the gxy branch only."""
-        command.revision(self.alembic_config, message=args.message, rev_id=args.rev_id, head="gxy@head")  # TODO head breaks second revision when testing.
-        #command.revision(self.alembic_config, message=args.message) #, head="gxy@head")  # no head - does not break
+        command.revision(self.alembic_config, message=args.message, rev_id=args.rev_id, head="gxy@head")
 
     def version(self, args: argparse.Namespace) -> None:
         command.heads(self.alembic_config, verbose=args.verbose)
@@ -96,6 +91,12 @@ class DbScript:
     def _set_url(self, url: str) -> None:
         self.alembic_config.set_main_option("sqlalchemy.url", url)
 
+    def _parse_revision(self, rev):
+        # Relative revision identifier requires a branch label
+        if rev.startswith("+") or rev.startswith("-"):
+            return f"gxy@{rev}"
+        return rev
+
     def _get_configuration(self, config_file: Optional[str] = None) -> Tuple[DatabaseConfig, DatabaseConfig]:
         """
         Return a 2-item-tuple with configuration values used for managing databases.
@@ -105,7 +106,6 @@ class DbScript:
             cwds = [cwd, os.path.join(cwd, CONFIG_DIR_NAME)]
             config_file = find_config_file(DEFAULT_CONFIG_NAMES, dirs=cwds)
     
-        #breakpoint()
         # load gxy properties and auto-migrate
         properties = load_app_properties(config_file=config_file, config_prefix=GXY_CONFIG_PREFIX)
         default_url = f"sqlite:///{os.path.join(get_data_dir(properties), 'universe.sqlite')}?isolation_level=IMMEDIATE"
@@ -114,7 +114,6 @@ class DbScript:
         encoding = properties.get("database_encoding", None)
         gxy_config = DatabaseConfig(url, template, encoding)
     
-        #breakpoint()
         # load tsi properties
         properties = load_app_properties(config_file=config_file, config_prefix=TSI_CONFIG_PREFIX)
         default_url = gxy_config.url
@@ -122,7 +121,5 @@ class DbScript:
         template = properties.get("database_template", None)
         encoding = properties.get("database_encoding", None)
         tsi_config = DatabaseConfig(url, template, encoding)
-        #breakpoint()
     
         return (gxy_config, tsi_config)
-

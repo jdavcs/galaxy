@@ -7,10 +7,10 @@ from contextlib import contextmanager
 from typing import (
     Callable,
     Iterator,
+    List,
     NewType,
     Optional,
 )
-
 
 import alembic
 from alembic.runtime.migration import MigrationContext
@@ -50,6 +50,21 @@ GXY_BASE_ID = 'gxy0'
 TSI_BASE_ID = 'tsi0'
 
 
+@pytest.fixture(scope="session")
+def alembic_env_dir() -> str:
+    """ [galaxy-root]/lib/galaxy/model/migrations/alembic/ """
+    galaxy_root = os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..")
+    return os.path.join(galaxy_root, "lib", "galaxy", "model", "migrations", "alembic")
+
+
+@pytest.fixture(scope="session")
+def alembic_config_text(alembic_env_dir) -> List[str]:
+    """ Contents of production alembic.ini as list of lines """
+    current_config_path = os.path.join(alembic_env_dir, "..", "alembic.ini")
+    with open(current_config_path, "r") as f:
+        return f.readlines()
+
+
 @pytest.fixture()
 def tmp_directory():
     with tempfile.TemporaryDirectory() as tmp_dir:
@@ -57,101 +72,119 @@ def tmp_directory():
 
 
 @pytest.fixture()
-def alembic_config_factory(tmp_directory, monkeypatch):
+def config(url_factory, alembic_env_dir, alembic_config_text, tmp_directory, monkeypatch):
+    """
+    Construct Config object for staging; setup staging env.
+    """
+    gxy_versions_dir = os.path.join(tmp_directory, 'versions_gxy')
+    tsi_versions_dir = os.path.join(tmp_directory, 'versions_tsi')
+    version_locations = f"{gxy_versions_dir};{tsi_versions_dir}"
 
-    def f(dburl):
-        # initialize alembic directory in testing location
-        alembic_dir = os.path.join(tmp_directory, 'alembic')
-        alembic_config = Config(os.path.join(alembic_dir, "alembic.ini"))
-        alembic.command.init(alembic_config, alembic_dir)  # TODO errors on mult tests
-        alembic_config.set_main_option("sqlalchemy.url", dburl)
-        # Create gxy and tsi branches (MUST SET head='base'!)
-        alembic.command.revision(alembic_config, branch_label=GXY_BRANCH_LABEL, head='base', rev_id=GXY_BASE_ID)
-        alembic.command.revision(alembic_config, branch_label=TSI_BRANCH_LABEL, head='base', rev_id=TSI_BASE_ID)
-        # Use the test alembic.ini file
-        monkeypatch.setenv('ALEMBIC_CONFIG', alembic_config.config_file_name)
-        # Use the test dburl
-        monkeypatch.setenv('GALAXY_CONFIG_OVERRIDE_DATABASE_CONNECTION', dburl)
-        monkeypatch.setenv('GALAXY_CONFIG_OVERRIDE_INSTALL_DATABASE_CONNECTION', dburl)
-        return alembic_config
+    dburl = url_factory()
+    config_file_path = os.path.join(tmp_directory, "alembic.ini")
+    update_config_for_staging(alembic_config_text, alembic_env_dir, version_locations, dburl)
+    write_config_file(config_file_path, alembic_config_text)
 
-    return f
+    alembic_cfg = Config(config_file_path)
+    create_alembic_branches(alembic_cfg, gxy_versions_dir, tsi_versions_dir)
+
+    monkeypatch.setenv('ALEMBIC_CONFIG', config_file_path)
+    monkeypatch.setenv('GALAXY_CONFIG_OVERRIDE_DATABASE_CONNECTION', dburl)
+    monkeypatch.setenv('GALAXY_CONFIG_OVERRIDE_INSTALL_DATABASE_CONNECTION', dburl)
+
+    return alembic_cfg
+
+
+def update_config_for_staging(config_text, script_location, version_locations, dburl) -> None:
+    """ Set script_location, version_locations, sqlalchemy.url values. """
+    alembic_section_index, url_set = -1, False
+    url_line = f"sqlalchemy.url = {dburl}\n"
+    for i, line in enumerate(config_text):
+        if line.strip() == "[alembic]":
+            alembic_section_index = i
+        elif line.startswith("script_location ="):
+            config_text[i] = f"script_location = {script_location}\n"
+        elif line.startswith("version_locations ="):
+            config_text[i] = f"version_locations = {version_locations}\n"
+        elif line.startswith("sqlalchemy.url ="):
+            config_text[i] = url_line
+            url_set = True
+    if not url_set:  # True when executed for the first time
+        config_text.insert(alembic_section_index + 1, url_line)
+
+
+def write_config_file(config_file_path, config_text):
+    with open(config_file_path, 'w') as f:
+        f.write(''.join(config_text))
+
+
+def create_alembic_branches(config, gxy_versions_dir, tsi_versions_dir):
+    """ Create gxy and tsi branches """
+    alembic.command.revision(
+        config, branch_label=GXY_BRANCH_LABEL, head='base', rev_id=GXY_BASE_ID, version_path=gxy_versions_dir)
+    alembic.command.revision(
+        config, branch_label=TSI_BRANCH_LABEL, head='base', rev_id=TSI_BASE_ID, version_path=tsi_versions_dir)
 
 
 def stdout(capture):
     return capture.readouterr().out
 
 
+def dburl_from_config(config):
+    return config.get_main_option('sqlalchemy.url')
+
+
 def run_command(cmd):
-    #completed_process = subprocess.run(cmd.split())  # for debugging only
-    completed_process = subprocess.run(cmd.split(), capture_output=True, text=True)  # TODO uncomment when done
+    completed_process = subprocess.run(cmd.split(), capture_output=True, text=True)
     return completed_process
+
+
+def get_db_heads(config):
+    dburl = dburl_from_config(config)
+    engine = create_engine(dburl)
+    with engine.connect() as conn:
+        context = MigrationContext.configure(conn)
+        heads = context.get_current_heads()
+    engine.dispose()
+    return heads
 
 
 class TestRevisionCommand:
 
-    def test_revision_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        # run command under test
-        run_command(f"./db.sh revision --message foo1")  # rev-id is optional
+    def test_revision_cmd(self, config):
+        run_command(f"./db.sh revision --message foo1")
         run_command(f"./db.sh revision --rev-id 2 --message foo2")
         run_command(f"./db.sh revision --rev-id 3 --message foo3")
 
-        # get result and assert
-        script_dir = ScriptDirectory.from_config(alembic_cfg)
+        script_dir = ScriptDirectory.from_config(config)
         revisions = [rev for rev in script_dir.walk_revisions()]
-        assert len(revisions) == 5  # 2 base + 3 new
+        assert len(revisions) == 5  # verify total revisions: 2 base + 3 new
 
         rev = script_dir.get_revision('3')
-        assert rev.revision == '3'  # verify revision id
         assert GXY_BRANCH_LABEL in rev.branch_labels  # verify branch label
         assert rev.down_revision == '2'  # verify parent revision
         assert rev.module.__name__ == '3_foo3_py'  # verify message
 
-    def test_revision_cmd_missing_message_arg_error(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        # run command under test
+    def test_revision_cmd_missing_message_arg_error(self):
         completed = run_command(f"./db.sh revision --rev-id 1")
-
         assert completed.returncode == 2
         assert "the following arguments are required: -m/--message" in completed.stderr
 
 
 class TestShowCommand:
 
-    def test_show_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        alembic.command.revision(alembic_cfg, rev_id='42', head=GXY_BASE_ID)
-
-        # run command under test
+    def test_show_cmd(self, config):
+        alembic.command.revision(config, rev_id='42', head=GXY_BASE_ID)
         completed = run_command(f"./db.sh show 42")
-
         assert "Revision ID: 42" in completed.stdout
 
-    def test_show_cmd_invalid_revision_error(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        alembic.command.revision(alembic_cfg, rev_id='42', head=GXY_BASE_ID)
-
+    def test_show_cmd_invalid_revision_error(self, config):
+        alembic.command.revision(config, rev_id='42', head=GXY_BASE_ID)
         completed = run_command(f"./db.sh show idonotexist")
         assert completed.returncode == 1
         assert "Can't locate revision identified by 'idonotexist'" in completed.stderr
 
-    def test_show_cmd_missing_revision_arg_error(self, url_factory, alembic_config_factory, monkeypatch):
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
+    def test_show_cmd_missing_revision_arg_error(self):
         completed = run_command(f"./db.sh show")
         assert completed.returncode == 2
         assert "the following arguments are required: revision" in completed.stderr
@@ -159,52 +192,33 @@ class TestShowCommand:
 
 class TestHistoryCommand:
 
-    def test_history_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
+    def test_history_cmd(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+        alembic.command.revision(config, rev_id='3', head='2')
 
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-        alembic.command.revision(alembic_cfg, rev_id='3', head='2')
-
-        # run command under test
         completed = run_command(f"./db.sh history")
-
         assert completed.returncode == 0
         assert "2 -> 3 (gxy) (head), empty message" in completed.stdout
         assert "1 -> 2 (gxy)" in completed.stdout
         assert "gxy0 -> 1 (gxy)" in completed.stdout
 
-    def test_history_cmd_verbose(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
+    def test_history_cmd_verbose(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+        alembic.command.revision(config, rev_id='3', head='2')
 
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-        alembic.command.revision(alembic_cfg, rev_id='3', head='2')
-
-        # run command under test
         completed = run_command(f"./db.sh history --verbose")
-
         assert "Revision ID: 2" in completed.stdout
         assert "Revises: 1" in completed.stdout
 
-    def test_history_cmd_indicate_current(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-        alembic.command.revision(alembic_cfg, rev_id='3', head='2')
-
-        # required for indicating current version
-        alembic.command.upgrade(alembic_cfg, 'heads')
+    def test_history_cmd_indicate_current(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+        alembic.command.revision(config, rev_id='3', head='2')
+        alembic.command.upgrade(config, 'heads')
 
         completed = run_command(f"./db.sh history --indicate-current")
-
         assert completed.returncode == 0
         assert "2 -> 3 (gxy) (head) (current), empty message" in completed.stdout
         assert "1 -> 2 (gxy)" in completed.stdout
@@ -213,31 +227,19 @@ class TestHistoryCommand:
 
 class TestVersionCommand:
 
-    def test_version_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
+    def test_version_cmd(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
 
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-
-        # run command under test
         completed = run_command(f"./db.sh version")
-
         assert completed.returncode == 0
         assert "2 (gxy) (head)" in completed.stdout
 
-    def test_version_cmd_verbose(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
+    def test_version_cmd_verbose(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
 
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-
-        # run command under test
         completed = run_command(f"./db.sh version --verbose")
-
         assert completed.returncode == 0
         assert "Revision ID: 2" in completed.stdout
         assert "Revises: 1" in completed.stdout
@@ -245,123 +247,123 @@ class TestVersionCommand:
 
 class TestUpgradeCommand:
 
-    def test_upgrade_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-
-        completed = run_command(f"./db.sh upgrade")  # upgrade gxy to v2, tsi to base
+    def test_upgrade_cmd(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+    
+        # first upgrade: upgrades gxy to 2, tsi to base
+        completed = run_command(f"./db.sh upgrade")
         assert completed.returncode == 0
         assert "Running upgrade gxy0 -> 1" in completed.stderr
         assert "Running upgrade 1 -> 2" in completed.stderr
-
-        engine = create_engine(dburl)
-        with engine.connect() as conn:
-            context = MigrationContext.configure(conn)
-            heads = context.get_current_heads()
-            assert len(heads) == 2
-            assert '2' in heads
-            assert '3' not in heads
-
-        alembic.command.revision(alembic_cfg, rev_id='3', head='2')
-
-        completed = run_command(f"./db.sh upgrade")  # upgrade gxy to v3
+    
+        heads = get_db_heads(config)
+        assert len(heads) == 2
+        assert '2' in heads
+        assert TSI_BASE_ID in heads
+    
+        alembic.command.revision(config, rev_id='3', head='2')
+    
+        # next upgrade: upgrades gxy to 3, no effect on tsi
+        completed = run_command(f"./db.sh upgrade")
         assert completed.returncode == 0
         assert "Running upgrade 2 -> 3" in completed.stderr
-
-        with engine.connect() as conn:
-            context = MigrationContext.configure(conn)
-            heads = context.get_current_heads()
-            assert len(heads) == 2
-            assert '2' not in heads
-            assert '3' in heads
-
-        engine.dispose()
-
-    def test_upgrade_cmd_sql_only(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-
-        completed = run_command(f"./db.sh upgrade --sql")  # upgrade gxy to v2, tsi to base
+    
+        heads = get_db_heads(config)
+        assert len(heads) == 2
+        assert '3' in heads
+        assert TSI_BASE_ID in heads
+    
+    def test_upgrade_cmd_sql_only(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+    
+        completed = run_command(f"./db.sh upgrade --sql")
         assert completed.returncode == 0
         assert "UPDATE alembic_version SET version_num='2'" in completed.stdout
         assert "UPDATE alembic_version SET version_num='3'" not in completed.stdout
-
-        alembic.command.revision(alembic_cfg, rev_id='3', head='2')
-
-        completed = run_command(f"./db.sh upgrade --sql")  # upgrade gxy to v3
+    
+        alembic.command.revision(config, rev_id='3', head='2')
+    
+        completed = run_command(f"./db.sh upgrade --sql")
         assert completed.returncode == 0
         assert "UPDATE alembic_version SET version_num='2'" in completed.stdout
         assert "UPDATE alembic_version SET version_num='3'" in completed.stdout
+    
+    def test_upgrade_cmd_with_revision_arg(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+    
+        # upgrades gxy to 1
+        completed = run_command(f"./db.sh upgrade 1")
+        assert completed.returncode == 0
+        assert "Running upgrade gxy0 -> 1" in completed.stderr
+    
+        heads = get_db_heads(config)
+        assert heads == ("1",)
 
-    def test_upgrade_cmd_with_revision_arg(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
-        # TODO
-        # implement +1 as gxy@+1; test also for rev+1, and same for downgrading.
+    def test_upgrade_cmd_with_relative_revision_syntax(self, config):
+        alembic.command.revision(config, rev_id='a', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='b', head='a')
+        alembic.command.revision(config, rev_id='c', head='b')
+        alembic.command.revision(config, rev_id='d', head='c')
+        alembic.command.revision(config, rev_id='e', head='d')
+
+        # upgrades gxy to b: none + 2 (none > base > a)
+        completed = run_command(f"./db.sh upgrade +3")
+        assert completed.returncode == 0
+        assert "Running upgrade  -> gxy0" in completed.stderr
+        assert "Running upgrade gxy0 -> a" in completed.stderr
+        assert "Running upgrade a -> b" in completed.stderr
+
+        heads = get_db_heads(config)
+        assert heads == ("b",)
+
+        # upgrades gxy to d relative to b: b + 2 (b > c > d)
+        completed = run_command(f"./db.sh upgrade b+2")
+        assert completed.returncode == 0
+        assert "Running upgrade b -> c" in completed.stderr
+        assert "Running upgrade c -> d" in completed.stderr
+
+        heads = get_db_heads(config)
+        assert heads == ("d",)
 
 
 class TestDowngradeCommand:
 
-    def test_downgrade_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
+    def test_downgrade_cmd(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
+        alembic.command.revision(config, rev_id='3', head='2')
+        alembic.command.upgrade(config, 'heads')
 
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-        alembic.command.revision(alembic_cfg, rev_id='3', head='2')
-        alembic.command.upgrade(alembic_cfg, 'heads')
-
-        completed = run_command(f"./db.sh downgrade 1")  # upgrade gxy to v2, tsi to base
+        completed = run_command(f"./db.sh downgrade 1")  # downgrade gxy to 1, no effect on tsi
         assert completed.returncode == 0
         assert "Running downgrade 3 -> 2" in completed.stderr
         assert "Running downgrade 2 -> 1" in completed.stderr
 
-        engine = create_engine(dburl)
-        with engine.connect() as conn:
-            context = MigrationContext.configure(conn)
-            heads = context.get_current_heads()
-            assert len(heads) == 2
-            assert '1' in heads
+        heads = get_db_heads(config)
+        assert len(heads) == 2
+        assert '1' in heads
 
-        engine.dispose()
+# TODO add same type of test cases as in TestUpgradeCommand
 
 
 class TestDbVersionCommand:
 
-    def test_dbversion_cmd(self, url_factory, alembic_config_factory, monkeypatch):
-        # setup
-        dburl = url_factory()
-        alembic_cfg = alembic_config_factory(dburl)
+    def test_dbversion_cmd(self, config):
+        alembic.command.revision(config, rev_id='1', head=GXY_BASE_ID)
+        alembic.command.revision(config, rev_id='2', head='1')
 
-        alembic.command.revision(alembic_cfg, rev_id='1', head=GXY_BASE_ID)
-        alembic.command.revision(alembic_cfg, rev_id='2', head='1')
-
-        completed = run_command(f"./db.sh dbversion")  # upgrade gxy to v2, tsi to base
+        completed = run_command(f"./db.sh dbversion")
         assert completed.returncode == 0
         assert "(head)" not in completed.stdout  # there has been no upgrade
 
-        alembic.command.upgrade(alembic_cfg, 'heads')
+        alembic.command.upgrade(config, 'heads')
 
-        completed = run_command(f"./db.sh dbversion")  # upgrade gxy to v2, tsi to base
+        completed = run_command(f"./db.sh dbversion")
         assert completed.returncode == 0
         assert "2 (head)" in completed.stdout
 
 
-
-# TODO: upgrade + downgrade with different rev arguments, dbversion, 
-#    def assert_alembic_revision_command_output(self, output, rev_id):
-#        pattern = re.compile(rf"\s*Generating /.+/alembic/versions/{rev_id}_.py ...  done")
-#        assert pattern.match(output)
-#
-#
-#
+# TODO test for 2 separate databases: gxy and tsi
