@@ -1,11 +1,10 @@
 <tool id="metadata_bed" name="BED metadata test" version="1.0.0">
     <command>
     <![CDATA[
-    echo "modified chromCol $input1.metadata.chromCol" > $out_file1 &&
-    echo "chromCol $input1.metadata.chromCol" >> $out_file1 &&
-    echo "startCol $input1.metadata.startCol" >> $out_file1 &&
-    echo "endCol $input1.metadata.endCol" >> $out_file1 &&
-    echo "strandCol $input1.metadata.strandCol" >> $out_file1
+    echo "test 14" > $out_file1 &&
+    echo "myfoo on MMM $input1.MMM.chromCol" >> $out_file1 &&
+    echo "myfoo on MMM $input1.MMM.chromCol" >> $out_file1 &&
+    echo "modified MMM $input1.MMM.chromCol" >> $out_file1
     ]]>
     </command>
     <inputs>

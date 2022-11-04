@@ -1,3 +1,4 @@
+mymeta_count = 0
 """
 Galaxy data model classes
 
@@ -3954,6 +3955,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         return datatype_for_extension(self.extension)
 
     def get_metadata(self):
+        print(f'\nBAD: CALLED get_metadata {"=" * 100}\n')
         # using weakref to store parent (to prevent circ ref),
         #   does a Session.clear() cause parent to be invalidated, while still copying over this non-database attribute?
         if not hasattr(self, "_metadata_collection") or self._metadata_collection.parent != self:
@@ -3968,7 +3970,17 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         # Needs to accept a MetadataCollection, a bunch, or a dict
         self._metadata = self.metadata.make_dict_copy(bunch)
 
-    metadata = property(get_metadata, set_metadata)
+#    metadata = property(get_metadata, set_metadata)
+
+
+    def get_mymeta(self):
+        global mymeta_count;
+        print(f'\nCALLED get_mymeta {mymeta_count} {"X" * 100}\n')
+        mymeta_count += 1
+        return self.metadata
+
+    # TODO try this instead of metadata in tools
+    MMM = property(get_mymeta, set_metadata)
 
     @property
     def has_metadata_files(self):
