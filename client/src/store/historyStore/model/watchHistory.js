@@ -13,7 +13,7 @@ import { getGalaxyInstance } from "app";
 
 const limit = 1000;
 
-let throttlePeriod = 3000;
+let throttlePeriod = 600000; //TODO DEBUG
 let watchTimeout = null;
 
 // last time the history has changed
@@ -28,7 +28,7 @@ let watchingVisibility = false;
 function setVisibilityThrottle() {
     if (document.visibilityState === "visible") {
         // Poll every 3 seconds when visible
-        throttlePeriod = 3000;
+        throttlePeriod = 60000; //TODO DEBUG
         rewatchHistory();
     } else {
         // Poll every 60 seconds when hidden/backgrounded
