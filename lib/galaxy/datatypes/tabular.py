@@ -212,12 +212,12 @@ class TabularData(data.Text):
             column_parameter_alias = {}
         out = []
         try:
-            if not column_names and dataset.metadata.column_names:
-                column_names = dataset.metadata.column_names
+            if not column_names and dataset.MMM.column_names:
+                column_names = dataset.MMM.column_names
 
-            columns = dataset.metadata.columns
+            columns = dataset.MMM.columns
             if columns is None:
-                columns = dataset.metadata.spec.columns.no_value
+                columns = dataset.MMM.spec.columns.no_value
             columns = min(columns, self.max_peek_columns)
             column_headers = [None] * columns
 
@@ -227,10 +227,10 @@ class TabularData(data.Text):
                     column_headers[i] = column_names[i]
 
             # fill in empty headers from ColumnParameters set in the metadata
-            for name, spec in dataset.metadata.spec.items():
+            for name, spec in dataset.MMM.spec.items():
                 if isinstance(spec.param, metadata.ColumnParameter):
                     try:
-                        i = int(getattr(dataset.metadata, name)) - 1
+                        i = int(getattr(dataset.MMM, name)) - 1
                     except Exception:
                         i = -1
                     if 0 <= i < columns and column_headers[i] is None:

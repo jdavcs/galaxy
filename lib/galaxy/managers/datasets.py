@@ -607,8 +607,8 @@ class _UnflattenedMetadataDatasetAssociationSerializer(base.ModelSerializer[T], 
         """
         dataset_assoc = item
         meta_files = []
-        for meta_type in dataset_assoc.metadata_file_types:
-            if getattr(dataset_assoc.metadata, meta_type, None):
+        for meta_type in dataset_assoc.MMM:
+            if getattr(dataset_assoc.MMM, meta_type, None):
                 meta_files.append(
                     dict(
                         file_type=meta_type,
@@ -633,10 +633,10 @@ class _UnflattenedMetadataDatasetAssociationSerializer(base.ModelSerializer[T], 
         excluded = [] if excluded is None else excluded
 
         metadata = {}
-        for name, spec in dataset_assoc.metadata.spec.items():
+        for name, spec in dataset_assoc.MMM.spec.items():
             if name in excluded:
                 continue
-            val = dataset_assoc.metadata.get(name)
+            val = dataset_assoc.MMM.get(name)
             # NOTE: no files
             if isinstance(val, model.MetadataFile):
                 # only when explicitly set: fetching filepaths can be expensive
@@ -776,7 +776,7 @@ class DatasetAssociationDeserializer(base.ModelDeserializer, deletable.PurgableD
         if metadata_specification.get("readonly"):
             return
         unwrapped_val = metadata_specification.unwrap(val)
-        setattr(dataset_assoc.metadata, key, unwrapped_val)
+        setattr(dataset_assoc.MMM, key, unwrapped_val)
         # ...?
         return unwrapped_val
 
