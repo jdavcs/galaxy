@@ -5,6 +5,7 @@ import logging
 import math
 import sys
 import tempfile
+from typing import TYPE_CHECKING
 from urllib.parse import quote_plus
 
 from bx.intervals.io import (
@@ -27,12 +28,14 @@ from galaxy.datatypes.util.gff_util import (
     parse_gff3_attributes,
     parse_gff_attributes,
 )
-from galaxy.model import DatasetInstance
 from galaxy.util import compression_utils
 from . import (
     data,
     dataproviders,
 )
+
+if TYPE_CHECKING:
+    from galaxy.model import DatasetInstance
 
 log = logging.getLogger(__name__)
 
@@ -169,7 +172,7 @@ class Interval(Tabular):
                     else:
                         empty_line_count += 1
 
-    def displayable(self, dataset: DatasetInstance):
+    def displayable(self, dataset: "DatasetInstance"):
         try:
             return (
                 not dataset.dataset.purged

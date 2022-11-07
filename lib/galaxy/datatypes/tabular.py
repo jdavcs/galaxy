@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import tempfile
 from json import dumps
+from typing import TYPE_CHECKING
 
 import pysam
 from markupsafe import escape
@@ -34,13 +35,15 @@ from galaxy.datatypes.sniff import (
     iter_headers,
     validate_tabular,
 )
-from galaxy.model import DatasetInstance
 from galaxy.util import compression_utils
 from galaxy.util.markdown import (
     indicate_data_truncated,
     pre_formatted_contents,
 )
 from . import dataproviders
+
+if TYPE_CHECKING:
+    from galaxy.model import DatasetInstance
 
 log = logging.getLogger(__name__)
 
@@ -95,7 +98,7 @@ class TabularData(data.Text):
         if dataset.metadata.comment_lines:
             dataset.blurb = f"{dataset.blurb}, {util.commaify(str(dataset.metadata.comment_lines))} comments"
 
-    def displayable(self, dataset: DatasetInstance):
+    def displayable(self, dataset: "DatasetInstance"):
         try:
             return (
                 not dataset.dataset.purged
