@@ -244,7 +244,7 @@ class DatasetInterface(BaseUIController, UsesAnnotations, UsesItemRatings, UsesE
                 (r.name, trans.security.encode_id(r.id))
                 for r in trans.app.security_agent.get_legitimate_roles(trans, data.dataset, "root")
             ]
-            data_metadata = [(name, spec) for name, spec in data.metadata.spec.items()]
+            data_metadata = [(name, spec) for name, spec in data.metadata_.spec.items()]
             converters_collection = [(key, value.name) for key, value in data.get_converter_types().items()]
             can_manage_dataset = trans.app.security_agent.can_manage_dataset(
                 trans.get_current_user_roles(), data.dataset
@@ -265,7 +265,7 @@ class DatasetInterface(BaseUIController, UsesAnnotations, UsesItemRatings, UsesE
             ]
             for name, spec in data_metadata:
                 if spec.visible:
-                    attributes = data.metadata.get_metadata_parameter(name, trans=trans)
+                    attributes = data.metadata_.get_metadata_parameter(name, trans=trans)
                     if type(attributes) is form_builder.SelectField:
                         attribute_inputs.append(
                             {
@@ -400,7 +400,7 @@ class DatasetInterface(BaseUIController, UsesAnnotations, UsesItemRatings, UsesE
                 # The following for loop will save all metadata_spec items
                 for name, spec in data.datatype.metadata_spec.items():
                     if not spec.get("readonly"):
-                        setattr(data.metadata, name, spec.unwrap(payload.get(name) or None))
+                        setattr(data.metadata_, name, spec.unwrap(payload.get(name) or None))
                 data.datatype.after_setting_metadata(data)
                 # Sanitize annotation before adding it.
                 if payload.get("annotation"):

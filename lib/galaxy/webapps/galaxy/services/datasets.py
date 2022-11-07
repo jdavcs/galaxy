@@ -520,12 +520,12 @@ class DatasetsService(ServiceBase, UsesVisualizationMixin):
         TODO: Remove the `open_file` parameter when removing the associated legacy endpoint.
         """
         hda = self.hda_manager.get_accessible(history_content_id, trans.user)
-        file_ext = hda.metadata.spec.get(metadata_file).get("file_ext", metadata_file)
+        file_ext = hda.metadata_.spec.get(metadata_file).get("file_ext", metadata_file)
         fname = "".join(c in util.FILENAME_VALID_CHARS and c or "_" for c in hda.name)[0:150]
         headers = {}
         headers["Content-Type"] = "application/octet-stream"
         headers["Content-Disposition"] = f'attachment; filename="Galaxy{hda.hid}-[{fname}].{file_ext}"'
-        file_path = hda.metadata.get(metadata_file).file_name
+        file_path = hda.metadata_.get(metadata_file).file_name
         if open_file:
             return open(file_path, "rb"), headers
         return file_path, headers
