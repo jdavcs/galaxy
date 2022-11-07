@@ -101,8 +101,8 @@ class TabularData(data.Text):
                 not dataset.dataset.purged
                 and dataset.has_data()
                 and dataset.state == dataset.states.OK
-                and dataset.metadata.columns > 0
-                and dataset.metadata.data_lines != 0
+                and dataset.metadata_.columns > 0
+                and dataset.metadata_.data_lines != 0
             )
         except Exception:
             return False

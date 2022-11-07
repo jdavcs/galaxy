@@ -175,11 +175,11 @@ class Interval(Tabular):
                 not dataset.dataset.purged
                 and dataset.has_data()
                 and dataset.state == dataset.states.OK
-                and dataset.metadata.columns > 0
-                and dataset.metadata.data_lines != 0
-                and dataset.metadata.chromCol
-                and dataset.metadata.startCol
-                and dataset.metadata.endCol
+                and dataset.metadata_.columns > 0
+                and dataset.metadata_.data_lines != 0
+                and dataset.metadata_.chromCol
+                and dataset.metadata_.startCol
+                and dataset.metadata_.endCol
             )
         except Exception:
             return False
