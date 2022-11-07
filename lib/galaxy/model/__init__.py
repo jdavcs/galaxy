@@ -2199,7 +2199,7 @@ class FakeDatasetAssociation:
     def __init__(self, dataset=None):
         self.dataset = dataset
         self.file_name = dataset.file_name
-        self.metadata = dict()
+        self.metadata_ = dict()
 
     def __eq__(self, other):
         return isinstance(other, FakeDatasetAssociation) and self.dataset == other.dataset
@@ -3866,7 +3866,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         self.designation = designation
         # set private variable to None here, since the attribute may be needed in by MetadataCollection.__init__
         self._metadata = None
-        self.metadata = metadata or dict()
+        self.metadata_ = metadata or dict()
         self.metadata_deferred = metadata_deferred
         self.extended_metadata = extended_metadata
         if (
@@ -3965,13 +3965,15 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
 
     @property
     def set_metadata_requires_flush(self):
-        return self.metadata.requires_dataset_id
+        return self.metadata_.requires_dataset_id
 
     def set_metadata(self, bunch):
         # Needs to accept a MetadataCollection, a bunch, or a dict
-        self._metadata = self.metadata.make_dict_copy(bunch)
+        self._metadata = self.metadata_.make_dict_copy(bunch)
 
-    metadata = property(get_metadata, set_metadata)
+    # Note the trailing underscore: the "metadata" attribute is reserved by
+    # SQLAlchemy for the MetaData instance when using a declarative base class
+    metadata_ = property(get_metadata, set_metadata)
 
     @property
     def has_metadata_files(self):
@@ -3980,13 +3982,13 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
     @property
     def metadata_file_types(self):
         meta_types = []
-        for meta_type in self.metadata.spec.keys():
-            if isinstance(self.metadata.spec[meta_type].param, galaxy.model.metadata.FileParameter):
+        for meta_type in self.metadata_.spec.keys():
+            if isinstance(self.metadata_.spec[meta_type].param, galaxy.model.metadata.FileParameter):
                 meta_types.append(meta_type)
         return meta_types
 
     def get_metadata_file_paths_and_extensions(self) -> List[Tuple[str, str]]:
-        metadata = self.metadata
+        metadata = self.metadata_
         metadata_files = []
         for metadata_name in self.metadata_file_types:
             file_ext = metadata.spec[metadata_name].file_ext
@@ -4000,7 +4002,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
     # field in the database.  That field now maps to "old_dbkey" (see mapping.py).
 
     def get_dbkey(self):
-        dbkey = self.metadata.dbkey
+        dbkey = self.metadata_.dbkey
         if not isinstance(dbkey, list):
             dbkey = [dbkey]
         if dbkey in [[None], []]:
@@ -4010,7 +4012,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
     def set_dbkey(self, value):
         if "dbkey" in self.datatype.metadata_spec:
             if not isinstance(value, list):
-                self.metadata.dbkey = [value]
+                self.metadata_.dbkey = [value]
 
     dbkey = property(get_dbkey, set_dbkey)
 
@@ -4194,7 +4196,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         Returns an HDA that points to a metadata file which contains a
         converted data with the requested extension.
         """
-        for name, value in self.metadata.items():
+        for name, value in self.metadata_.items():
             # HACK: MetadataFile objects do not have a type/ext, so need to use metadata name
             # to determine type.
             if dataset_ext == "bai" and name == "bam_index" and isinstance(value, MetadataFile):
@@ -4381,7 +4383,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         return msg
 
     def _serialize(self, id_encoder, serialization_options):
-        metadata = _prepare_metadata_for_serialization(id_encoder, serialization_options, self.metadata)
+        metadata = _prepare_metadata_for_serialization(id_encoder, serialization_options, self.metadata_)
         rval = dict_for(
             self,
             create_time=self.create_time.__str__(),
@@ -4528,7 +4530,7 @@ class HistoryDatasetAssociation(DatasetInstance, HasTags, Dictifiable, UsesAnnot
 
         hda.copy_tags_to(copy_tags)
         object_session(self).add(hda)
-        hda.metadata = self.metadata
+        hda.metadata_ = self.metadata_
         if flush:
             object_session(self).flush()
         return hda
@@ -4595,7 +4597,7 @@ class HistoryDatasetAssociation(DatasetInstance, HasTags, Dictifiable, UsesAnnot
         # Must set metadata after ldda flushed, as MetadataFiles require ldda.id
         if self.set_metadata_requires_flush:
             object_session(self).flush()
-        ldda.metadata = self.metadata
+        ldda.metadata_ = self.metadata_
         # TODO: copy #tags from history
         if ldda_message:
             ldda.message = ldda_message
@@ -4716,15 +4718,15 @@ class HistoryDatasetAssociation(DatasetInstance, HasTags, Dictifiable, UsesAnnot
         if hda.extended_metadata is not None:
             rval["extended_metadata"] = hda.extended_metadata.data
 
-        for name in hda.metadata.spec.keys():
-            val = hda.metadata.get(name)
+        for name in hda.metadata_.spec.keys():
+            val = hda.metadata_.get(name)
             if isinstance(val, MetadataFile):
                 # only when explicitly set: fetching filepaths can be expensive
                 if not expose_dataset_path:
                     continue
                 val = val.file_name
             # If no value for metadata, look in datatype for metadata.
-            elif not hda.metadata.element_is_set(name) and hasattr(hda.datatype, name):
+            elif not hda.metadata_.element_is_set(name) and hasattr(hda.datatype, name):
                 val = getattr(hda.datatype, name)
             rval[f"metadata_{name}"] = val
         return rval
@@ -5177,8 +5179,8 @@ class LibraryDataset(Base, Serializable):
             rval["uuid"] = None
         else:
             rval["uuid"] = str(ldda.dataset.uuid)
-        for name in ldda.metadata.spec.keys():
-            val = ldda.metadata.get(name)
+        for name in ldda.metadata_.spec.keys():
+            val = ldda.metadata_.get(name)
             if isinstance(val, MetadataFile):
                 val = val.file_name
             elif isinstance(val, list):
@@ -5231,7 +5233,7 @@ class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, Serializable):
 
         sa_session.add(hda)
         sa_session.flush()
-        hda.metadata = self.metadata  # need to set after flushed, as MetadataFiles require dataset.id
+        hda.metadata_ = self.metadata_  # need to set after flushed, as MetadataFiles require dataset.id
         if add_to_history and target_history:
             target_history.add_dataset(hda)
         sa_session.flush()
@@ -5262,7 +5264,7 @@ class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, Serializable):
         sa_session.add(ldda)
         sa_session.flush()
         # Need to set after flushed, as MetadataFiles require dataset.id
-        ldda.metadata = self.metadata
+        ldda.metadata_ = self.metadata_
         sa_session.flush()
         return ldda
 
@@ -5320,8 +5322,8 @@ class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, Serializable):
         rval["parent_library_id"] = ldda.library_dataset.folder.parent_library.id
         if ldda.extended_metadata is not None:
             rval["extended_metadata"] = ldda.extended_metadata.data
-        for name in ldda.metadata.spec.keys():
-            val = ldda.metadata.get(name)
+        for name in ldda.metadata_.spec.keys():
+            val = ldda.metadata_.get(name)
             if isinstance(val, MetadataFile):
                 val = val.file_name
             # If no value for metadata, look in datatype for metadata.
