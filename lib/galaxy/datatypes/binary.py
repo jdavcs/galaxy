@@ -13,7 +13,10 @@ import tarfile
 import tempfile
 import zipfile
 from json import dumps
-from typing import Optional
+from typing import (
+    Optional,
+    TYPE_CHECKING,
+)
 
 import h5py
 import numpy as np
@@ -55,6 +58,9 @@ from . import (
     data,
     dataproviders,
 )
+
+if TYPE_CHECKING:
+    from galaxy.model import DatasetInstance
 
 log = logging.getLogger(__name__)
 # pysam 0.16.0.1 emits logs containing the word 'Error', this can confuse the stdout/stderr checkers.
@@ -496,7 +502,7 @@ class BamNative(CompressedArchive, _BamOrSam):
         """
         pysam.merge("-O", "BAM", output_file, *split_files)
 
-    def init_meta(self, dataset, copy_from=None):
+    def init_meta(self, dataset: "DatasetInstance", copy_from: Optional["DatasetInstance"] = None) -> None:
         Binary.init_meta(self, dataset, copy_from=copy_from)
 
     def sniff(self, filename):
@@ -2237,7 +2243,7 @@ class SQlite(Binary):
     file_ext = "sqlite"
     edam_format = "format_3621"
 
-    def init_meta(self, dataset, copy_from=None):
+    def init_meta(self, dataset: "DatasetInstance", copy_from: Optional["DatasetInstance"] = None) -> None:
         Binary.init_meta(self, dataset, copy_from=copy_from)
 
     def set_meta(self, dataset, overwrite=True, **kwd):
