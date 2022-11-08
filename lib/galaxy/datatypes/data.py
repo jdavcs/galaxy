@@ -230,7 +230,9 @@ class Data(metaclass=DataMeta):
         """Unimplemented method, allows guessing of metadata from contents of file"""
         return True
 
-    def missing_meta(self, dataset, check=None, skip=None):
+    def missing_meta(
+        self, dataset: "DatasetInstance", check: Optional[List] = None, skip: Optional[List] = None
+    ) -> bool:
         """
         Checks for empty metadata values.
         Returns False if no non-optional metadata is missing and the missing metadata key otherwise.
@@ -242,14 +244,14 @@ class Data(metaclass=DataMeta):
         if check:
             to_check = check
         else:
-            to_check = dataset.metadata.keys()
+            to_check = dataset.metadata_.keys()
         for key in to_check:
             if key in skip:
                 continue
-            if not check and len(skip) == 0 and dataset.metadata.spec[key].get("optional"):
+            if not check and len(skip) == 0 and dataset.metadata_.spec[key].get("optional"):
                 continue  # we skip check for optional and nonrequested values here
-            if not dataset.metadata.element_is_set(key) and (
-                check or dataset.metadata.spec[key].check_required_metadata
+            if not dataset.metadata_.element_is_set(key) and (
+                check or dataset.metadata_.spec[key].check_required_metadata
             ):
                 # FIXME: Optional metadata isn't always properly annotated,
                 # so skip check if check_required_metadata is false on the datatype that defined the metadata element.
