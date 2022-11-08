@@ -830,7 +830,7 @@ class RexpBase(Html):
 
     def init_meta(self, dataset: "DatasetInstance", copy_from: Optional["DatasetInstance"] = None) -> None:
         if copy_from:
-            dataset.metadata = copy_from.metadata
+            dataset.metadata_ = copy_from.metadata_
 
     def set_meta(self, dataset, **kwd):
         """

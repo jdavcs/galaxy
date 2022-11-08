@@ -224,7 +224,7 @@ class Data(metaclass=DataMeta):
         # Dataset.set_metadata.  It always copies the rhs in order to
         # flag the object as modified for SQLAlchemy.
         if copy_from:
-            dataset.metadata = copy_from.metadata
+            dataset.metadata_ = copy_from.metadata_
 
     def set_meta(self, dataset: Any, overwrite=True, **kwd):
         """Unimplemented method, allows guessing of metadata from contents of file"""
