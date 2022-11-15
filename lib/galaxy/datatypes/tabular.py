@@ -1541,31 +1541,33 @@ class ConnectivityTable(Tabular):
                 i += 1
         return False
 
-    def get_chunk(self, trans, dataset, chunk):
-        ck_index = int(chunk)
-        f = open(dataset.file_name)
-        f.seek(ck_index * trans.app.config.display_chunk_size)
-        # If we aren't at the start of the file, seek to next newline.  Do this better eventually.
-        if f.tell() != 0:
-            cursor = f.read(1)
-            while cursor and cursor != "\n":
-                cursor = f.read(1)
-        ck_data = f.read(trans.app.config.display_chunk_size)
-        cursor = f.read(1)
-        while cursor and ck_data[-1] != "\n":
-            ck_data += cursor
-            cursor = f.read(1)
+    def get_chunk(self, trans, dataset, offset=0, ck_size=None):
+        with open(dataset.file_name) as f:
+            f.seek(offset)
+            # If we aren't at the start of the file, skip until next line
+            if f.tell() != 0:
+                f.readline()
+            ck_data = f.read(ck_size or trans.app.config.display_chunk_size)
+            # If we are not at the end of the line, read the rest of the line
+            if ck_data and ck_data[-1] != "\n":
+                ck_data += f.readline()
+            last_read = f.tell()
 
+        ck_data_header = ck_data_body = ""
         # The ConnectivityTable format has several derivatives of which one is delimited by (multiple) spaces.
         # By converting these spaces back to tabs, chucks can still be interpreted by tab delimited file parsers
-        ck_data_header = ck_data_body = ""
         if ck_data:
             ck_data_header, ck_data_body = ck_data.split("\n", 1)
             ck_data_header = re.sub("^([0-9]+)[ ]+", r"\1\t", ck_data_header)
             ck_data_body = re.sub("\n[ \t]+", "\n", ck_data_body)
             ck_data_body = re.sub("[ ]+", "\t", ck_data_body)
 
-        return dumps({"ck_data": util.unicodify(f"{ck_data_header}\n{ck_data_body}"), "ck_index": ck_index + 1})
+        return dumps(
+            {
+                "ck_data": util.unicodify(f"{ck_data_header}\n{ck_data_body}"),
+                "offset": last_read,
+            }
+        )
 
 
 @build_sniff_from_prefix
