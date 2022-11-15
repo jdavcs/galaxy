@@ -33,8 +33,8 @@ def make_trans():
     class StubTransaction:
         def __init__(self, chunk_size):
             self.app = Stub()
-            self.app.config = Stub()
-            self.app.config.display_chunk_size = chunk_size
+            self.app.config = Stub()  # type: ignore[attr-defined]
+            self.app.config.display_chunk_size = chunk_size  # type: ignore[attr-defined]
 
     return StubTransaction
 
@@ -43,7 +43,7 @@ def test_get_chunk__chunk_size_greater_than_file(dataset, make_trans, test_file_
     dt = ConnectivityTable()
     chunk_size = 1000
     trans = make_trans(chunk_size)
-    chunk = dt.get_chunk(trans, dataset, 0)
+    chunk = dt.get_chunk(trans, dataset)
     assert (
         chunk
         == f'{{"ck_data": "363\\ttmRNA\\n1\\tG\\t0\\t2\\t359\\t1\\n2\\tG\\t1\\t3\\t358\\t2\\n", "offset": {test_file_length}}}'
