@@ -35,6 +35,10 @@ def test_get_chunk__chunk_size_greater_than_file(dataset, make_trans):
     chunk = dt.get_chunk(trans, dataset, 0)
     assert chunk == '{"ck_data": "363\\ttmRNA\\n1\\tG\\t0\\t2\\t359\\t1\\n2\\tG\\t1\\t3\\t358\\t2\\n", "ck_index": 1}'
 
+    # no more data
+    chunk = dt.get_chunk(trans, dataset, 1)
+    assert chunk == '{"ck_data": "\\n", "ck_index": 2}'
+
 
 def test_get_chunk__chunk_size_less_than_line(dataset, make_trans):
     dt = ConnectivityTable()
@@ -52,3 +56,7 @@ def test_get_chunk__chunk_size_less_than_line(dataset, make_trans):
     # reads line 3
     chunk = dt.get_chunk(trans, dataset, 2)
     assert chunk == '{"ck_data": "2\\tG\\t1\\t3\\t358\\t2\\n", "ck_index": 3}'
+
+    # no more data
+    chunk = dt.get_chunk(trans, dataset, 3)
+    assert chunk == '{"ck_data": "\\n", "ck_index": 4}'

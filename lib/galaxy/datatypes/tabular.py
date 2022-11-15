@@ -1558,10 +1558,12 @@ class ConnectivityTable(Tabular):
 
         # The ConnectivityTable format has several derivatives of which one is delimited by (multiple) spaces.
         # By converting these spaces back to tabs, chucks can still be interpreted by tab delimited file parsers
-        ck_data_header, ck_data_body = ck_data.split("\n", 1)
-        ck_data_header = re.sub("^([0-9]+)[ ]+", r"\1\t", ck_data_header)
-        ck_data_body = re.sub("\n[ \t]+", "\n", ck_data_body)
-        ck_data_body = re.sub("[ ]+", "\t", ck_data_body)
+        ck_data_header = ck_data_body = ""
+        if ck_data:
+            ck_data_header, ck_data_body = ck_data.split("\n", 1)
+            ck_data_header = re.sub("^([0-9]+)[ ]+", r"\1\t", ck_data_header)
+            ck_data_body = re.sub("\n[ \t]+", "\n", ck_data_body)
+            ck_data_body = re.sub("[ ]+", "\t", ck_data_body)
 
         return dumps({"ck_data": util.unicodify(f"{ck_data_header}\n{ck_data_body}"), "ck_index": ck_index + 1})
 
