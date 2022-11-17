@@ -138,7 +138,7 @@ def dburl_from_config(config: Config) -> str:
 
 def run_command(cmd: str) -> subprocess.CompletedProcess:
     root = galaxy_directory()
-    cmd = f"{root}/{cmd}"
+    cmd = f"sh {root}/{cmd}"
     return subprocess.run(cmd.split(), capture_output=True, text=True)
 
 
