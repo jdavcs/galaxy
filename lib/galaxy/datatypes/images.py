@@ -111,16 +111,16 @@ class OMETiff(Tiff):
         self, dataset: "DatasetInstance", overwrite: bool = True, metadata_tmp_files_dir: Optional[str] = None, **kwd
     ) -> None:
         spec_key = "offsets"
-        offsets_file = dataset.metadata.offsets
+        offsets_file = dataset.metadata_.offsets
         if not offsets_file:
-            offsets_file = dataset.metadata.spec[spec_key].param.new_file(
+            offsets_file = dataset.metadata_.spec[spec_key].param.new_file(
                 dataset=dataset, metadata_tmp_files_dir=metadata_tmp_files_dir
             )
         with tifffile.TiffFile(dataset.file_name) as tif:
             offsets = [page.offset for page in tif.pages]
         with open(offsets_file.file_name, "w") as f:
             json.dump(offsets, f)
-        dataset.metadata.offsets = offsets_file
+        dataset.metadata_.offsets = offsets_file
 
     def sniff(self, filename: str) -> bool:
         with tifffile.TiffFile(filename) as tif:
