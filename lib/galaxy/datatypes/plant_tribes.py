@@ -123,15 +123,15 @@ class PlantTribesKsComponents(Tabular):
                 except Exception:
                     continue
         if len(significant_components) > 0:
-            dataset.metadata.number_comp = max(significant_components)
+            dataset.metadata_.number_comp = max(significant_components)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
             dataset.peek = get_file_peek(dataset.file_name)
-            if dataset.metadata.number_comp == 1:
+            if dataset.metadata_.number_comp == 1:
                 dataset.blurb = "1 significant component"
             else:
-                dataset.blurb = f"{dataset.metadata.number_comp} significant components"
+                dataset.blurb = f"{dataset.metadata_.number_comp} significant components"
         else:
             dataset.peek = "file does not exist"
             dataset.blurb = "file purged from disk"
