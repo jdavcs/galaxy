@@ -74,10 +74,10 @@ class GenericMolFile(Text):
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
-            if dataset.metadata.number_of_molecules == 1:
+            if dataset.metadata_.number_of_molecules == 1:
                 dataset.blurb = "1 molecule"
             else:
-                dataset.blurb = f"{dataset.metadata.number_of_molecules} molecules"
+                dataset.blurb = f"{dataset.metadata_.number_of_molecules} molecules"
             dataset.peek = get_file_peek(dataset.file_name)
         else:
             dataset.peek = "file does not exist"
@@ -208,7 +208,7 @@ class MOL(GenericMolFile):
         """
         Set the number molecules, in the case of MOL its always one.
         """
-        dataset.metadata.number_of_molecules = 1
+        dataset.metadata_.number_of_molecules = 1
 
 
 @build_sniff_from_prefix
@@ -261,7 +261,7 @@ class SDF(GenericMolFile):
         """
         Set the number of molecules in dataset.
         """
-        dataset.metadata.number_of_molecules = count_special_lines(r"^\$\$\$\$$", dataset.file_name)
+        dataset.metadata_.number_of_molecules = count_special_lines(r"^\$\$\$\$$", dataset.file_name)
 
     @classmethod
     def split(cls, input_datasets: List, subdir_generator_function: Callable, split_params: Dict) -> None:
@@ -344,7 +344,7 @@ class MOL2(GenericMolFile):
         """
         Set the number of lines of data in dataset.
         """
-        dataset.metadata.number_of_molecules = count_special_lines("@<TRIPOS>MOLECULE", dataset.file_name)
+        dataset.metadata_.number_of_molecules = count_special_lines("@<TRIPOS>MOLECULE", dataset.file_name)
 
     @classmethod
     def split(cls, input_datasets: List, subdir_generator_function: Callable, split_params: Dict) -> None:
@@ -430,7 +430,7 @@ class FPS(GenericMolFile):
         """
         Set the number of lines of data in dataset.
         """
-        dataset.metadata.number_of_molecules = count_special_lines("^#", dataset.file_name, invert=True)
+        dataset.metadata_.number_of_molecules = count_special_lines("^#", dataset.file_name, invert=True)
 
     @classmethod
     def split(cls, input_datasets: List, subdir_generator_function: Callable, split_params: Dict) -> None:
@@ -571,7 +571,7 @@ class DRF(GenericMolFile):
         """
         Set the number of lines of data in dataset.
         """
-        dataset.metadata.number_of_molecules = count_special_lines('"ligand id"', dataset.file_name, invert=True)
+        dataset.metadata_.number_of_molecules = count_special_lines('"ligand id"', dataset.file_name, invert=True)
 
 
 class PHAR(GenericMolFile):
@@ -645,7 +645,7 @@ class PDB(GenericMolFile):
                     if line.startswith("ATOM  ") or line.startswith("HETATM"):
                         if line[21] != " ":
                             chain_ids.add(line[21])
-            dataset.metadata.chain_ids = list(chain_ids)
+            dataset.metadata_.chain_ids = list(chain_ids)
         except Exception as e:
             log.error("Error finding chain_ids: %s", unicodify(e))
             raise
@@ -654,7 +654,7 @@ class PDB(GenericMolFile):
         if not dataset.dataset.purged:
             atom_numbers = count_special_lines("^ATOM", dataset.file_name)
             hetatm_numbers = count_special_lines("^HETATM", dataset.file_name)
-            chain_ids = ",".join(dataset.metadata.chain_ids) if len(dataset.metadata.chain_ids) > 0 else "None"
+            chain_ids = ",".join(dataset.metadata_.chain_ids) if len(dataset.metadata_.chain_ids) > 0 else "None"
             dataset.peek = get_file_peek(dataset.file_name)
             dataset.blurb = f"{atom_numbers} atoms and {hetatm_numbers} HET-atoms\nchain_ids: {chain_ids}"
         else:
@@ -802,7 +802,7 @@ class PQR(GenericMolFile):
                     match = prog.match(line.rstrip())
                     if match and match.groups()[5]:
                         chain_ids.add(match.groups()[5])
-            dataset.metadata.chain_ids = list(chain_ids)
+            dataset.metadata_.chain_ids = list(chain_ids)
         except Exception as e:
             log.error("Error finding chain_ids: %s", unicodify(e))
             raise
@@ -811,7 +811,7 @@ class PQR(GenericMolFile):
         if not dataset.dataset.purged:
             atom_numbers = count_special_lines("^ATOM", dataset.file_name)
             hetatm_numbers = count_special_lines("^HETATM", dataset.file_name)
-            chain_ids = ",".join(dataset.metadata.chain_ids) if len(dataset.metadata.chain_ids) > 0 else "None"
+            chain_ids = ",".join(dataset.metadata_.chain_ids) if len(dataset.metadata_.chain_ids) > 0 else "None"
             dataset.peek = get_file_peek(dataset.file_name)
             dataset.blurb = f"{atom_numbers} atoms and {hetatm_numbers} HET-atoms\nchain_ids: {chain_ids}"
         else:
@@ -915,22 +915,22 @@ class Cell(GenericMolFile):
                 return
 
             # CELL file can only have one molecule
-            dataset.metadata.number_of_molecules = 1
-            dataset.metadata.atom_data = atom_data
-            dataset.metadata.number_of_atoms = len(dataset.metadata.atom_data)
-            dataset.metadata.chemical_formula = chemical_formula
+            dataset.metadata_.number_of_molecules = 1
+            dataset.metadata_.atom_data = atom_data
+            dataset.metadata_.number_of_atoms = len(dataset.metadata_.atom_data)
+            dataset.metadata_.chemical_formula = chemical_formula
             try:
-                dataset.metadata.is_periodic = bool(pbc)
+                dataset.metadata_.is_periodic = bool(pbc)
             except ValueError:  # pbc is an array
-                dataset.metadata.is_periodic = bool(pbc.any())
-            dataset.metadata.lattice_parameters = list(lattice_parameters)
+                dataset.metadata_.is_periodic = bool(pbc.any())
+            dataset.metadata_.lattice_parameters = list(lattice_parameters)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
             dataset.peek = get_file_peek(dataset.file_name)
-            dataset.info = self.get_dataset_info(dataset.metadata)
-            structure_string = "structure" if dataset.metadata.number_of_molecules == 1 else "structures"
-            dataset.blurb = f"CASTEP CELL file containing {dataset.metadata.number_of_molecules} {structure_string}"
+            dataset.info = self.get_dataset_info(dataset.metadata_)
+            structure_string = "structure" if dataset.metadata_.number_of_molecules == 1 else "structures"
+            dataset.blurb = f"CASTEP CELL file containing {dataset.metadata_.number_of_molecules} {structure_string}"
 
         else:
             dataset.peek = "file does not exist"
@@ -1085,19 +1085,19 @@ class CIF(GenericMolFile):
                 self.meta_error = True
                 return
 
-            dataset.metadata.number_of_molecules = len(ase_data)
-            dataset.metadata.atom_data = atom_data
-            dataset.metadata.number_of_atoms = [len(atoms) for atoms in dataset.metadata.atom_data]
-            dataset.metadata.chemical_formula = chemical_formula
-            dataset.metadata.is_periodic = is_periodic
-            dataset.metadata.lattice_parameters = list(lattice_parameters)
+            dataset.metadata_.number_of_molecules = len(ase_data)
+            dataset.metadata_.atom_data = atom_data
+            dataset.metadata_.number_of_atoms = [len(atoms) for atoms in dataset.metadata_.atom_data]
+            dataset.metadata_.chemical_formula = chemical_formula
+            dataset.metadata_.is_periodic = is_periodic
+            dataset.metadata_.lattice_parameters = list(lattice_parameters)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
             dataset.peek = get_file_peek(dataset.file_name)
-            dataset.info = self.get_dataset_info(dataset.metadata)
-            structure_string = "structure" if dataset.metadata.number_of_molecules == 1 else "structures"
-            dataset.blurb = f"CIF file containing {dataset.metadata.number_of_molecules} {structure_string}"
+            dataset.info = self.get_dataset_info(dataset.metadata_)
+            structure_string = "structure" if dataset.metadata_.number_of_molecules == 1 else "structures"
+            dataset.blurb = f"CIF file containing {dataset.metadata_.number_of_molecules} {structure_string}"
 
         else:
             dataset.peek = "file does not exist"
@@ -1283,19 +1283,19 @@ class XYZ(GenericMolFile):
                 self.meta_error = True
                 return
 
-            dataset.metadata.number_of_molecules = len(ase_data)
-            dataset.metadata.atom_data = atom_data
-            dataset.metadata.number_of_atoms = [len(atoms) for atoms in dataset.metadata.atom_data]
-            dataset.metadata.chemical_formula = chemical_formula
-            dataset.metadata.is_periodic = is_periodic
-            dataset.metadata.lattice_parameters = list(lattice_parameters)
+            dataset.metadata_.number_of_molecules = len(ase_data)
+            dataset.metadata_.atom_data = atom_data
+            dataset.metadata_.number_of_atoms = [len(atoms) for atoms in dataset.metadata_.atom_data]
+            dataset.metadata_.chemical_formula = chemical_formula
+            dataset.metadata_.is_periodic = is_periodic
+            dataset.metadata_.lattice_parameters = list(lattice_parameters)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
             dataset.peek = get_file_peek(dataset.file_name)
-            dataset.info = self.get_dataset_info(dataset.metadata)
-            structure_string = "structure" if dataset.metadata.number_of_molecules == 1 else "structures"
-            dataset.blurb = f"XYZ file containing {dataset.metadata.number_of_molecules} {structure_string}"
+            dataset.info = self.get_dataset_info(dataset.metadata_)
+            structure_string = "structure" if dataset.metadata_.number_of_molecules == 1 else "structures"
+            dataset.blurb = f"XYZ file containing {dataset.metadata_.number_of_molecules} {structure_string}"
         else:
             dataset.peek = "file does not exist"
             dataset.blurb = "file purged from disk"
@@ -1501,14 +1501,14 @@ class InChI(Tabular):
         """
         Set the number of lines of data in dataset.
         """
-        dataset.metadata.number_of_molecules = self.count_data_lines(dataset)
+        dataset.metadata_.number_of_molecules = self.count_data_lines(dataset)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
-            if dataset.metadata.number_of_molecules == 1:
+            if dataset.metadata_.number_of_molecules == 1:
                 dataset.blurb = "1 molecule"
             else:
-                dataset.blurb = f"{dataset.metadata.number_of_molecules} molecules"
+                dataset.blurb = f"{dataset.metadata_.number_of_molecules} molecules"
             dataset.peek = get_file_peek(dataset.file_name)
         else:
             dataset.peek = "file does not exist"
@@ -1566,14 +1566,14 @@ class SMILES(Tabular):
         """
         Set the number of lines of data in dataset.
         """
-        dataset.metadata.number_of_molecules = self.count_data_lines(dataset)
+        dataset.metadata_.number_of_molecules = self.count_data_lines(dataset)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
-            if dataset.metadata.number_of_molecules == 1:
+            if dataset.metadata_.number_of_molecules == 1:
                 dataset.blurb = "1 molecule"
             else:
-                dataset.blurb = f"{dataset.metadata.number_of_molecules} molecules"
+                dataset.blurb = f"{dataset.metadata_.number_of_molecules} molecules"
             dataset.peek = get_file_peek(dataset.file_name)
         else:
             dataset.peek = "file does not exist"
@@ -1602,14 +1602,14 @@ class CML(GenericXml):
         """
         Set the number of lines of data in dataset.
         """
-        dataset.metadata.number_of_molecules = count_special_lines(r"^\s*<molecule", dataset.file_name)
+        dataset.metadata_.number_of_molecules = count_special_lines(r"^\s*<molecule", dataset.file_name)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         if not dataset.dataset.purged:
-            if dataset.metadata.number_of_molecules == 1:
+            if dataset.metadata_.number_of_molecules == 1:
                 dataset.blurb = "1 molecule"
             else:
-                dataset.blurb = f"{dataset.metadata.number_of_molecules} molecules"
+                dataset.blurb = f"{dataset.metadata_.number_of_molecules} molecules"
             dataset.peek = get_file_peek(dataset.file_name)
         else:
             dataset.peek = "file does not exist"
