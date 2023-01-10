@@ -37,12 +37,12 @@ class _QIIME2ResultBase(CompressedZipArchive):
         metadata = _get_metadata_from_archive(dataset.file_name)
         for key, value in metadata.items():
             if value:
-                setattr(dataset.metadata, key, value)
+                setattr(dataset.metadata_, key, value)
 
-        dataset.metadata.semantic_type_simple = _strip_properties(dataset.metadata.semantic_type)
+        dataset.metadata_.semantic_type_simple = _strip_properties(dataset.metadata_.semantic_type)
 
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
-        if dataset.metadata.semantic_type == "Visualization":
+        if dataset.metadata_.semantic_type == "Visualization":
             dataset.blurb = "QIIME 2 Visualization"
         else:
             dataset.blurb = "QIIME 2 Artifact"
@@ -60,11 +60,11 @@ class _QIIME2ResultBase(CompressedZipArchive):
         return "".join(table)
 
     def _peek(self, dataset: "DatasetInstance", simple: bool = False) -> List:
-        peek = [("Type", dataset.metadata.semantic_type), ("UUID", dataset.metadata.uuid)]
+        peek = [("Type", dataset.metadata_.semantic_type), ("UUID", dataset.metadata_.uuid)]
         if not simple:
-            if dataset.metadata.semantic_type != "Visualization":
-                peek.append(("Format", dataset.metadata.format))
-            peek.append(("Version", dataset.metadata.version))
+            if dataset.metadata_.semantic_type != "Visualization":
+                peek.append(("Format", dataset.metadata_.format))
+            peek.append(("Version", dataset.metadata_.version))
         return peek
 
     def _sniff(self, filename: str) -> Optional[Dict]:
@@ -135,11 +135,11 @@ class QIIME2Metadata(Tabular):
             # The first column (q2:types) is always the IDs
             q2_types[0] = "index"
 
-            if len(q2_types) < dataset.metadata.columns:
+            if len(q2_types) < dataset.metadata_.columns:
                 # this is probably malformed, but easy to fix
-                q2_types.extend([""] * (dataset.metadata.columns - len(q2_types)))
+                q2_types.extend([""] * (dataset.metadata_.columns - len(q2_types)))
 
-            for idx, (q2_type, col_type) in enumerate(zip(q2_types, dataset.metadata.column_types)):
+            for idx, (q2_type, col_type) in enumerate(zip(q2_types, dataset.metadata_.column_types)):
                 if q2_type == "":
                     if col_type in ("float", "int"):
                         q2_types[idx] = "numeric"
@@ -147,7 +147,7 @@ class QIIME2Metadata(Tabular):
                         q2_types[idx] = "categorical"
                 else:
                     if q2_type == "categorical" and col_type in ("float", "int", "list"):
-                        dataset.metadata.column_types[idx] = "str"
+                        dataset.metadata_.column_types[idx] = "str"
 
     def sniff_prefix(self, file_prefix: FilePrefix) -> bool:
         for _, line in zip(range(self._search_lines), file_prefix.line_iterator()):
