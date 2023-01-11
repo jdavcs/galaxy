@@ -66,9 +66,9 @@ class DatasetDataProvider(base.DataProvider):
         """
         # re-map keys to fit ColumnarProvider.__init__ kwargs
         params = {}
-        params["column_count"] = dataset.metadata.columns
-        params["column_types"] = dataset.metadata.column_types
-        params["column_names"] = dataset.metadata.column_names or getattr(dataset.datatype, "column_names", None)
+        params["column_count"] = dataset.metadata_.columns
+        params["column_types"] = dataset.metadata_.column_types
+        params["column_names"] = dataset.metadata_.column_names or getattr(dataset.datatype, "column_names", None)
         return params
 
     def get_metadata_column_types(self, indeces=None):
@@ -80,7 +80,7 @@ class DatasetDataProvider(base.DataProvider):
         :type indeces: list of ints
         """
         metadata_column_types = (
-            self.dataset.metadata.column_types or getattr(self.dataset.datatype, "column_types", None) or None
+            self.dataset.metadata_.column_types or getattr(self.dataset.datatype, "column_types", None) or None
         )
         if not metadata_column_types:
             return metadata_column_types
@@ -101,7 +101,7 @@ class DatasetDataProvider(base.DataProvider):
         :type indeces: list of ints
         """
         metadata_column_names = (
-            self.dataset.metadata.column_names or getattr(self.dataset.datatype, "column_names", None) or None
+            self.dataset.metadata_.column_names or getattr(self.dataset.datatype, "column_names", None) or None
         )
         if not metadata_column_names:
             return metadata_column_names
@@ -125,7 +125,7 @@ class DatasetDataProvider(base.DataProvider):
         :raises ValueError: if an entry in list_of_column_names is not in column_names
         """
         metadata_column_names = (
-            self.dataset.metadata.column_names or getattr(self.dataset.datatype, "column_names", None) or None
+            self.dataset.metadata_.column_names or getattr(self.dataset.datatype, "column_names", None) or None
         )
         if not metadata_column_names:
             raise KeyError(
@@ -143,7 +143,7 @@ class DatasetDataProvider(base.DataProvider):
         Return the 1-base index of a sources column with the given `name`.
         """
         # metadata columns are 1-based indeces
-        column = getattr(self.dataset.metadata, name)
+        column = getattr(self.dataset.metadata_, name)
         return (column - 1) if (isinstance(column, int) and column > 0) else None
 
     def get_genomic_region_indeces(self, check=False):
