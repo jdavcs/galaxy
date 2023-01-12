@@ -85,7 +85,7 @@ Headers = Dict[str, Any]
 
 class GeneratePrimaryFileDataset(Protocol):
     extra_files_path: str
-    metadata: Any
+    metadata_: Any
 
 
 class DatatypeConverterNotFoundException(Exception):
