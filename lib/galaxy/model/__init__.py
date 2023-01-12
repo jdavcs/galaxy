@@ -4014,7 +4014,7 @@ class DatasetInstance(UsesCreateAndUpdateTime, _HasTable):
         # Needs to accept a MetadataCollection, a bunch, or a dict
         self._metadata = self.metadata_.make_dict_copy(bunch)
 
-    metadata = property(get_metadata, set_metadata)  # TODO DELETE THIS WHEN RENAMING IS COMPLETE
+    #metadata = property(get_metadata, set_metadata)  # TODO DELETE THIS WHEN RENAMING IS COMPLETE
     metadata_ = property(get_metadata, set_metadata)
 
     @property
