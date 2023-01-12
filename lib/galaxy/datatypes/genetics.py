@@ -745,25 +745,6 @@ class RexpBase(Html):
             ]
         return res
 
-    def get_pheno(self, dataset):
-        """
-        expects a .pheno file in the extra_files_dir - ugh
-        note that R is wierd and adds the row.name in
-        the header so the columns are all wrong - unless you tell it not to.
-        A file can be written as
-        write.table(file='foo.pheno',pData(foo),sep='\t',quote=F,row.names=F)
-        """
-        p = open(dataset.metadata_.pheno_path).readlines()
-        if len(p) > 0:  # should only need to fix an R pheno file once
-            head = p[0].strip().split("\t")
-            line1 = p[1].strip().split("\t")
-            if len(head) < len(line1):
-                head.insert(0, "ChipFileName")  # fix R write.table b0rken-ness
-                p[0] = "\t".join(head)
-        else:
-            p = []
-        return "\n".join(p)
-
     def set_peek(self, dataset: "DatasetInstance", **kwd) -> None:
         """
         expects a .pheno file in the extra_files_dir - ugh
@@ -783,18 +764,6 @@ class RexpBase(Html):
         else:
             dataset.peek = "file does not exist\n"
             dataset.blurb = "file purged from disk"
-
-    def get_peek(self, dataset):
-        """
-        expects a .pheno file in the extra_files_dir - ugh
-        """
-        pp = os.path.join(dataset.extra_files_path, f"{dataset.metadata_.base_name}.pheno")
-        try:
-            with open(pp) as f:
-                p = f.readlines()
-        except Exception:
-            p = [f"##failed to find {pp}"]
-        return "".join(p[:5])
 
     def get_file_peek(self, filename: str) -> str:
         """
