@@ -61,7 +61,7 @@ def one_ld_library_model_store_dict():
         blurb="a blurb goes here...",
         peek="A bit of the data...",
         extension=TEST_EXTENSION,
-        metadata=metadata,
+        metadata_=metadata,
         designation=None,
         deleted=False,
         visible=True,
@@ -137,7 +137,7 @@ def one_ld_library_deferred_model_store_dict():
         blurb="a blurb goes here...",
         peek="A bit of the data...",
         extension=TEST_EXTENSION,
-        metadata=metadata,
+        metadata_=metadata,
         designation=None,
         deleted=False,
         visible=True,
@@ -216,7 +216,7 @@ def one_hda_model_store_dict(
         blurb="a blurb goes here...",
         peek="A bit of the data...",
         extension=TEST_EXTENSION,
-        metadata=metadata,
+        metadata_=metadata,
         designation=None,
         deleted=False,
         visible=True,
@@ -262,7 +262,7 @@ def history_model_store_dict():
         blurb="a blurb goes here...",
         peek="A bit of the data...",
         extension=TEST_EXTENSION,
-        metadata=metadata,
+        metadata_=metadata,
         designation=None,
         visible=True,
         dataset_uuid=str(uuid4()),
@@ -323,7 +323,7 @@ def deferred_hda_model_store_dict(
         metadata_deferred=metadata_deferred,
     )
     if not metadata_deferred:
-        serialized_hda["metadata"] = metadata
+        serialized_hda["metadata_"] = metadata
     return {
         "datasets": [
             serialized_hda,
@@ -374,7 +374,7 @@ def deferred_hda_model_store_dict_bam(
         metadata_deferred=metadata_deferred,
     )
     if not metadata_deferred:
-        serialized_hda["metadata"] = metadata
+        serialized_hda["metadata_"] = metadata
     return {
         "datasets": [
             serialized_hda,
