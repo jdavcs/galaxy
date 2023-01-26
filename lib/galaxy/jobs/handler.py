@@ -34,6 +34,7 @@ from galaxy.jobs import (
     TaskWrapper,
 )
 from galaxy.jobs.mapper import JobNotReadyException
+from galaxy.model.base import transaction
 from galaxy.structured_app import MinimalManagerApp
 from galaxy.util import unicodify
 from galaxy.util.custom_logging import get_logger
@@ -331,7 +332,8 @@ class JobHandlerQueue(Monitors):
                 job_wrapper = self.__recover_job_wrapper(job)
                 self.dispatcher.recover(job, job_wrapper)
         if self.sa_session.dirty:
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
 
     def __recover_job_wrapper(self, job):
         # Already dispatched and running
@@ -564,7 +566,8 @@ class JobHandlerQueue(Monitors):
         for id in set(self.job_wrappers.keys()) - set(new_waiting_jobs):
             del self.job_wrappers[id]
         # Flush, if we updated the state
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
         # Done with the session
         self.sa_session.remove()
 
@@ -1020,7 +1023,8 @@ class JobHandlerQueue(Monitors):
         if job.handler is None:
             job.handler = self.app.config.server_name
             self.sa_session.add(job)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
             # If not tracking jobs in the database
             self.put(job.id, job.tool_id)
         else:
@@ -1106,12 +1110,14 @@ class JobHandlerStopQueue(Monitors):
             job.info = error_msg
         job.set_final_state(final_state, supports_skip_locked=self.app.application_stack.supports_skip_locked())
         self.sa_session.add(job)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
 
     def __stop(self, job):
         job.set_state(job.states.STOPPED)
         self.sa_session.add(job)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
 
     def monitor_step(self):
         """
