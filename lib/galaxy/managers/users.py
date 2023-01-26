@@ -30,6 +30,7 @@ from galaxy.managers import (
     base,
     deletable,
 )
+from galaxy.model.base import transaction
 from galaxy.security.validate_user_input import (
     VALID_EMAIL_RE,
     validate_email,
@@ -129,7 +130,9 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
             user.active = True
         self.session().add(user)
         try:
-            self.session().flush()
+            session = self.session()
+            with transaction(session):
+                session.commit()
             # TODO:?? flush needed for permissions below? If not, make optional
         except exc.IntegrityError as db_err:
             raise exceptions.Conflict(str(db_err))
@@ -471,7 +474,8 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
                         other_galaxy_session.is_valid = False
                         trans.sa_session.add(other_galaxy_session)
                 trans.sa_session.add(user)
-                trans.sa_session.flush()
+                with transaction(trans.sa_session):
+                    trans.sa_session.commit()
                 trans.log_event("User change password")
         else:
             return "Failed to determine user, access denied."
@@ -520,7 +524,8 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
             activation_token = util.hash_util.new_secure_hash_v2(str(random.getrandbits(256)))
             user.activation_token = activation_token
             trans.sa_session.add(user)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
         return activation_token
 
     def send_reset_email(self, trans, payload, **kwd):
@@ -549,7 +554,8 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
                 try:
                     util.send_mail(frm, email, subject, body, self.app.config)
                     trans.sa_session.add(reset_user)
-                    trans.sa_session.flush()
+                    with transaction(trans.sa_session):
+                        trans.sa_session.commit()
                     trans.log_event(f"User reset password: {email}")
                 except Exception as e:
                     log.debug(body)
@@ -570,7 +576,8 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
         if reset_user:
             prt = self.app.model.PasswordResetToken(reset_user)
             trans.sa_session.add(prt)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             return reset_user, prt
         return None, None
 
@@ -597,7 +604,9 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
     def activate(self, user):
         user.active = True
         self.session().add(user)
-        self.session().flush()
+        session = self.session()
+        with transaction(session):
+            session.commit()
 
 
 class UserSerializer(base.ModelSerializer, deletable.PurgableSerializerMixin):
