@@ -5,6 +5,7 @@ import socket
 import threading
 
 from galaxy.model import WorkerProcess
+from galaxy.model.base import transaction
 from galaxy.model.orm.now import now
 
 log = logging.getLogger(__name__)
@@ -49,7 +50,8 @@ class DatabaseHeartbeat:
         worker_process = self.worker_process
         if worker_process:
             self.sa_session.delete(worker_process)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
             self.application_stack.app.queue_worker.send_control_task("reconfigure_watcher", noop_self=True)
 
     def get_active_processes(self, last_seen_seconds=None):
@@ -92,7 +94,8 @@ class DatabaseHeartbeat:
         worker_process.update_time = now()
         worker_process.pid = self.pid
         self.sa_session.add(worker_process)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
         # We only want a single process watching the various config files on the file system.
         # We just pick the max server name for simplicity
         is_config_watcher = self.server_name == max(
