@@ -60,6 +60,7 @@ from galaxy.model import (
     LibraryDataset,
     User,
 )
+from galaxy.model.base import transaction
 from galaxy.model.security import GalaxyRBACAgent
 from galaxy.schema import (
     FilterQueryParams,
@@ -683,7 +684,8 @@ class HistoriesContentsService(ServiceBase, ServesExportStores, ConsumesModelSto
                 filters,
             )
         errors = self._apply_bulk_operation(contents, payload.operation, payload.params, trans)
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         success_count = len(contents) - len(errors)
         return HistoryContentBulkOperationResult.construct(success_count=success_count, errors=errors)
 
@@ -1142,7 +1144,8 @@ class HistoriesContentsService(ServiceBase, ServesExportStores, ConsumesModelSto
             message = f"Invalid 'source' parameter in request: {source}"
             raise exceptions.RequestParameterInvalidException(message)
 
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         return rval
 
     def __create_dataset(
@@ -1168,7 +1171,8 @@ class HistoriesContentsService(ServiceBase, ServesExportStores, ConsumesModelSto
         if hda is None:
             return None
 
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         return self.hda_serializer.serialize_to_view(hda, user=trans.user, trans=trans, **serialization_params.dict())
 
     def __create_hda_from_ldda(self, trans, history: History, ldda_id: int):
@@ -1420,7 +1424,8 @@ class HistoryItemOperator:
     ):
         if isinstance(item, HistoryDatasetAssociation):
             wrapped_task = self._change_item_datatype(item, params, trans)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             if wrapped_task:
                 wrapped_task.delay()
 
@@ -1430,7 +1435,8 @@ class HistoryItemOperator:
                 wrapped_task = self._change_item_datatype(dataset_instance, params, trans)
                 if wrapped_task:
                     wrapped_tasks.append(wrapped_task)
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             group(wrapped_tasks).delay()
 
     def _change_item_datatype(
