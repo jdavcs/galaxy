@@ -22,6 +22,7 @@ from galaxy.model import (
     CustosAuthnzToken,
     User,
 )
+from galaxy.model.base import transaction
 from galaxy.model.orm.util import add_object_to_object_session
 from . import IdentityProvider
 
@@ -174,7 +175,8 @@ class CustosAuthnz(IdentityProvider):
             custos_authnz_token.expiration_time = expiration_time
             custos_authnz_token.refresh_expiration_time = refresh_expiration_time
         trans.sa_session.add(custos_authnz_token)
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         return "/", custos_authnz_token.user
 
     def create_user(self, token, trans, login_redirect_url):
@@ -221,7 +223,8 @@ class CustosAuthnz(IdentityProvider):
 
         trans.sa_session.add(user)
         trans.sa_session.add(custos_authnz_token)
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
         return login_redirect_url, user
 
     def disconnect(self, provider, trans, email=None, disconnect_redirect_url=None):
@@ -238,7 +241,8 @@ class CustosAuthnz(IdentityProvider):
                     if id_token_decoded["email"] == email:
                         index = idx
             trans.sa_session.delete(provider_tokens[index])
-            trans.sa_session.flush()
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             return True, "", disconnect_redirect_url
         except Exception as e:
             return False, f"Failed to disconnect provider {provider}: {util.unicodify(e)}", None
