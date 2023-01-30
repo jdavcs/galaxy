@@ -2,6 +2,7 @@
 import logging
 
 import galaxy.util
+from galaxy.model.base import transaction
 
 log = logging.getLogger(__name__)
 
@@ -176,7 +177,8 @@ class DatabaseQuotaAgent(QuotaAgent):
         else:
             dqa = self.model.DefaultQuotaAssociation(default_type, quota)
         self.sa_session.add(dqa)
-        self.sa_session.flush()
+        with transaction(self.sa_session):
+            self.sa_session.commit()
 
     def get_percent(self, trans=None, user=False, history=False, usage=False, quota=False):
         """
@@ -214,14 +216,16 @@ class DatabaseQuotaAgent(QuotaAgent):
                     self.sa_session.delete(a)
                     flush_needed = True
                 if flush_needed:
-                    self.sa_session.flush()
+                    with transaction(self.sa_session):
+                        self.sa_session.commit()
             for user in users:
                 uqa = self.model.UserQuotaAssociation(user, quota)
                 self.sa_session.add(uqa)
             for group in groups:
                 gqa = self.model.GroupQuotaAssociation(group, quota)
                 self.sa_session.add(gqa)
-            self.sa_session.flush()
+            with transaction(self.sa_session):
+                self.sa_session.commit()
 
     def is_over_quota(self, app, job, job_destination):
         quota = self.get_quota(job.user)
