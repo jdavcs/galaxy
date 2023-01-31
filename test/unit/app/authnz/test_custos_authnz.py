@@ -199,7 +199,7 @@ class TestCustosAuthnz(TestCase):
 
         class Session:
             items = []
-            flush_called = False
+            commit_called = False
             _query = Query()
             deleted = []
 
@@ -209,8 +209,8 @@ class TestCustosAuthnz(TestCase):
             def delete(self, item):
                 self.deleted.append(item)
 
-            def flush(self):
-                self.flush_called = True
+            def commit(self):
+                self.commit_called = True
 
             def query(self, cls):
                 return self._query
@@ -444,7 +444,7 @@ class TestCustosAuthnz(TestCase):
         )
         assert refresh_expiration_timedelta.total_seconds() < 1
         assert self.custos_authnz.config["provider"] == added_custos_authnz_token.provider
-        assert self.trans.sa_session.flush_called
+        assert self.trans.sa_session.commit_called
 
     def test_callback_galaxy_user_not_created_when_user_logged_in_and_no_custos_authnz_token_exists(self):
         """
@@ -473,7 +473,7 @@ class TestCustosAuthnz(TestCase):
         assert isinstance(added_custos_authnz_token, CustosAuthnzToken)
         assert user is added_custos_authnz_token.user
         assert user is self.trans.user
-        assert self.trans.sa_session.flush_called
+        assert self.trans.sa_session.commit_called
 
     def test_callback_galaxy_user_not_created_when_custos_authnz_token_exists(self):
         self.trans.set_cookie(value=self.test_state, name=custos_authnz.STATE_COOKIE_NAME)
@@ -534,7 +534,7 @@ class TestCustosAuthnz(TestCase):
         )
         assert refresh_expiration_timedelta.total_seconds() < 1
         assert old_refresh_expiration_time != session_custos_authnz_token.refresh_expiration_time
-        assert self.trans.sa_session.flush_called
+        assert self.trans.sa_session.commit_called
 
     def test_disconnect(self):
         custos_authnz_token = CustosAuthnzToken(
@@ -557,7 +557,7 @@ class TestCustosAuthnz(TestCase):
         assert 1 == len(self.trans.sa_session.deleted)
         deleted_token = self.trans.sa_session.deleted[0]
         assert custos_authnz_token is deleted_token
-        assert self.trans.sa_session.flush_called
+        assert self.trans.sa_session.commit_called
         assert success
         assert "" == message
         assert "/" == redirect_uri
@@ -566,7 +566,7 @@ class TestCustosAuthnz(TestCase):
         self.trans.user = User()
         success, message, redirect_uri = self.custos_authnz.disconnect("Custos", self.trans, "/")
         assert 0 == len(self.trans.sa_session.deleted)
-        assert not self.trans.sa_session.flush_called
+        assert not self.trans.sa_session.commit_called
         assert not success
         assert "" != message
         assert redirect_uri is None
@@ -598,7 +598,7 @@ class TestCustosAuthnz(TestCase):
         success, message, redirect_uri = self.custos_authnz.disconnect("Custos", self.trans, "/")
 
         assert 0 == len(self.trans.sa_session.deleted)
-        assert not self.trans.sa_session.flush_called
+        assert not self.trans.sa_session.commit_called
         assert not success
         assert "" != message
         assert redirect_uri is None
