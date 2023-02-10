@@ -54,7 +54,7 @@ def transaction(session):
 class ModelMapping(Bunch):
     def __init__(self, model_modules, engine):
         self.engine = engine
-        SessionLocal = sessionmaker(autoflush=False, autocommit=True)
+        SessionLocal = sessionmaker(autoflush=False, autocommit=False)
         versioned_session(SessionLocal)
         context = scoped_session(SessionLocal, scopefunc=self.request_scopefunc)
         # For backward compatibility with "context.current"
