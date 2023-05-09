@@ -25,11 +25,11 @@ from galaxy.managers import (
     secured,
     users,
 )
+from galaxy.model.base import transaction
 from galaxy.schema.tasks import (
     ComputeDatasetHashTaskRequest,
     PurgeDatasetsTaskRequest,
 )
-from galaxy.model.base import transaction
 from galaxy.structured_app import MinimalManagerApp
 from galaxy.util.hash_util import memory_bound_hexdigest
 
