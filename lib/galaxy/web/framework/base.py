@@ -201,6 +201,7 @@ class WebApplication:
     def handle_request(self, environ, start_response, body_renderer=None):
         # Grab the request_id (should have been set by middleware)
         request_id = environ.get("request_id", "unknown")
+        self._model.set_request_id(request_id)  # starts SA session scope
         # Map url using routes
         path_info = environ.get("PATH_INFO", "")
         client_match = self.clientside_routes.match(path_info, environ)
@@ -255,6 +256,7 @@ class WebApplication:
             if not body:
                 raise
         body_renderer = body_renderer or self._render_body
+        self._model.unset_request_id(request_id)  # ends SA session scope
         return body_renderer(trans, body, environ, start_response)
 
     def _render_body(self, trans, body, environ, start_response):
