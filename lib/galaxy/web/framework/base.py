@@ -158,14 +158,18 @@ class WebApplication:
         friendly objects, finds the appropriate method to handle the request
         and calls it.
         """
-        # Immediately create request_id which we will use for logging
+        # Get request_id (should have been set by middleware):
+        # used for logging + ensuring request-scoped SQLAlchemy sessions.
         request_id = environ.get("request_id", "unknown")
         if self.trace_logger:
             self.trace_logger.context_set("request_id", request_id)
         self.trace(message="Starting request")
+
         try:
-            return self.handle_request(environ, start_response)
+            self._model.set_request_id(request_id)  # starts SA session scope
+            return self.handle_request(request_id, environ, start_response)
         finally:
+            self._model.unset_request_id(request_id)  # ends SA session scope
             self.trace(message="Handle request finished")
             if self.trace_logger:
                 self.trace_logger.context_remove("request_id")
@@ -198,10 +202,7 @@ class WebApplication:
             raise webob.exc.HTTPNotFound(f"Action not callable for {path_info}")
         return (controller_name, controller, action, method)
 
-    def handle_request(self, environ, start_response, body_renderer=None):
-        # Grab the request_id (should have been set by middleware)
-        request_id = environ.get("request_id", "unknown")
-        self._model.set_request_id(request_id)  # starts SA session scope
+    def handle_request(self, request_id, environ, start_response, body_renderer=None):
         # Map url using routes
         path_info = environ.get("PATH_INFO", "")
         client_match = self.clientside_routes.match(path_info, environ)
@@ -256,7 +257,6 @@ class WebApplication:
             if not body:
                 raise
         body_renderer = body_renderer or self._render_body
-        self._model.unset_request_id(request_id)  # ends SA session scope
         return body_renderer(trans, body, environ, start_response)
 
     def _render_body(self, trans, body, environ, start_response):
