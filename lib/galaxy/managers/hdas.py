@@ -244,7 +244,9 @@ class HDAManager(
         if quota_amount_reduction and quota_source_info.use:
             user.adjust_total_disk_usage(-quota_amount_reduction, quota_source_info.label)
             # TODO: don't flush above if we're going to re-flush here
-            object_session(user).flush()
+            session = object_session(user)
+            with transaction(session):
+                session.commit()
 
     # .... states
     def error_if_uploading(self, hda):
