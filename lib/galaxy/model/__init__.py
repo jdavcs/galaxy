@@ -1941,8 +1941,10 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
             update_time=update_time, sa_session=sa_session, supports_skip_locked=supports_skip_locked
         )
         params = {"job_id": self.id, "state": self.state, "info": self.info, "update_time": update_time}
-        for statement in statements:
-            sa_session.execute(statement, params)
+
+        with sa_session.bind.connect() as conn, conn.begin():
+            for statement in statements:
+                conn.execute(statement, params)
 
     def remappable(self):
         """
