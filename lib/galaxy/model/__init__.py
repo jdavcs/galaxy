@@ -1843,6 +1843,12 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
     def set_final_state(self, final_state, supports_skip_locked):
         self.set_state(final_state)
         # TODO: migrate to where-in subqueries?
+        sa_session = object_session(self)
+        update_time = now()
+        self.update_hdca_update_time_for_job(
+            update_time=update_time, sa_session=sa_session, supports_skip_locked=supports_skip_locked
+        )
+        params = {"job_id": self.id, "update_time": update_time}
         statement = text(
             """
             UPDATE workflow_invocation_step
@@ -1850,13 +1856,8 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
             WHERE job_id = :job_id;
         """
         )
-        sa_session = object_session(self)
-        update_time = now()
-        self.update_hdca_update_time_for_job(
-            update_time=update_time, sa_session=sa_session, supports_skip_locked=supports_skip_locked
-        )
-        params = {"job_id": self.id, "update_time": update_time}
-        sa_session.execute(statement, params)
+        with sa_session.bind.connect() as conn, conn.begin():
+            conn.execute(statement, params)
 
     def get_destination_configuration(self, dest_params, config, key, default=None):
         """Get a destination parameter that can be defaulted back
