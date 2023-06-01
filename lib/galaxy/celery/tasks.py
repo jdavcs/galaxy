@@ -149,7 +149,8 @@ def touch(sa_session: galaxy_scoped_session, item_id: int, model_class: str = "H
         raise NotImplementedError(f"touch method not implemented for '{model_class}'")
     item = sa_session.query(model.HistoryDatasetCollectionAssociation).filter_by(id=item_id).one()
     item.touch()
-    sa_session.flush()
+    with transaction(sa_session):
+        sa_session.commit()
 
 
 @galaxy_task(action="set dataset association metadata")
