@@ -567,6 +567,7 @@ class RepositoriesController(BaseAPIController):
         def handle_repository(trans, repository, results):
             log.debug(f"Resetting metadata on repository {repository.name}")
             try:
+                # TODO this dies on the third call
                 rmm = repository_metadata_manager.RepositoryMetadataManager(
                     app=self.app,
                     user=trans.user,
@@ -575,7 +576,9 @@ class RepositoriesController(BaseAPIController):
                     repository=repository,
                     persist=False,
                 )
+                #breakpoint()
                 rmm.reset_all_metadata_on_repository_in_tool_shed()
+                #breakpoint()
                 rmm_invalid_file_tups = rmm.get_invalid_file_tups()
                 if rmm_invalid_file_tups:
                     message = tool_util.generate_message_for_invalid_tools(
@@ -587,7 +590,7 @@ class RepositoriesController(BaseAPIController):
                     results["successful_count"] += 1
             except Exception as e:
                 message = (
-                    f"Error resetting metadata on repository {repository.name} owned by {repository.user.username}: {e}"
+                    f"Error resetting metadata on repository {repository.name} owned by {repository.user.username}: {e}"  # TODO repository.user: detached session
                 )
                 results["unsuccessful_count"] += 1
             status = f"{repository.name} : {message}"

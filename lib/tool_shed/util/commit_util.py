@@ -178,7 +178,6 @@ def handle_bz2(repository: "Repository", uploaded_file_name):
             uncompressed.write(chunk)
     shutil.move(uncompressed.name, uploaded_file_name)
 
-
 ChangeResponseT = Tuple[Union[bool, str], str, List[str], str, int, int]
 
 
@@ -249,7 +248,7 @@ def handle_directory_changes(
                     undesirable_files_removed,
                 )
     hg_util.commit_changeset(repo_path, full_path_to_changeset=full_path, username=username, message=commit_message)
-    admin_only = len(repository.downloadable_revisions) != 1
+    admin_only = len(repository.downloadable_revisions) != 1  # TODO  repository.downloadable_revisions: detached session (lazy load)
     suc.handle_email_alerts(
         app, host, repository, content_alert_str=content_alert_str, new_repo_alert=new_repo_alert, admin_only=admin_only
     )
