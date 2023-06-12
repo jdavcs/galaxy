@@ -12,6 +12,7 @@ from galaxy.managers.pages import (
     PageManager,
     PageSerializer,
 )
+from galaxy.model.base import transaction
 from galaxy.schema import PdfDocumentType
 from galaxy.schema.fields import DecodedDatabaseIdField
 from galaxy.schema.schema import (
@@ -98,7 +99,8 @@ class PagesService(ServiceBase):
         page = base.get_object(trans, id, "Page", check_ownership=True)
 
         page.deleted = True
-        trans.sa_session.flush()
+        with transaction(trans.sa_session):
+            trans.sa_session.commit()
 
     def show(self, trans, id: DecodedDatabaseIdField) -> PageDetails:
         """View a page summary and the content of the latest revision

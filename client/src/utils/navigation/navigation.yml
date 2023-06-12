@@ -313,9 +313,15 @@ history_panel:
     pagination_next: '.list-pagination button.next'
     pagination_previous: '.list-pagination button.prev'
 
+    storage_overview: '.history-storage-overview-button'
+
   text:
     tooltip_name: 'Rename history...'
     new_name: 'Unnamed history'
+
+history_storage:
+  selectors:
+    _: '.history-storage-overview'
 
 edit_dataset_attributes:
   selectors:
@@ -1008,6 +1014,16 @@ upload:
       selector: '//span[contains(@title, "${path}")]'
     file_dialog_ok: '.file-dialog-modal-ok'
     paste_new: .upload-paste
+
+new_user_welcome:
+  selectors:
+    _: .new-user-welcome
+    topics: .new-user-welcome-topic
+    topic_button: '.new-user-welcome-topic[data-new-user-welcome-topic-title="${title}"] button'
+    subtopics: .new-user-welcome-subtopic
+    subtopic_button: '.new-user-welcome-subtopic[data-new-user-welcome-subtopic-title="${title}"] button'
+    slides: .new-user-welcome-slides
+    back: .new-user-welcome-return
 
 rule_builder:
   selectors:
