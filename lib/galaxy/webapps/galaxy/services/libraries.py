@@ -15,6 +15,7 @@ from galaxy.managers.context import ProvidesAppContext
 from galaxy.managers.folders import FolderManager
 from galaxy.managers.libraries import LibraryManager
 from galaxy.managers.roles import RoleManager
+from galaxy.model.repositories.role import RoleRepository
 from galaxy.schema.fields import DecodedDatabaseIdField
 from galaxy.schema.schema import (
     BasicRoleModel,
@@ -319,9 +320,10 @@ class LibrariesService(ServiceBase, ConsumesModelStores):
         Updates the library permissions.
         """
         permissions = {}
+        _role_repo = RoleRepository(trans.sa_session)
         for k, v in trans.app.model.Library.permitted_actions.items():
             role_params = payload.get(f"{k}_in", [])
-            in_roles = [trans.sa_session.query(trans.app.model.Role).get(x) for x in util.listify(role_params)]
+            in_roles = [_role_repo.get(x) for x in util.listify(role_params)]
             permissions[trans.app.security_agent.get_action(v.action)] = in_roles
         trans.app.security_agent.set_all_library_permissions(trans, library, permissions)
         trans.sa_session.refresh(library)

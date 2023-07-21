@@ -8,6 +8,7 @@ from sqlalchemy import (
     and_,
     cast,
     Integer,
+    select,
 )
 
 from galaxy.model.scoped_session import install_model_scoped_session
@@ -54,15 +55,15 @@ class ToolShedRepositoriesService:
             clause_list.append(ToolShedRepository.table.c.deleted == request.deleted)
         if request.uninstalled is not None:
             clause_list.append(ToolShedRepository.table.c.uninstalled == request.uninstalled)
-        query = (
-            self._install_model_context.query(ToolShedRepository)
+        stmt = (
+            select(ToolShedRepository)
             .order_by(ToolShedRepository.table.c.name)
             .order_by(cast(ToolShedRepository.ctx_rev, Integer).desc())
         )
         if len(clause_list) > 0:
-            query = query.filter(and_(*clause_list))
+            stmt = stmt.filter(and_(*clause_list))
         index = []
-        for repository in query.all():
+        for repository in self._install_model_context.scalars(stmt).all():
             index.append(self._show(repository))
         return index
 

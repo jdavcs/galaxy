@@ -41,6 +41,7 @@ from galaxy.managers.histories import (
 from galaxy.managers.notification import NotificationManager
 from galaxy.managers.users import UserManager
 from galaxy.model.base import transaction
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as hda_repo
 from galaxy.model.store import payload_to_source_uri
 from galaxy.schema import (
     FilterQueryParams,
@@ -640,11 +641,7 @@ class HistoriesService(ServiceBase, ConsumesModelStores, ServesExportStores):
         installed_builds = []
         for build in glob.glob(os.path.join(trans.app.config.len_file_path, "*.len")):
             installed_builds.append(os.path.basename(build).split(".len")[0])
-        fasta_hdas = (
-            trans.sa_session.query(model.HistoryDatasetAssociation)
-            .filter_by(history=history, extension="fasta", deleted=False)
-            .order_by(model.HistoryDatasetAssociation.hid.desc())
-        )
+        fasta_hdas = hda_repo(trans.sa_session).get_fasta_hdas_by_history(history.id)
         return CustomBuildsMetadataResponse(
             installed_builds=[LabelValuePair(label=ins, value=ins) for ins in installed_builds],
             fasta_hdas=[

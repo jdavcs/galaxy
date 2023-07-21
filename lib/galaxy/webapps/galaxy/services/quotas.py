@@ -1,10 +1,7 @@
 import logging
 from typing import Optional
 
-from sqlalchemy import (
-    false,
-    true,
-)
+from sqlalchemy import select
 
 from galaxy import (
     model,
@@ -12,6 +9,7 @@ from galaxy import (
 )
 from galaxy.managers.context import ProvidesUserContext
 from galaxy.managers.quotas import QuotaManager
+from galaxy.model.repositories.quota import QuotaRepository
 from galaxy.quota._schema import (
     CreateQuotaParams,
     CreateQuotaResult,
@@ -39,14 +37,14 @@ class QuotasService(ServiceBase):
     def index(self, trans: ProvidesUserContext, deleted: bool = False) -> QuotaSummaryList:
         """Displays a list of quotas."""
         rval = []
-        query = trans.sa_session.query(model.Quota)
+        quota_repo = QuotaRepository(trans.sa_session)
         if deleted:
             route = "deleted_quota"
-            query = query.filter(model.Quota.deleted == true())
+            quotas = quota_repo.get_deleted()
         else:
             route = "quota"
-            query = query.filter(model.Quota.deleted == false())
-        for quota in query:
+            quotas = quota_repo.get_deleted(False)
+        for quota in quotas:
             item = quota.to_dict(value_mapper={"id": DecodedDatabaseIdField.encode})
             encoded_id = DecodedDatabaseIdField.encode(quota.id)
             item["url"] = url_for(route, id=encoded_id)
@@ -125,7 +123,8 @@ class QuotasService(ServiceBase):
             except Exception:
                 pass  # maybe an email/group name
             # this will raise if the item is invalid
-            return trans.sa_session.query(model_class).filter(column == item).first().id
+            stmt = select(model_class).filter(column == item).limit(1)
+            return trans.sa_session.scalars(stmt).first().id
 
         new_in_users = []
         new_in_groups = []
