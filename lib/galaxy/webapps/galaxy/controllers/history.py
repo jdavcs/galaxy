@@ -4,6 +4,7 @@ from dateutil.parser import isoparse
 from markupsafe import escape
 from sqlalchemy import (
     false,
+    select,
     true,
 )
 from sqlalchemy.orm import undefer
@@ -20,6 +21,7 @@ from galaxy.model.item_attrs import (
     UsesAnnotations,
     UsesItemRatings,
 )
+from galaxy.model.repositories.role import RoleRepository
 from galaxy.structured_app import StructuredApp
 from galaxy.util import (
     listify,
@@ -402,11 +404,12 @@ class HistoryController(BaseUIController, SharableMixin, UsesAnnotations, UsesIt
         new_history = histories[0]
         galaxy_session = trans.get_galaxy_session()
         try:
-            association = (
-                trans.sa_session.query(trans.app.model.GalaxySessionToHistoryAssociation)
+            stmt = (
+                select(trans.app.model.GalaxySessionToHistoryAssociation)
                 .filter_by(session_id=galaxy_session.id, history_id=new_history.id)
-                .first()
+                .limit(1)
             )
+            association = trans.sa_session.scalars(stmt).first()
         except Exception:
             association = None
         new_history.add_galaxy_session(galaxy_session, association=association)
@@ -435,11 +438,10 @@ class HistoryController(BaseUIController, SharableMixin, UsesAnnotations, UsesIt
                     # hit if this user isn't having the history shared with her.
                     history = self.history_manager.by_id(self.decode_id(id))
                     # Current user is the user with which the histories were shared
-                    association = (
-                        trans.sa_session.query(trans.app.model.HistoryUserShareAssociation)
-                        .filter_by(user=trans.user, history=history)
-                        .one()
+                    stmt = select(trans.app.model.HistoryUserShareAssociation).filter_by(
+                        user=trans.user, history=history
                     )
+                    association = trans.sa_session.execute(select(stmt)).scalar_one()
                     trans.sa_session.delete(association)
                     with transaction(trans.sa_session):
                         trans.sa_session.commit()
@@ -513,8 +515,13 @@ class HistoryController(BaseUIController, SharableMixin, UsesAnnotations, UsesIt
         """
         # Get history.
         session = trans.sa_session
-        user = session.query(model.User).filter_by(username=username).first()
-        history = trans.sa_session.query(model.History).filter_by(user=user, slug=slug, deleted=False).first()
+
+        stmt = select(model.User).filter_by(username=username).limit(1)
+        user = session.scalars(stmt).first()
+
+        stmt = select(model.History).filter_by(user=user, slug=slug, deleted=False).limit(1)
+        history = session.scalars(stmt).first()
+
         if history is None:
             raise web.httpexceptions.HTTPNotFound()
 
@@ -569,11 +576,10 @@ class HistoryController(BaseUIController, SharableMixin, UsesAnnotations, UsesIt
         else:
             self.history_manager.error_unless_mutable(history)
             permissions = {}
+            _role_repo = RoleRepository(trans.sa_session)
             for action_key, action in trans.app.model.Dataset.permitted_actions.items():
                 in_roles = payload.get(action_key) or []
-                in_roles = [
-                    trans.sa_session.query(trans.app.model.Role).get(trans.security.decode_id(x)) for x in in_roles
-                ]
+                in_roles = [_role_repo.get(trans.security.decode_id(x)) for x in in_roles]
                 permissions[trans.app.security_agent.get_action(action.action)] = in_roles
             trans.app.security_agent.history_set_default_permissions(history, permissions)
             return {"message": "Default history '%s' dataset permissions have been changed." % history.name}
