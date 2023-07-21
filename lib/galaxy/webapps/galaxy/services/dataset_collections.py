@@ -26,6 +26,7 @@ from galaxy.managers.context import ProvidesHistoryContext
 from galaxy.managers.hdcas import HDCAManager
 from galaxy.managers.histories import HistoryManager
 from galaxy.model import DatasetCollectionElement
+from galaxy.model.repositories.dataset_collection_element import DatasetCollectionElementRepository as dce_repo
 from galaxy.schema.fields import (
     DecodedDatabaseIdField,
     ModelClassField,
@@ -210,7 +211,7 @@ class DatasetCollectionsService(ServiceBase, UsesLibraryMixinItems):
         return rval
 
     def dce_content(self, trans: ProvidesHistoryContext, dce_id: DecodedDatabaseIdField) -> DCESummary:
-        dce: Optional[DatasetCollectionElement] = trans.model.session.query(DatasetCollectionElement).get(dce_id)
+        dce: Optional[DatasetCollectionElement] = dce_repo(trans.model.session).get(dce_id)
         if not dce:
             raise exceptions.ObjectNotFound("No DatasetCollectionElement found")
         if not trans.user_is_admin:

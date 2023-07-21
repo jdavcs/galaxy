@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlalchemy import (
     false,
+    select,
     true,
 )
 
@@ -39,14 +40,14 @@ class QuotasService(ServiceBase):
     def index(self, trans: ProvidesUserContext, deleted: bool = False) -> QuotaSummaryList:
         """Displays a list of quotas."""
         rval = []
-        query = trans.sa_session.query(model.Quota)
+        stmt = select(model.Quota)
         if deleted:
             route = "deleted_quota"
-            query = query.filter(model.Quota.deleted == true())
+            stmt = stmt.filter(model.Quota.deleted == true())
         else:
             route = "quota"
-            query = query.filter(model.Quota.deleted == false())
-        for quota in query:
+            stmt = stmt.filter(model.Quota.deleted == false())
+        for quota in trans.sa_session.scalars(stmt):
             item = quota.to_dict(value_mapper={"id": DecodedDatabaseIdField.encode})
             encoded_id = DecodedDatabaseIdField.encode(quota.id)
             item["url"] = url_for(route, id=encoded_id)
@@ -125,7 +126,8 @@ class QuotasService(ServiceBase):
             except Exception:
                 pass  # maybe an email/group name
             # this will raise if the item is invalid
-            return trans.sa_session.query(model_class).filter(column == item).first().id
+            stmt = select(model_class).filter(column == item).limit(1)
+            return trans.sa_session.scalars(stmt).first().id
 
         new_in_users = []
         new_in_groups = []

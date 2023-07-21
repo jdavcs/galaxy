@@ -16,6 +16,7 @@ from typing import (
 
 from sqlalchemy import (
     false,
+    select,
     true,
 )
 
@@ -640,11 +641,13 @@ class HistoriesService(ServiceBase, ConsumesModelStores, ServesExportStores):
         installed_builds = []
         for build in glob.glob(os.path.join(trans.app.config.len_file_path, "*.len")):
             installed_builds.append(os.path.basename(build).split(".len")[0])
-        fasta_hdas = (
-            trans.sa_session.query(model.HistoryDatasetAssociation)
+
+        stmt = (
+            select(model.HistoryDatasetAssociation)
             .filter_by(history=history, extension="fasta", deleted=False)
             .order_by(model.HistoryDatasetAssociation.hid.desc())
         )
+        fasta_hdas = trans.sa_session.scalars(stmt)
         return CustomBuildsMetadataResponse(
             installed_builds=[LabelValuePair(label=ins, value=ins) for ins in installed_builds],
             fasta_hdas=[
