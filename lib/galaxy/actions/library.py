@@ -18,6 +18,7 @@ from galaxy.exceptions import (
 )
 from galaxy.model import LibraryDataset
 from galaxy.model.base import transaction
+from galaxy.model.repositories.library_folder import LibraryFolderRepository
 from galaxy.tools.actions import upload_common
 from galaxy.tools.parameters import populate_state
 from galaxy.util.path import (
@@ -307,7 +308,7 @@ class LibraryActions:
     def _create_folder(self, trans, parent_id: int, **kwd):
         is_admin = trans.user_is_admin
         current_user_roles = trans.get_current_user_roles()
-        parent_folder = trans.sa_session.query(trans.app.model.LibraryFolder).get(parent_id)
+        parent_folder = LibraryFolderRepository(trans.sa_session).get(parent_id)
         # Check the library which actually contains the user-supplied parent folder, not the user-supplied
         # library, which could be anything.
         self._check_access(trans, is_admin, parent_folder, current_user_roles)
