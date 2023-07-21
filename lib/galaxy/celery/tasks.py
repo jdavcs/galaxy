@@ -35,6 +35,8 @@ from galaxy.managers.notification import NotificationManager
 from galaxy.managers.tool_data import ToolDataImportManager
 from galaxy.metadata.set_metadata import set_metadata_portable
 from galaxy.model.base import transaction
+from galaxy.model.repositories.job import JobRepository
+from galaxy.model.repositories.user import UserRepository as user_repo
 from galaxy.model.scoped_session import galaxy_scoped_session
 from galaxy.objectstore import BaseObjectStore
 from galaxy.objectstore.caching import check_caches
@@ -75,7 +77,7 @@ def recalculate_user_disk_usage(
     session: galaxy_scoped_session, object_store: BaseObjectStore, task_user_id: Optional[int] = None
 ):
     if task_user_id:
-        user = session.query(model.User).get(task_user_id)
+        user = user_repo(session).get(task_user_id)
         if user:
             user.calculate_and_set_disk_usage(object_store)
         else:
@@ -159,7 +161,8 @@ def touch(
 ):
     if model_class != "HistoryDatasetCollectionAssociation":
         raise NotImplementedError(f"touch method not implemented for '{model_class}'")
-    item = sa_session.query(model.HistoryDatasetCollectionAssociation).filter_by(id=item_id).one()
+    stmt = select(model.HistoryDatasetCollectionAssociation).filter_by(id=item_id)
+    item = sa_session.execute(stmt).scalar_one()
     item.touch()
     with transaction(sa_session):
         sa_session.commit()
@@ -215,7 +218,7 @@ def setup_fetch_data(
     task_user_id: Optional[int] = None,
 ):
     tool = cached_create_tool_from_representation(app=app, raw_tool_source=raw_tool_source)
-    job = sa_session.query(model.Job).get(job_id)
+    job = JobRepository(sa_session).get(job_id)
     # self.request.hostname is the actual worker name given by the `-n` argument, not the hostname as you might think.
     job.handler = self.request.hostname
     job.job_runner_name = "celery"
@@ -247,7 +250,7 @@ def finish_job(
     task_user_id: Optional[int] = None,
 ):
     tool = cached_create_tool_from_representation(app=app, raw_tool_source=raw_tool_source)
-    job = sa_session.query(model.Job).get(job_id)
+    job = JobRepository(sa_session).get(job_id)
     # TODO: assert state ?
     mini_job_wrapper = MinimalJobWrapper(job=job, app=app, tool=tool)
     mini_job_wrapper.finish("", "")
@@ -307,7 +310,7 @@ def fetch_data(
     sa_session: galaxy_scoped_session,
     task_user_id: Optional[int] = None,
 ) -> str:
-    job = sa_session.query(model.Job).get(job_id)
+    job = JobRepository(sa_session).get(job_id)
     mini_job_wrapper = MinimalJobWrapper(job=job, app=app)
     mini_job_wrapper.change_state(model.Job.states.RUNNING, flush=True, job=job)
     return abort_when_job_stops(_fetch_data, session=sa_session, job_id=job_id, setup_return=setup_return)
