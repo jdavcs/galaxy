@@ -8,10 +8,8 @@ from galaxy import (
     util,
 )
 from galaxy.managers.context import ProvidesUserContext
-from galaxy.model import (
-    InteractiveToolEntryPoint,
-    Job,
-)
+from galaxy.model.repositories.interactive_tool_entry_point import InteractiveToolEntryPointRepository
+from galaxy.model.repositories.job import JobRepository
 from galaxy.structured_app import StructuredApp
 from galaxy.web import expose_api_anonymous_and_sessionless
 from . import BaseGalaxyAPIController
@@ -51,7 +49,7 @@ class ToolEntryPointsAPIController(BaseGalaxyAPIController):
             )
 
         if job_id is not None:
-            job = trans.sa_session.query(Job).get(self.decode_id(job_id))
+            job = JobRepository(trans.sa_session).get(self.decode_id(job_id))
             if not self.interactivetool_manager.can_access_job(trans, job):
                 raise exceptions.ItemAccessibilityException()
             entry_points = job.interactivetool_entry_points
@@ -94,7 +92,7 @@ class ToolEntryPointsAPIController(BaseGalaxyAPIController):
             raise exceptions.RequestParameterMissingException("Must supply entry point id")
         try:
             entry_point_id = self.decode_id(id)
-            entry_point = trans.sa_session.query(InteractiveToolEntryPoint).get(entry_point_id)
+            entry_point = InteractiveToolEntryPointRepository(trans.sa_session).get(entry_point_id)
         except Exception:
             raise exceptions.RequestParameterInvalidException("entry point invalid")
         if self.app.interactivetool_manager.can_access_entry_point(trans, entry_point):

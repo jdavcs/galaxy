@@ -6,6 +6,7 @@ import logging
 from galaxy import web
 from galaxy.forms.forms import form_factory
 from galaxy.model.base import transaction
+from galaxy.model.repositories.form_definition import FormDefinitionRepository
 from galaxy.util import XML
 from galaxy.webapps.base.controller import url_for
 from . import BaseGalaxyAPIController
@@ -23,9 +24,10 @@ class FormDefinitionAPIController(BaseGalaxyAPIController):
         if not trans.user_is_admin:
             trans.response.status = 403
             return "You are not authorized to view the list of forms."
-        query = trans.sa_session.query(trans.app.model.FormDefinition)
+
         rval = []
-        for form_definition in query:
+        form_defs = FormDefinitionRepository(trans.sa_session).get_all()
+        for form_definition in form_defs:
             item = form_definition.to_dict(
                 value_mapper={"id": trans.security.encode_id, "form_definition_current_id": trans.security.encode_id}
             )
@@ -46,7 +48,7 @@ class FormDefinitionAPIController(BaseGalaxyAPIController):
             trans.response.status = 400
             return f"Malformed form definition id ( {str(form_definition_id)} ) specified, unable to decode."
         try:
-            form_definition = trans.sa_session.query(trans.app.model.FormDefinition).get(decoded_form_definition_id)
+            form_definition = FormDefinitionRepository(trans.sa_session).get(decoded_form_definition_id)
         except Exception:
             form_definition = None
         if not form_definition or not trans.user_is_admin:

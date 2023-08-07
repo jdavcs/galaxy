@@ -4,6 +4,7 @@ API operations on the contents of a data library.
 import logging
 from typing import Optional
 
+from sqlalchemy import select
 from sqlalchemy.orm.exc import (
     MultipleResultsFound,
     NoResultFound,
@@ -29,6 +30,7 @@ from galaxy.model import (
     tags,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.library_folder import LibraryFolderRepository
 from galaxy.structured_app import StructuredApp
 from galaxy.web import expose_api
 from galaxy.webapps.base.controller import (
@@ -103,11 +105,8 @@ class LibraryContentsController(
 
         decoded_library_id = self.decode_id(library_id)
         try:
-            library = (
-                trans.sa_session.query(trans.app.model.Library)
-                .filter(trans.app.model.Library.table.c.id == decoded_library_id)
-                .one()
-            )
+            stmt = select(trans.app.model.Library).filter(trans.app.model.Library.id == decoded_library_id)
+            library = trans.sa_session.execute(stmt).scalar_one()
         except MultipleResultsFound:
             raise exceptions.InconsistentDatabase("Multiple libraries found with the same id.")
         except NoResultFound:
@@ -348,7 +347,7 @@ class LibraryContentsController(
         roles = kwd.get("roles", "")
         is_admin = trans.user_is_admin
         current_user_roles = trans.get_current_user_roles()
-        folder = trans.sa_session.query(trans.app.model.LibraryFolder).get(folder_id)
+        folder = LibraryFolderRepository(trans.sa_session).get(folder_id)
         self._check_access(trans, is_admin, folder, current_user_roles)
         self._check_add(trans, is_admin, folder, current_user_roles)
         library = folder.parent_library
