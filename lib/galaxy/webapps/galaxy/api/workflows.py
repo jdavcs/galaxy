@@ -23,6 +23,10 @@ from fastapi import (
 from gxformat2._yaml import ordered_dump
 from markupsafe import escape
 from pydantic import Extra
+from sqlalchemy import (
+    func,
+    select,
+)
 from starlette.responses import StreamingResponse
 
 from galaxy import (
@@ -47,6 +51,7 @@ from galaxy.managers.workflows import (
 )
 from galaxy.model.base import transaction
 from galaxy.model.item_attrs import UsesAnnotations
+from galaxy.model.repositories.stored_workflow import StoredWorkflowRepository
 from galaxy.model.store import BcoExportOptions
 from galaxy.schema.fields import DecodedDatabaseIdField
 from galaxy.schema.invocation import InvocationMessageResponseModel
@@ -162,16 +167,17 @@ class WorkflowsAPIController(
         for m in user.stored_workflow_menu_entries:
             sess.delete(m)
         user.stored_workflow_menu_entries = []
-        q = sess.query(model.StoredWorkflow)
         # To ensure id list is unique
         seen_workflow_ids = set()
+        sw_repo = StoredWorkflowRepository(sess)
         for wf_id in workflow_ids_decoded:
             if wf_id in seen_workflow_ids:
                 continue
             else:
                 seen_workflow_ids.add(wf_id)
             m = model.StoredWorkflowMenuEntry()
-            m.stored_workflow = q.get(wf_id)
+            m.stored_workflow = sw_repo.get(wf_id)
+
             user.stored_workflow_menu_entries.append(m)
         with transaction(sess):
             sess.commit()
@@ -192,12 +198,11 @@ class WorkflowsAPIController(
         """
         stored_workflow = self.__get_stored_workflow(trans, id, **kwd)
         if stored_workflow.importable is False and stored_workflow.user != trans.user and not trans.user_is_admin:
-            if (
-                trans.sa_session.query(model.StoredWorkflowUserShareAssociation)
-                .filter_by(user=trans.user, stored_workflow=stored_workflow)
-                .count()
-                == 0
-            ):
+            stmt = select(model.StoredWorkflowUserShareAssociation).filter_by(
+                user=trans.user, stored_workflow=stored_workflow
+            )
+            stmt = select(func.count()).select_from(stmt)
+            if trans.sa_session.scalar(stmt) == 0:
                 message = "Workflow is neither importable, nor owned by or shared with current user"
                 raise exceptions.ItemAccessibilityException(message)
         if kwd.get("legacy", False):

@@ -38,6 +38,10 @@ from galaxy.model import (
     UserQuotaUsage,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.form_definition import FormDefinitionRepository
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository
+from galaxy.model.repositories.role import RoleRepository
+from galaxy.model.repositories.user_address import UserAddressRepository
 from galaxy.schema import APIKeyModel
 from galaxy.schema.fields import DecodedDatabaseIdField
 from galaxy.schema.schema import (
@@ -491,7 +495,7 @@ class FastAPIUsers:
                 build_dict["count"] = str(counter)
             else:
                 build_dict["fasta"] = trans.security.decode_id(len_value)
-                dataset = trans.sa_session.query(trans.app.model.HistoryDatasetAssociation).get(build_dict["fasta"])
+                dataset = HistoryDatasetAssociationRepository(trans.sa_session).get(int(build_dict["fasta"]))
                 try:
                     new_len = dataset.get_converted_dataset(trans, "len")
                     new_linecount = new_len.get_converted_dataset(trans, "linecount")
@@ -517,11 +521,10 @@ class FastAPIUsers:
         dbkeys = json.loads(user.preferences["dbkeys"]) if "dbkeys" in user.preferences else {}
         valid_dbkeys = {}
         update = False
+        hda_repo = HistoryDatasetAssociationRepository(trans.sa_session)
         for key, dbkey in dbkeys.items():
             if "count" not in dbkey and "linecount" in dbkey:
-                chrom_count_dataset = trans.sa_session.query(trans.app.model.HistoryDatasetAssociation).get(
-                    dbkey["linecount"]
-                )
+                chrom_count_dataset = hda_repo.get(dbkey["linecount"])
                 if (
                     chrom_count_dataset
                     and not chrom_count_dataset.deleted
@@ -909,9 +912,7 @@ class UserAPIController(BaseGalaxyAPIController, UsesTagsMixin, BaseUIController
         user_info_form_id = payload.get("info|form_id")
         if user_info_form_id:
             prefix = "info|"
-            user_info_form = trans.sa_session.query(trans.app.model.FormDefinition).get(
-                trans.security.decode_id(user_info_form_id)
-            )
+            user_info_form = FormDefinitionRepository(trans.sa_session).get(trans.security.decode_id(user_info_form_id))
             user_info_values = {}
             for item in payload:
                 if item.startswith(prefix):
@@ -958,11 +959,12 @@ class UserAPIController(BaseGalaxyAPIController, UsesTagsMixin, BaseUIController
                 address_dicts[index][attribute] = payload[item]
                 address_count = max(address_count, index + 1)
         user.addresses = []
+        useraddr_repo = UserAddressRepository(trans.sa_session)
         for index in range(0, address_count):
             d = address_dicts[index]
             if d.get("id"):
                 try:
-                    user_address = trans.sa_session.query(UserAddress).get(trans.security.decode_id(d["id"]))
+                    user_address = useraddr_repo.get(trans.security.decode_id(d["id"]))
                 except Exception as e:
                     raise exceptions.ObjectNotFound(f"Failed to access user address ({d['id']}). {e}")
             else:
@@ -1040,11 +1042,10 @@ class UserAPIController(BaseGalaxyAPIController, UsesTagsMixin, BaseUIController
         payload = payload or {}
         user = self._get_user(trans, id)
         permissions = {}
+        _role_repo = RoleRepository(trans.sa_session)
         for index, action in trans.app.model.Dataset.permitted_actions.items():
             action_id = trans.app.security_agent.get_action(action.action).action
-            permissions[action_id] = [
-                trans.sa_session.query(trans.app.model.Role).get(x) for x in (payload.get(index) or [])
-            ]
+            permissions[action_id] = [_role_repo.get(x) for x in (payload.get(index) or [])]
         trans.app.security_agent.user_set_default_permissions(user, permissions)
         return {"message": "Permissions have been saved."}
 
