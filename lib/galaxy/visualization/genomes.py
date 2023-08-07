@@ -6,11 +6,13 @@ from json import loads
 from typing import Dict
 
 from bx.seq.twobit import TwoBitFile
+from sqlalchemy import select
 
 from galaxy.exceptions import (
     ObjectNotFound,
     ReferenceDataError,
 )
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as hda_repo
 from galaxy.structured_app import StructuredApp
 from galaxy.util.bunch import Bunch
 
@@ -291,7 +293,7 @@ class Genomes:
         # If there is no dbkey owner, default to current user.
         dbkey_owner, dbkey = decode_dbkey(dbkey)
         if dbkey_owner:
-            dbkey_user = trans.sa_session.query(trans.app.model.User).filter_by(username=dbkey_owner).first()
+            dbkey_user = self._get_dbkey_user(trans, dbkey_owner)
         else:
             dbkey_user = trans.user
 
@@ -307,12 +309,10 @@ class Genomes:
             if dbkey in user_keys:
                 dbkey_attributes = user_keys[dbkey]
                 dbkey_name = dbkey_attributes["name"]
-
+                _hda_repo = hda_repo(trans.sa_session)
                 # If there's a fasta for genome, convert to 2bit for later use.
                 if "fasta" in dbkey_attributes:
-                    build_fasta = trans.sa_session.query(trans.app.model.HistoryDatasetAssociation).get(
-                        dbkey_attributes["fasta"]
-                    )
+                    build_fasta = _hda_repo.get(dbkey_attributes["fasta"])
                     len_file = build_fasta.get_converted_dataset(trans, "len").file_name
                     build_fasta.get_converted_dataset(trans, "twobit")
                     # HACK: set twobit_file to True rather than a file name because
@@ -321,11 +321,7 @@ class Genomes:
                     twobit_file = True
                 # Backwards compatibility: look for len file directly.
                 elif "len" in dbkey_attributes:
-                    len_file = (
-                        trans.sa_session.query(trans.app.model.HistoryDatasetAssociation)
-                        .get(user_keys[dbkey]["len"])
-                        .file_name
-                    )
+                    len_file = _hda_repo.get(user_keys[dbkey]["len"]).file_name
                 if len_file:
                     genome = Genome(dbkey, dbkey_name, len_file=len_file, twobit_file=twobit_file)
 
@@ -374,7 +370,7 @@ class Genomes:
         # If there is no dbkey owner, default to current user.
         dbkey_owner, dbkey = decode_dbkey(dbkey)
         if dbkey_owner:
-            dbkey_user = trans.sa_session.query(trans.app.model.User).filter_by(username=dbkey_owner).first()
+            dbkey_user = self._get_dbkey_user(trans, dbkey_owner)
         else:
             dbkey_user = trans.user
 
@@ -391,9 +387,7 @@ class Genomes:
         else:
             user_keys = loads(dbkey_user.preferences["dbkeys"])
             dbkey_attributes = user_keys[dbkey]
-            fasta_dataset = trans.sa_session.query(trans.app.model.HistoryDatasetAssociation).get(
-                dbkey_attributes["fasta"]
-            )
+            fasta_dataset = hda_repo(trans.sa_session).get(dbkey_attributes["fasta"])
             msg = fasta_dataset.convert_dataset(trans, "twobit")
             if msg:
                 return msg
@@ -411,3 +405,7 @@ class Genomes:
             if chrom in twobit:
                 seq_data = twobit[chrom].get(int(low), int(high))
                 return GenomeRegion(chrom=chrom, start=low, end=high, sequence=seq_data)
+
+    def _get_dbkey_user(self, trans, dbkey_owner):
+        stmt = select(trans.app.model.User).filter_by(username=dbkey_owner).limit(1)
+        return trans.sa_session.scalars(stmt).first()
