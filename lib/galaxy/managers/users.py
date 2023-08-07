@@ -20,6 +20,7 @@ from sqlalchemy import (
     and_,
     exc,
     func,
+    select,
     true,
 )
 from sqlalchemy.orm.exc import NoResultFound
@@ -837,3 +838,13 @@ class AdminUserFilterParser(base.ModelFilterParser, deletable.PurgableFiltersMix
         )
 
         self.fn_filter_parsers.update({})
+
+
+def get_user_by_username(session, username):
+    """Get a user from the database by username."""
+    try:
+        stmt = select(model.User).filter(model.User.username == username)
+        user = session.execute(stmt).scalar_one()
+        return user
+    except Exception:
+        return None
