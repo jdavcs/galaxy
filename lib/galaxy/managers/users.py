@@ -840,10 +840,14 @@ class AdminUserFilterParser(base.ModelFilterParser, deletable.PurgableFiltersMix
         self.fn_filter_parsers.update({})
 
 
-def get_user_by_username(model, username):
-    """Get a user from the database by username."""
+def get_user_by_username(session, user_class, username):
+    """
+    Get a user from the database by username.
+
+    We pass the model so that this function can be used by the toolshed app too.
+    """
     try:
-        stmt = select(model.User).filter(model.User.username == username)
-        return model.session.execute(stmt).scalar_one()
+        stmt = select(user_class).filter(user_class.username == username)
+        return session.execute(stmt).scalar_one()
     except Exception:
         return None
