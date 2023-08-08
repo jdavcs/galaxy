@@ -842,7 +842,7 @@ class AdminUserFilterParser(base.ModelFilterParser, deletable.PurgableFiltersMix
 
 def get_user_by_username(app, username):
     """Get a user from the database by username."""
-    sa_session = app.model.session
+    session = app.model.session
     try:
         stmt = select(model.User).filter(model.User.username == username)
         user = session.execute(stmt).scalar_one()
