@@ -24,7 +24,7 @@ from galaxy import (
     util,
     web,
 )
-from galaxy.managers.repo import get_user_by_username
+from galaxy.managers.users import get_user_by_username
 from galaxy.model.base import transaction
 from galaxy.tool_shed.util import dependency_display
 from galaxy.tools.repositories import ValidationContext
