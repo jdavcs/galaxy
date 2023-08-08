@@ -840,10 +840,10 @@ class AdminUserFilterParser(base.ModelFilterParser, deletable.PurgableFiltersMix
         self.fn_filter_parsers.update({})
 
 
-def get_user_by_username(app, username):
+def get_user_by_username(model, username):
     """Get a user from the database by username."""
     try:
-        stmt = select(model.User).filter(app.model.User.username == username)
-        return app.model.session.execute(stmt).scalar_one()
+        stmt = select(model.User).filter(model.User.username == username)
+        return model.session.execute(stmt).scalar_one()
     except Exception:
         return None
