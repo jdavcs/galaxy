@@ -844,10 +844,10 @@ def get_user_by_username(app, username):
     """Get a user from the database by username."""
     sa_session = app.model.session
     try:
-        #stmt = select(model.User).filter(model.User.username == username)
-        #user = session.execute(stmt).scalar_one()
-        #return user
-        user = sa_session.query(app.model.User).filter(app.model.User.table.c.username == username).one()
+        stmt = select(app.model.User).filter(app.model.User.username == username)
+        user = sa_session.execute(stmt).scalar_one()
         return user
+        #user = sa_session.query(app.model.User).filter(app.model.User.table.c.username == username).one()
+        #return user
     except Exception:
         return None
