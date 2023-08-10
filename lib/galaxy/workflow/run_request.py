@@ -13,14 +13,14 @@ from galaxy import exceptions
 from galaxy.model import (
     EffectiveOutput,
     History,
-    HistoryDatasetAssociation,
-    LibraryDataset,
-    LibraryDatasetDatasetAssociation,
     WorkflowInvocation,
     WorkflowRequestInputParameter,
     WorkflowRequestStepState,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as hda_repo
+from galaxy.model.repositories.ldda import LibraryDatasetDatasetAssociationRepository as ldda_repo
+from galaxy.model.repositories.library_dataset import LibraryDatasetRepository
 from galaxy.tools.parameters.meta import expand_workflow_inputs
 from galaxy.workflow.resources import get_resource_mapper_function
 
@@ -370,16 +370,14 @@ def build_workflow_run_configs(
             input_id = input_dict["id"]
             try:
                 if input_source == "ldda":
-                    ldda = trans.sa_session.query(LibraryDatasetDatasetAssociation).get(
-                        trans.security.decode_id(input_id)
-                    )
+                    ldda = ldda_repo(trans.sa_session).get(trans.security.decode_id(input_id))
                     assert trans.user_is_admin or trans.app.security_agent.can_access_dataset(
                         trans.get_current_user_roles(), ldda.dataset
                     )
                     content = ldda.to_history_dataset_association(history, add_to_history=add_to_history)
                 elif input_source == "ld":
                     ldda = (
-                        trans.sa_session.query(LibraryDataset)
+                        LibraryDatasetRepository(trans.sa_session)
                         .get(trans.security.decode_id(input_id))
                         .library_dataset_dataset_association
                     )
@@ -389,7 +387,7 @@ def build_workflow_run_configs(
                     content = ldda.to_history_dataset_association(history, add_to_history=add_to_history)
                 elif input_source == "hda":
                     # Get dataset handle, add to dict and history if necessary
-                    content = trans.sa_session.query(HistoryDatasetAssociation).get(trans.security.decode_id(input_id))
+                    content = hda_repo(trans.sa_session).get(trans.security.decode_id(input_id))
                     assert trans.user_is_admin or trans.app.security_agent.can_access_dataset(
                         trans.get_current_user_roles(), content.dataset
                     )
