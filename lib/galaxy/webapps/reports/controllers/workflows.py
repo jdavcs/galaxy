@@ -20,6 +20,7 @@ from galaxy import (
     model,
     util,
 )
+from galaxy.model.repositories.workflow import WorkflowRepository
 from galaxy.util import UNKNOWN
 from galaxy.web.legacy_framework import grids
 from galaxy.webapps.base.controller import (
@@ -491,4 +492,4 @@ class Workflows(BaseUIController, ReportQueryBuilder):
 
 
 def get_workflow(trans, id):
-    return trans.sa_session.query(trans.model.Workflow).get(trans.security.decode_id(id))
+    return WorkflowRepository(trans.sa_session, trans.model.Workflow).get(trans.security.decode_id(id))
