@@ -18,12 +18,14 @@ from sqlalchemy import (
     and_,
     not_,
     or_,
+    select,
 )
 
 from galaxy import (
     model,
     util,
 )
+from galaxy.model.repositories.job import JobRepository
 from galaxy.web.legacy_framework import grids
 from galaxy.webapps.base.controller import (
     BaseUIController,
@@ -1288,7 +1290,7 @@ class Jobs(BaseUIController, ReportQueryBuilder):
     @web.expose
     def job_info(self, trans, **kwd):
         message = ""
-        job = trans.sa_session.query(model.Job).get(trans.security.decode_id(kwd.get("id", "")))
+        job = JobRepository(trans.sa_session).get(trans.security.decode_id(kwd.get("id", "")))
         return trans.fill_template("/webapps/reports/job_info.mako", job=job, message=message)
 
 
@@ -1296,7 +1298,7 @@ class Jobs(BaseUIController, ReportQueryBuilder):
 
 
 def get_job(trans, id):
-    return trans.sa_session.query(trans.model.Job).get(trans.security.decode_id(id))
+    return JobRepository(trans.sa_session).get(trans.security.decode_id(id))
 
 
 def get_monitor_id(trans, monitor_email):
@@ -1304,9 +1306,8 @@ def get_monitor_id(trans, monitor_email):
     A convenience method to obtain the monitor job id.
     """
     monitor_user_id = None
-    monitor_row = (
-        trans.sa_session.query(trans.model.User.id).filter(trans.model.User.table.c.email == monitor_email).first()
-    )
+    stmt = select(trans.model.User.id).filter(trans.model.User.email == monitor_email).limit(1)
+    monitor_row = trans.sa_session.scalars(stmt).first()
     if monitor_row is not None:
         monitor_user_id = monitor_row[0]
     return monitor_user_id
