@@ -10,6 +10,7 @@ from galaxy import (
     util,
     web,
 )
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as hda_repo
 from galaxy.security.validate_user_input import validate_email_str
 from galaxy.util import unicodify
 
@@ -135,12 +136,13 @@ class ErrorReporter:
         # Get the dataset
         sa_session = app.model.context
         if not isinstance(hda, model.HistoryDatasetAssociation):
+            _hda_repo = hda_repo(sa_session)
             hda_id = hda
             try:
-                hda = sa_session.query(model.HistoryDatasetAssociation).get(hda_id)
+                hda = _hda_repo.get(hda_id)
                 assert hda is not None, ValueError("No HDA yet")
             except Exception:
-                hda = sa_session.query(model.HistoryDatasetAssociation).get(app.security.decode_id(hda_id))
+                hda = _hda_repo.get(app.security.decode_id(hda_id))
         assert isinstance(hda, model.HistoryDatasetAssociation), ValueError(f"Bad value provided for HDA ({hda}).")
         self.hda = hda
         # Get the associated job

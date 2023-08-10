@@ -13,6 +13,7 @@ from typing import (
     Optional,
 )
 
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from webob.compat import cgi_FieldStorage
 
@@ -30,6 +31,9 @@ from galaxy.model import (
     Role,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.form_definition import FormDefinitionRepository
+from galaxy.model.repositories.library_folder import LibraryFolderRepository
+from galaxy.model.repositories.role import RoleRepository
 from galaxy.util import is_url
 from galaxy.util.path import external_chown
 
@@ -94,12 +98,12 @@ def handle_library_params(
     # See if we have any template field contents
     template_field_contents = {}
     template_id = params.get("template_id", None)
-    folder = trans.sa_session.query(LibraryFolder).get(folder_id)
+    folder = LibraryFolderRepository(trans.sa_session).get(folder_id)
     # We are inheriting the folder's info_association, so we may have received inherited contents or we may have redirected
     # here after the user entered template contents ( due to errors ).
     template: Optional[FormDefinition] = None
     if template_id not in [None, "None"]:
-        template = trans.sa_session.query(FormDefinition).get(template_id)
+        template = FormDefinitionRepository(trans.sa_session).get(template_id)
         assert template
         for field in template.fields:
             field_name = field["name"]
@@ -107,8 +111,9 @@ def handle_library_params(
                 field_value = util.restore_text(params.get(field_name, ""))
                 template_field_contents[field_name] = field_value
     roles: List[Role] = []
+    role_repo = RoleRepository(trans.sa_session)
     for role_id in util.listify(params.get("roles", [])):
-        role = trans.sa_session.query(Role).get(role_id)
+        role = role_repo.get(role_id)
         roles.append(role)
     tags = params.get("tags", None)
     return LibraryParams(
@@ -436,10 +441,11 @@ def active_folders(trans, folder):
     # Stolen from galaxy.web.controllers.library_common (importing from which causes a circular issues).
     # Much faster way of retrieving all active sub-folders within a given folder than the
     # performance of the mapper.  This query also eagerloads the permissions on each folder.
-    return (
-        trans.sa_session.query(LibraryFolder)
+    stmt = (
+        select(LibraryFolder)
         .filter_by(parent=folder, deleted=False)
         .options(joinedload(LibraryFolder.actions))
-        .order_by(LibraryFolder.table.c.name)
-        .all()
+        .unique()
+        .order_by(LibraryFolder.name)
     )
+    return trans.sa_session.scalars(stmt).all()

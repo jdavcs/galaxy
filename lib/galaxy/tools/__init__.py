@@ -29,6 +29,11 @@ import webob.exc
 from lxml import etree
 from mako.template import Template
 from packaging.version import Version
+from sqlalchemy import (
+    delete,
+    func,
+    select,
+)
 
 from galaxy import (
     exceptions,
@@ -38,6 +43,8 @@ from galaxy.exceptions import ToolInputsNotReadyException
 from galaxy.job_execution import output_collect
 from galaxy.metadata import get_metadata_compute_strategy
 from galaxy.model.base import transaction
+from galaxy.model.repositories.job import JobRepository
+from galaxy.model.repositories.stored_workflow import StoredWorkflowRepository
 from galaxy.tool_shed.util.repository_util import get_installed_repository
 from galaxy.tool_shed.util.shed_util_common import set_image_paths
 from galaxy.tool_util.deps import (
@@ -351,9 +358,9 @@ class PersistentToolTagManager(AbstractToolTagManager):
 
     def reset_tags(self):
         log.info(
-            f"removing all tool tag associations ({str(self.sa_session.query(self.app.model.ToolTagAssociation).count())})"
+            f"removing all tool tag associations ({str(self.sa_session.scalar(select(func.count(self.app.model.ToolTagAssociation))))})"
         )
-        self.sa_session.query(self.app.model.ToolTagAssociation).delete()
+        self.sa_session.execute(delete(self.app.model.ToolTagAssociation))
         with transaction(self.sa_session):
             self.sa_session.commit()
 
@@ -364,7 +371,8 @@ class PersistentToolTagManager(AbstractToolTagManager):
             for tag_name in tag_names:
                 if tag_name == "":
                     continue
-                tag = self.sa_session.query(self.app.model.Tag).filter_by(name=tag_name).first()
+                stmt = select(self.app.model.Tag).filter_by(name=tag_name).limit(1)
+                tag = self.sa_session.scalars(stmt).first()
                 if not tag:
                     tag = self.app.model.Tag(name=tag_name)
                     self.sa_session.add(tag)
@@ -620,7 +628,7 @@ class ToolBox(AbstractToolBox):
         which is encoded in the tool panel.
         """
         id = self.app.security.decode_id(workflow_id)
-        stored = self.app.model.context.query(self.app.model.StoredWorkflow).get(id)
+        stored = StoredWorkflowRepository(self.app.model.context).get(id)
         return stored.latest_workflow
 
     def __build_tool_version_select_field(self, tools, tool_id, set_selected):
@@ -3017,7 +3025,7 @@ class SetMetadataTool(Tool):
                 self.sa_session.commit()
 
     def job_failed(self, job_wrapper, message, exception=False):
-        job = job_wrapper.sa_session.query(model.Job).get(job_wrapper.job_id)
+        job = JobRepository(job_wrapper.sa_session).get(job_wrapper.job_id)
         if job:
             inp_data = {}
             for dataset_assoc in job.input_datasets:
@@ -3064,7 +3072,7 @@ class InteractiveTool(Tool):
 
     def job_failed(self, job_wrapper, message, exception=False):
         super().job_failed(job_wrapper, message, exception=exception)
-        job = job_wrapper.sa_session.query(model.Job).get(job_wrapper.job_id)
+        job = JobRepository(job_wrapper.sa_session).get(job_wrapper.job_id)
         self.__remove_interactivetool_by_job(job)
 
 
