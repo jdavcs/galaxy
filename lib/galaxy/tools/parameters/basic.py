@@ -31,6 +31,10 @@ from galaxy.model import (
     HistoryDatasetCollectionAssociation,
     LibraryDatasetDatasetAssociation,
 )
+from galaxy.model.repositories.dataset_collection_element import DatasetCollectionElementRepository as dce_repo
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as hda_repo
+from galaxy.model.repositories.hdca import HistoryDatasetCollectionAssociationRepository as hdca_repo
+from galaxy.model.repositories.ldda import LibraryDatasetDatasetAssociationRepository as ldda_repo
 from galaxy.schema.fetch_data import FilesPayload
 from galaxy.tool_util.parser import get_input_source as ensure_input_source
 from galaxy.util import (
@@ -1943,13 +1947,18 @@ class BaseDataToolParameter(ToolParameter):
             if isinstance(value, dict) and "src" in value:
                 id = value["id"] if isinstance(value["id"], int) else app.security.decode_id(value["id"])
                 if value["src"] == "dce":
-                    return app.model.context.query(DatasetCollectionElement).get(id)
+                    return _dce_repo.get(id)
                 elif value["src"] == "hdca":
-                    return app.model.context.query(HistoryDatasetCollectionAssociation).get(id)
+                    return _hdca_repo.get(id)
                 elif value["src"] == "ldda":
-                    return app.model.context.query(LibraryDatasetDatasetAssociation).get(id)
+                    return _ldda_repo.get(id)
                 else:
-                    return app.model.context.query(HistoryDatasetAssociation).get(id)
+                    return _hda_repo.get(id)
+
+        _dce_repo = dce_repo(app.model.context)
+        _hdca_repo = hdca_repo(app.model.context)
+        _ldda_repo = ldda_repo(app.model.context)
+        _hda_repo = hda_repo(app.model.context)
 
         if isinstance(value, dict) and "values" in value:
             if hasattr(self, "multiple") and self.multiple is True:
@@ -1962,22 +1971,18 @@ class BaseDataToolParameter(ToolParameter):
         if value in none_values:
             return None
         if isinstance(value, str) and value.find(",") > -1:
-            return [
-                app.model.context.query(HistoryDatasetAssociation).get(int(v))
-                for v in value.split(",")
-                if v not in none_values
-            ]
+            return [_hda_repo.get(int(v)) for v in value.split(",") if v not in none_values]
         elif str(value).startswith("__collection_reduce__|"):
             decoded_id = str(value)[len("__collection_reduce__|") :]
             if not decoded_id.isdigit():
                 decoded_id = app.security.decode_id(decoded_id)
-            return app.model.context.query(HistoryDatasetCollectionAssociation).get(int(decoded_id))
+            return _hdca_repo.get(int(decoded_id))
         elif str(value).startswith("dce:"):
-            return app.model.context.query(DatasetCollectionElement).get(int(value[len("dce:") :]))
+            return _dce_repo.get(int(value[len("dce:") :]))
         elif str(value).startswith("hdca:"):
-            return app.model.context.query(HistoryDatasetCollectionAssociation).get(int(value[len("hdca:") :]))
+            return _hdca_repo.get(int(value[len("hdca:") :]))
         else:
-            return app.model.context.query(HistoryDatasetAssociation).get(int(value))
+            return _hda_repo.get(int(value))
 
     def validate(self, value, trans=None):
         def do_validate(v):
@@ -2079,6 +2084,11 @@ class DataToolParameter(BaseDataToolParameter):
                 self.conversions.append((name, conv_extension, [conv_type]))
 
     def from_json(self, value, trans, other_values=None):
+        _dce_repo = dce_repo(trans.sa_session)
+        _hdca_repo = hdca_repo(trans.sa_session)
+        _ldda_repo = ldda_repo(trans.sa_session)
+        _hda_repo = hda_repo(trans.sa_session)
+
         other_values = other_values or {}
         if trans.workflow_building_mode is workflow_building_modes.ENABLED or is_runtime_value(value):
             return None
@@ -2090,24 +2100,31 @@ class DataToolParameter(BaseDataToolParameter):
             value = self.to_python(value, trans.app)
         if isinstance(value, str) and value.find(",") > 0:
             value = [int(value_part) for value_part in value.split(",")]
-        rval = []
+        rval: List[
+            Union[
+                DatasetCollectionElement,
+                HistoryDatasetAssociation,
+                HistoryDatasetCollectionAssociation,
+                LibraryDatasetDatasetAssociation,
+            ]
+        ] = []
         if isinstance(value, list):
             found_hdca = False
             for single_value in value:
                 if isinstance(single_value, dict) and "src" in single_value and "id" in single_value:
                     if single_value["src"] == "hda":
                         decoded_id = trans.security.decode_id(single_value["id"])
-                        rval.append(trans.sa_session.query(HistoryDatasetAssociation).get(decoded_id))
+                        rval.append(_hda_repo.get(decoded_id))
                     elif single_value["src"] == "hdca":
                         found_hdca = True
                         decoded_id = trans.security.decode_id(single_value["id"])
-                        rval.append(trans.sa_session.query(HistoryDatasetCollectionAssociation).get(decoded_id))
+                        rval.append(_hdca_repo.get(decoded_id))
                     elif single_value["src"] == "ldda":
                         decoded_id = trans.security.decode_id(single_value["id"])
-                        rval.append(trans.sa_session.query(LibraryDatasetDatasetAssociation).get(decoded_id))
+                        rval.append(_ldda_repo.get(decoded_id))
                     elif single_value["src"] == "dce":
                         decoded_id = trans.security.decode_id(single_value["id"])
-                        rval.append(trans.sa_session.query(DatasetCollectionElement).get(decoded_id))
+                        rval.append(_dce_repo.get(decoded_id))
                     else:
                         raise ValueError(f"Unknown input source {single_value['src']} passed to job submission API.")
                 elif isinstance(
@@ -2126,7 +2143,7 @@ class DataToolParameter(BaseDataToolParameter):
                         # support that for integer column types.
                         log.warning("Encoded ID where unencoded ID expected.")
                         single_value = trans.security.decode_id(single_value)
-                    rval.append(trans.sa_session.query(HistoryDatasetAssociation).get(single_value))
+                    rval.append(_hda_repo.get(single_value))
             if found_hdca:
                 for val in rval:
                     if not isinstance(val, HistoryDatasetCollectionAssociation):
@@ -2139,13 +2156,13 @@ class DataToolParameter(BaseDataToolParameter):
         elif isinstance(value, dict) and "src" in value and "id" in value:
             if value["src"] == "hda":
                 decoded_id = trans.security.decode_id(value["id"])
-                rval.append(trans.sa_session.query(HistoryDatasetAssociation).get(decoded_id))
+                rval.append(_hda_repo.get(decoded_id))
             elif value["src"] == "hdca":
                 decoded_id = trans.security.decode_id(value["id"])
-                rval.append(trans.sa_session.query(HistoryDatasetCollectionAssociation).get(decoded_id))
+                rval.append(_hdca_repo.get(decoded_id))
             elif value["src"] == "dce":
                 decoded_id = trans.security.decode_id(value["id"])
-                rval.append(trans.sa_session.query(DatasetCollectionElement).get(decoded_id))
+                rval.append(_dce_repo.get(decoded_id))
             else:
                 raise ValueError(f"Unknown input source {value['src']} passed to job submission API.")
         elif str(value).startswith("__collection_reduce__|"):
@@ -2153,12 +2170,12 @@ class DataToolParameter(BaseDataToolParameter):
             decoded_ids = map(trans.security.decode_id, encoded_ids)
             rval = []
             for decoded_id in decoded_ids:
-                hdca = trans.sa_session.query(HistoryDatasetCollectionAssociation).get(decoded_id)
+                hdca = _hdca_repo.get(decoded_id)
                 rval.append(hdca)
         elif isinstance(value, HistoryDatasetCollectionAssociation) or isinstance(value, DatasetCollectionElement):
             rval.append(value)
         else:
-            rval.append(trans.sa_session.query(HistoryDatasetAssociation).get(value))
+            rval.append(_hda_repo.get(int(value)))  # type:ignore[arg-type]
         dataset_matcher_factory = get_dataset_matcher_factory(trans)
         dataset_matcher = dataset_matcher_factory.dataset_matcher(self, other_values)
         for v in rval:
@@ -2174,12 +2191,12 @@ class DataToolParameter(BaseDataToolParameter):
                         v = v.hda
                     match = dataset_matcher.hda_match(v)
                     if match and match.implicit_conversion:
-                        v.implicit_conversion = True
+                        v.implicit_conversion = True  # type:ignore[union-attr]
         if not self.multiple:
             if len(rval) > 1:
                 raise ParameterValueError("more than one dataset supplied to single input dataset parameter", self.name)
             if len(rval) > 0:
-                rval = rval[0]
+                rval = rval[0]  # type:ignore[assignment]
             else:
                 raise ParameterValueError("invalid dataset supplied to single input dataset parameter", self.name)
         return rval
@@ -2422,6 +2439,9 @@ class DataCollectionToolParameter(BaseDataToolParameter):
                 yield history_dataset_collection, match.implicit_conversion
 
     def from_json(self, value, trans, other_values=None):
+        _dce_repo = dce_repo(trans.sa_session)
+        _hdca_repo = hdca_repo(trans.sa_session)
+
         other_values = other_values or {}
         rval: Optional[Union[DatasetCollectionElement, HistoryDatasetCollectionAssociation]] = None
         if trans.workflow_building_mode is workflow_building_modes.ENABLED:
@@ -2443,28 +2463,22 @@ class DataCollectionToolParameter(BaseDataToolParameter):
             rval = value
         elif isinstance(value, dict) and "src" in value and "id" in value:
             if value["src"] == "hdca":
-                rval = trans.sa_session.query(HistoryDatasetCollectionAssociation).get(
-                    trans.security.decode_id(value["id"])
-                )
+                rval = _hdca_repo.get(trans.security.decode_id(value["id"]))
         elif isinstance(value, list):
             if len(value) > 0:
                 value = value[0]
                 if isinstance(value, dict) and "src" in value and "id" in value:
                     if value["src"] == "hdca":
-                        rval = trans.sa_session.query(HistoryDatasetCollectionAssociation).get(
-                            trans.security.decode_id(value["id"])
-                        )
+                        rval = _hdca_repo.get(trans.security.decode_id(value["id"]))
                     elif value["src"] == "dce":
-                        rval = trans.sa_session.query(DatasetCollectionElement).get(
-                            trans.security.decode_id(value["id"])
-                        )
+                        rval = _dce_repo.get(trans.security.decode_id(value["id"]))
         elif isinstance(value, str):
             if value.startswith("dce:"):
-                rval = trans.sa_session.query(DatasetCollectionElement).get(value[len("dce:") :])
+                rval = _dce_repo.get(int(value[len("dce:") :]))
             elif value.startswith("hdca:"):
-                rval = trans.sa_session.query(HistoryDatasetCollectionAssociation).get(value[len("hdca:") :])
+                rval = _hdca_repo.get(int(value[len("hdca:") :]))
             else:
-                rval = trans.sa_session.query(HistoryDatasetCollectionAssociation).get(value)
+                rval = _hdca_repo.get(int(value))
         if rval and isinstance(rval, HistoryDatasetCollectionAssociation):
             if rval.deleted:
                 raise ParameterValueError("the previously selected dataset collection has been deleted", self.name)
@@ -2622,6 +2636,7 @@ class LibraryDatasetToolParameter(ToolParameter):
         if not isinstance(value, list):
             value = [value]
         lst = []
+        _ldda_repo = ldda_repo(app.model.context)
         for item in value:
             if isinstance(item, LibraryDatasetDatasetAssociation):
                 lst.append(item)
@@ -2634,8 +2649,8 @@ class LibraryDatasetToolParameter(ToolParameter):
                 else:
                     lst = []
                     break
-                lda = app.model.context.query(LibraryDatasetDatasetAssociation).get(
-                    lda_id if isinstance(lda_id, int) else app.security.decode_id(lda_id)
+                lda = _ldda_repo.get(
+                    lda_id if isinstance(lda_id, int) else app.security.decode_id(lda_id),
                 )
                 if lda is not None:
                     lst.append(lda)
