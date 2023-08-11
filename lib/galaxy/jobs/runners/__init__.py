@@ -15,6 +15,8 @@ from queue import (
     Queue,
 )
 
+from sqlalchemy import select
+
 import galaxy.jobs
 from galaxy import model
 from galaxy.exceptions import ConfigurationError
@@ -379,11 +381,12 @@ class BaseJobRunner:
                 dataset_assoc.dataset.dataset.history_associations + dataset_assoc.dataset.dataset.library_associations
             ):
                 if isinstance(dataset, self.app.model.HistoryDatasetAssociation):
-                    joda = (
-                        self.sa_session.query(self.app.model.JobToOutputDatasetAssociation)
+                    stmt = (
+                        select(self.app.model.JobToOutputDatasetAssociation)
                         .filter_by(job=job, dataset=dataset)
-                        .first()
+                        .limit(1)
                     )
+                    joda = self.sa_session.scalars(stmt).first()
                     yield (joda, dataset)
         # TODO: why is this not just something easy like:
         # for dataset_assoc in job.output_datasets + job.output_library_datasets:
