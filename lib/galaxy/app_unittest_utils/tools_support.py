@@ -143,6 +143,9 @@ class MockContext:
     def add(self, object):
         self.created_objects.append(object)
 
+    def commit(self):
+        pass
+
 
 class MockQuery:
     def __init__(self, class_objects):
