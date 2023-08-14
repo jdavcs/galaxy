@@ -54,7 +54,7 @@ class FormDefinitionAPIController(BaseGalaxyAPIController):
         if not form_definition or not trans.user_is_admin:
             trans.response.status = 400
             return f"Invalid form definition id ( {str(form_definition_id)} ) specified."
-        item = form_definition.to_dict(
+        item = form_definition.to_dict(  # type:ignore[call-arg]   # TODO: remove type:ignore when bug is resolved
             view="element",
             value_mapper={"id": trans.security.encode_id, "form_definition_current_id": trans.security.encode_id},
         )
