@@ -4,12 +4,6 @@ API operations on the contents of a data library.
 import logging
 from typing import Optional
 
-from sqlalchemy import select
-from sqlalchemy.orm.exc import (
-    MultipleResultsFound,
-    NoResultFound,
-)
-
 from galaxy import (
     exceptions,
     managers,
@@ -30,6 +24,7 @@ from galaxy.model import (
     tags,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.library import LibraryRepository
 from galaxy.model.repositories.library_folder import LibraryFolderRepository
 from galaxy.structured_app import StructuredApp
 from galaxy.web import expose_api
@@ -103,16 +98,7 @@ class LibraryContentsController(
                     rval.append(ld)
             return rval
 
-        decoded_library_id = self.decode_id(library_id)
-        try:
-            stmt = select(trans.app.model.Library).filter(trans.app.model.Library.id == decoded_library_id)
-            library = trans.sa_session.execute(stmt).scalar_one()
-        except MultipleResultsFound:
-            raise exceptions.InconsistentDatabase("Multiple libraries found with the same id.")
-        except NoResultFound:
-            raise exceptions.RequestParameterInvalidException("No library found with the id provided.")
-        except Exception as e:
-            raise exceptions.InternalServerError(f"Error loading from the database.{util.unicodify(e)}")
+        library = LibraryRepository(trans.sa_session).get(self.decode_id(library_id))
         if not (trans.user_is_admin or trans.app.security_agent.can_access_library(current_user_roles, library)):
             raise exceptions.RequestParameterInvalidException("No library found with the id provided.")
         encoded_id = f"F{trans.security.encode_id(library.root_folder.id)}"
