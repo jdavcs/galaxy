@@ -3,7 +3,15 @@ from typing import (
     Optional,
 )
 
-from galaxy.model import Workflow
+from sqlalchemy import (
+    func,
+    select,
+)
+
+from galaxy.model import (
+    StoredWorkflowUserShareAssociation,
+    Workflow,
+)
 from galaxy.model.repositories import (
     BaseRepository,
     MappedType,
@@ -18,3 +26,9 @@ class WorkflowRepository(BaseRepository):
 
     def get(self, primary_key: int) -> Workflow:
         return cast(Workflow, super().get(primary_key))
+
+    def count_stored_workflow_user_assocs(self, user: MappedType, stored_workflow: MappedType) -> int:
+        # type-ignore/SessionlessContext
+        stmt = select(StoredWorkflowUserShareAssociation).filter_by(user=user, stored_workflow=stored_workflow)
+        stmt = select(func.count()).select_from(stmt)
+        return self.session.scalar(stmt)  # type:ignore[union-attr]
