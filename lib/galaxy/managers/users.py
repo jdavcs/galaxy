@@ -38,6 +38,7 @@ from galaxy.managers import (
 )
 from galaxy.model import UserQuotaUsage
 from galaxy.model.base import transaction
+from galaxy.model.repositories.user import UserRepository
 from galaxy.security.validate_user_input import (
     VALID_EMAIL_RE,
     validate_email,
@@ -846,6 +847,8 @@ def get_user_by_username(session, user_class, username):
     (We pass the session and the user_class to accommodate usage from the tool_shed app.)
     """
     try:
+        #user = UserRepository(session).get_foo()
+        #return user
         stmt = select(user_class).filter(user_class.username == username)
         return session.execute(stmt).scalar_one()
     except Exception:
