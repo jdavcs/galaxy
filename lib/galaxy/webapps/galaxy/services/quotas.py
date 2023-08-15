@@ -1,11 +1,7 @@
 import logging
 from typing import Optional
 
-from sqlalchemy import (
-    false,
-    select,
-    true,
-)
+from sqlalchemy import select
 
 from galaxy import (
     model,
@@ -13,6 +9,7 @@ from galaxy import (
 )
 from galaxy.managers.context import ProvidesUserContext
 from galaxy.managers.quotas import QuotaManager
+from galaxy.model.repositories.quota import QuotaRepository
 from galaxy.quota._schema import (
     CreateQuotaParams,
     CreateQuotaResult,
@@ -40,14 +37,14 @@ class QuotasService(ServiceBase):
     def index(self, trans: ProvidesUserContext, deleted: bool = False) -> QuotaSummaryList:
         """Displays a list of quotas."""
         rval = []
-        stmt = select(model.Quota)
+        quota_repo = QuotaRepository(trans.sa_session)
         if deleted:
             route = "deleted_quota"
-            stmt = stmt.filter(model.Quota.deleted == true())
+            quotas = quota_repo.get_deleted()
         else:
             route = "quota"
-            stmt = stmt.filter(model.Quota.deleted == false())
-        for quota in trans.sa_session.scalars(stmt):
+            quotas = quota_repo.get_deleted(False)
+        for quota in quotas:
             item = quota.to_dict(value_mapper={"id": DecodedDatabaseIdField.encode})
             encoded_id = DecodedDatabaseIdField.encode(quota.id)
             item["url"] = url_for(route, id=encoded_id)
