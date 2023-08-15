@@ -29,3 +29,8 @@ class BaseRepository:
     def get_all(self) -> List:
         # type-ignore/SessionlessContext
         return self.session.scalars(select(self.model_class)).all()  # type:ignore[union-attr]
+
+    def get_with_filter(self, **kwd) -> List:
+        # type-ignore/SessionlessContext
+        stmt = select(self.model_class).filter_by(**kwd)
+        return self.session.scalars(stmt).all()  # type:ignore[union-attr]
