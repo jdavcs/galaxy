@@ -848,7 +848,7 @@ def get_user_by_username(session, user_class, username):
     """
     try:
         user_repo = UserRepository(session)
-        userfoo = user_repo.get_foo()  # this breaks!!!
+        #userfoo = user_repo.get_foo()  # this breaks!!!
         #return user
         stmt = select(user_class).filter(user_class.username == username)
         return session.execute(stmt).scalar_one()

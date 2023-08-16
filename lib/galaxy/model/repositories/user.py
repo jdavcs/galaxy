@@ -20,5 +20,8 @@ class UserRepository(BaseRepository):
         return cast(User, super().get(primary_key))
 
     def get_foo(self):
-        stmt = select(User) #.filter(User.username == username)
-        return self.session.execute(stmt).scalar_one()
+        stmt = select(User)
+        return self.session.execute(stmt)
+
+    #stmt = select(User).filter(User.username == "john")
+    #return self.session.execute(stmt).scalar_one()
