@@ -40,7 +40,7 @@ class ToolShedRepositoriesService:
         repositories = self._tsr_repo.get_filtered(
             name=request.name,
             owner=request.owner,
-            changeset=request.changeset,
+            changeset_revision=request.changeset,
             deleted=request.deleted,
             uninstalled=request.uninstalled,
         )
