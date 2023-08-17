@@ -11,6 +11,11 @@ class UserRepository(ModelRepository):
     def __init__(self, session: SessionType):
         super().__init__(session, User)
 
+    def get_by_email(self, email: str):
+        stmt = select(User).filter(User.email == email).limit(1)
+        return self.session.scalars(stmt).first()  # type:ignore[union-attr]
+
+
 def get_user_by_username(session: SessionType, user_class, username: str):
     """Get a user from the database by username."""
     # This may be called from the tool_shed app, which has a different

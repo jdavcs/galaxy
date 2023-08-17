@@ -1,15 +1,12 @@
 import logging
 from typing import Optional
 
-from sqlalchemy import select
-
-from galaxy import (
-    model,
-    util,
-)
+from galaxy import util
 from galaxy.managers.context import ProvidesUserContext
 from galaxy.managers.quotas import QuotaManager
+from galaxy.model.repositories.group import GroupRepository
 from galaxy.model.repositories.quota import QuotaRepository
+from galaxy.model.repositories.user import UserRepository
 from galaxy.quota._schema import (
     CreateQuotaParams,
     CreateQuotaResult,
@@ -117,26 +114,31 @@ class QuotasService(ServiceBase):
         For convenience, in_users and in_groups can be encoded IDs or emails/group names in the API.
         """
 
-        def get_id(item, model_class, column):
+        def get_user_id(item):
             try:
                 return trans.security.decode_id(item)
             except Exception:
-                pass  # maybe an email/group name
-            # this will raise if the item is invalid
-            stmt = select(model_class).filter(column == item).limit(1)
-            return trans.sa_session.scalars(stmt).first().id
+                return user_repo.get_by_email(item).id
+
+        def get_group_id(item):
+            try:
+                return trans.security.decode_id(item)
+            except Exception:
+                return group_repo.get_by_name(item).id
 
         new_in_users = []
         new_in_groups = []
         invalid = []
+        user_repo = UserRepository(trans.sa_session)
+        group_repo = GroupRepository(trans.sa_session)
         for item in util.listify(payload.get("in_users", [])):
             try:
-                new_in_users.append(get_id(item, model.User, model.User.email))
+                new_in_users.append(get_user_id(item))
             except Exception:
                 invalid.append(item)
         for item in util.listify(payload.get("in_groups", [])):
             try:
-                new_in_groups.append(get_id(item, model.Group, model.Group.name))
+                new_in_groups.append(get_group_id(item))
             except Exception:
                 invalid.append(item)
         if invalid:
