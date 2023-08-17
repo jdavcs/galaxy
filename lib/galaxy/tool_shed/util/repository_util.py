@@ -26,6 +26,7 @@ from galaxy import (
     web,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.tool_shed_repository import ToolShedRepositoryRepository as tsr_repo
 from galaxy.model.scoped_session import install_model_scoped_session
 from galaxy.model.tool_shed_install import ToolShedRepository
 from galaxy.tool_shed.util import basic_util
@@ -69,7 +70,7 @@ def check_for_updates(
             message += "Unable to retrieve status from the tool shed for the following repositories:\n"
             message += ", ".join(repository_names_not_updated)
     else:
-        repository = get_tool_shed_repository_by_decoded_id(install_model_context, repository_id)
+        repository = tsr_repo(install_model_context).get(repository_id)
         ok, updated = _check_or_update_tool_shed_status_for_installed_repository(
             tool_shed_registry, install_model_context, repository
         )
@@ -632,15 +633,7 @@ def get_tool_shed_from_clone_url(repository_clone_url):
 def get_tool_shed_repository_by_id(app, repository_id) -> ToolShedRepository:
     """Return a tool shed repository database record defined by the id."""
     # This method is used only in Galaxy, not the tool shed.
-    return get_tool_shed_repository_by_decoded_id(app.install_model.context, app.security.decode_id(repository_id))
-
-
-def get_tool_shed_repository_by_decoded_id(
-    install_model_context: install_model_scoped_session, repository_id: int
-) -> ToolShedRepository:
-    return (
-        install_model_context.query(ToolShedRepository).filter(ToolShedRepository.table.c.id == repository_id).first()
-    )
+    return tsr_repo(app.install_model.context).get(app.security.decode_id(repository_id))
 
 
 def get_tool_shed_status_for(tool_shed_registry: Registry, repository: ToolShedRepository):

@@ -4,13 +4,8 @@ from typing import (
 )
 
 from pydantic import BaseModel
-from sqlalchemy import (
-    and_,
-    cast,
-    Integer,
-    select,
-)
 
+from galaxy.model.repositories.tool_shed_repository import ToolShedRepositoryRepository as tsr_repo
 from galaxy.model.scoped_session import install_model_scoped_session
 from galaxy.model.tool_shed_install import ToolShedRepository
 from galaxy.schema.fields import DecodedDatabaseIdField
@@ -18,10 +13,7 @@ from galaxy.schema.schema import (
     CheckForUpdatesResponse,
     InstalledToolShedRepository,
 )
-from galaxy.tool_shed.util.repository_util import (
-    check_for_updates,
-    get_tool_shed_repository_by_decoded_id,
-)
+from galaxy.tool_shed.util.repository_util import check_for_updates
 from galaxy.util.tool_shed.tool_shed_registry import Registry
 from galaxy.web import url_for
 
@@ -42,33 +34,23 @@ class ToolShedRepositoriesService:
     ):
         self._install_model_context = install_model_context
         self._tool_shed_registry = tool_shed_registry
+        self._tsr_repo = tsr_repo(self._install_model_context)
 
     def index(self, request: InstalledToolShedRepositoryIndexRequest) -> List[InstalledToolShedRepository]:
-        clause_list = []
-        if request.name is not None:
-            clause_list.append(ToolShedRepository.table.c.name == request.name)
-        if request.owner is not None:
-            clause_list.append(ToolShedRepository.table.c.owner == request.owner)
-        if request.changeset is not None:
-            clause_list.append(ToolShedRepository.table.c.changeset_revision == request.changeset)
-        if request.deleted is not None:
-            clause_list.append(ToolShedRepository.table.c.deleted == request.deleted)
-        if request.uninstalled is not None:
-            clause_list.append(ToolShedRepository.table.c.uninstalled == request.uninstalled)
-        stmt = (
-            select(ToolShedRepository)
-            .order_by(ToolShedRepository.table.c.name)
-            .order_by(cast(ToolShedRepository.ctx_rev, Integer).desc())
+        repositories = self._tsr_repo.get_filtered(
+            name=request.name,
+            owner=request.owner,
+            changeset=request.changeset,
+            deleted=request.deleted,
+            uninstalled=request.uninstalled,
         )
-        if len(clause_list) > 0:
-            stmt = stmt.filter(and_(*clause_list))
         index = []
-        for repository in self._install_model_context.scalars(stmt).all():
+        for repository in repositories:
             index.append(self._show(repository))
         return index
 
     def show(self, repository_id: DecodedDatabaseIdField) -> InstalledToolShedRepository:
-        tool_shed_repository = get_tool_shed_repository_by_decoded_id(self._install_model_context, int(repository_id))
+        tool_shed_repository = self._tsr_repo.get(repository_id)
         return self._show(tool_shed_repository)
 
     def check_for_updates(self, repository_id: Optional[int]) -> CheckForUpdatesResponse:
