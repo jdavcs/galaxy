@@ -6,13 +6,13 @@ from json import loads
 from typing import Dict
 
 from bx.seq.twobit import TwoBitFile
-from sqlalchemy import select
 
 from galaxy.exceptions import (
     ObjectNotFound,
     ReferenceDataError,
 )
 from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as hda_repo
+from galaxy.model.repositories.user import get_user_by_username
 from galaxy.structured_app import StructuredApp
 from galaxy.util.bunch import Bunch
 
@@ -293,7 +293,7 @@ class Genomes:
         # If there is no dbkey owner, default to current user.
         dbkey_owner, dbkey = decode_dbkey(dbkey)
         if dbkey_owner:
-            dbkey_user = self._get_dbkey_user(trans, dbkey_owner)
+            dbkey_user = get_user_by_username(trans.sa_session, dbkey_owner)
         else:
             dbkey_user = trans.user
 
@@ -370,7 +370,7 @@ class Genomes:
         # If there is no dbkey owner, default to current user.
         dbkey_owner, dbkey = decode_dbkey(dbkey)
         if dbkey_owner:
-            dbkey_user = self._get_dbkey_user(trans, dbkey_owner)
+            dbkey_user = get_user_by_username(trans.sa_session, dbkey_owner)
         else:
             dbkey_user = trans.user
 
@@ -405,7 +405,3 @@ class Genomes:
             if chrom in twobit:
                 seq_data = twobit[chrom].get(int(low), int(high))
                 return GenomeRegion(chrom=chrom, start=low, end=high, sequence=seq_data)
-
-    def _get_dbkey_user(self, trans, dbkey_owner):
-        stmt = select(trans.app.model.User).filter_by(username=dbkey_owner).limit(1)
-        return trans.sa_session.scalars(stmt).first()

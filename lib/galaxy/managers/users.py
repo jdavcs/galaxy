@@ -37,6 +37,10 @@ from galaxy.managers import (
 )
 from galaxy.model import UserQuotaUsage
 from galaxy.model.base import transaction
+from galaxy.model.repositories.user import (
+    get_user_by_email,
+    get_user_by_username,
+)
 from galaxy.security.validate_user_input import (
     VALID_EMAIL_RE,
     validate_email,
@@ -354,7 +358,7 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
         user = None
         if VALID_EMAIL_RE.match(identity):
             # VALID_PUBLICNAME and VALID_EMAIL do not overlap, so 'identity' here is an email address
-            user = self.session().query(self.model_class).filter(self.model_class.table.c.email == identity).first()
+            user = get_user_by_email(self.session(), identity, self.model_class)
             if not user:
                 # Try a case-insensitive match on the email
                 user = (
@@ -364,7 +368,7 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
                     .first()
                 )
         else:
-            user = self.session().query(self.model_class).filter(self.model_class.table.c.username == identity).first()
+            user = get_user_by_username(self.session(), identity, self.model_class)
         return user
 
     # ---- current
@@ -527,7 +531,7 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
         """
         Check for the activation token. Create new activation token and store it in the database if no token found.
         """
-        user = trans.sa_session.query(self.app.model.User).filter(self.app.model.User.table.c.email == email).first()
+        user = get_user_by_email(trans.sa_session, email, self.app.model.User)
         activation_token = user.activation_token
         if activation_token is None:
             activation_token = util.hash_util.new_secure_hash_v2(str(random.getrandbits(256)))
@@ -571,9 +575,7 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
                 return "Failed to produce password reset token. User not found."
 
     def get_reset_token(self, trans, email):
-        reset_user = (
-            trans.sa_session.query(self.app.model.User).filter(self.app.model.User.table.c.email == email).first()
-        )
+        reset_user = get_user_by_email(trans.sa_session, email, self.app.model.User)
         if not reset_user and email != email.lower():
             reset_user = (
                 trans.sa_session.query(self.app.model.User)
@@ -617,12 +619,7 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
             return None
         if getattr(self.app.config, "normalize_remote_user_email", False):
             remote_user_email = remote_user_email.lower()
-        user = (
-            self.session()
-            .query(self.app.model.User)
-            .filter(self.app.model.User.table.c.email == remote_user_email)
-            .first()
-        )
+        user = get_user_by_email(self.session(), remote_user_email, self.app.model.User)
         if user:
             # GVK: June 29, 2009 - This is to correct the behavior of a previous bug where a private
             # role and default user / history permissions were not set for remote users.  When a

@@ -6,7 +6,7 @@ from galaxy.managers.context import ProvidesUserContext
 from galaxy.managers.quotas import QuotaManager
 from galaxy.model.repositories.group import GroupRepository
 from galaxy.model.repositories.quota import QuotaRepository
-from galaxy.model.repositories.user import UserRepository
+from galaxy.model.repositories.user import get_user_by_email
 from galaxy.quota._schema import (
     CreateQuotaParams,
     CreateQuotaResult,
@@ -118,7 +118,7 @@ class QuotasService(ServiceBase):
             try:
                 return trans.security.decode_id(item)
             except Exception:
-                return user_repo.get_by_email(item).id
+                return get_user_by_email(trans.sa_session, item).id
 
         def get_group_id(item):
             try:
@@ -129,7 +129,6 @@ class QuotasService(ServiceBase):
         new_in_users = []
         new_in_groups = []
         invalid = []
-        user_repo = UserRepository(trans.sa_session)
         group_repo = GroupRepository(trans.sa_session)
         for item in util.listify(payload.get("in_users", [])):
             try:
