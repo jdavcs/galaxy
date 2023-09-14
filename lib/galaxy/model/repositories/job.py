@@ -1,3 +1,4 @@
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import (
     null,
     or_,
@@ -10,14 +11,11 @@ from galaxy.model import (
     User,
     YIELD_PER_ROWS,
 )
-from galaxy.model.repositories import (
-    ModelRepository,
-    SessionType,
-)
+from galaxy.model.repositories import ModelRepository
 
 
 class JobRepository(ModelRepository):
-    def __init__(self, session: SessionType):
+    def __init__(self, session: Session):
         super().__init__(session, Job)
 
     def get_jobs_to_check_at_startup(self, track_jobs_in_database: bool, config):

@@ -3,16 +3,14 @@ from sqlalchemy import (
     Integer,
     select,
 )
+from sqlalchemy.orm import Session
 
-from galaxy.model.repositories import (
-    ModelRepository,
-    SessionType,
-)
+from galaxy.model.repositories import ModelRepository
 from galaxy.model.tool_shed_install import ToolShedRepository
 
 
 class ToolShedRepositoryRepository(ModelRepository):
-    def __init__(self, session: SessionType):
+    def __init__(self, session: Session):
         super().__init__(session, ToolShedRepository)
 
     def get_filtered(self, **kwd):

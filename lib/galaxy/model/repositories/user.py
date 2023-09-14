@@ -1,14 +1,12 @@
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from galaxy.model import User
-from galaxy.model.repositories import (
-    ModelRepository,
-    SessionType,
-)
+from galaxy.model.repositories import ModelRepository
 
 
 class UserRepository(ModelRepository):
-    def __init__(self, session: SessionType):
+    def __init__(self, session: Session):
         super().__init__(session, User)
 
 

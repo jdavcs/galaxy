@@ -2,6 +2,7 @@ from sqlalchemy import (
     func,
     select,
 )
+from sqlalchemy.orm import Session
 
 from galaxy.model import (
     StoredWorkflowUserShareAssociation,
@@ -10,12 +11,11 @@ from galaxy.model import (
 from galaxy.model.repositories import (
     MappedType,
     ModelRepository,
-    SessionType,
 )
 
 
 class WorkflowRepository(ModelRepository):
-    def __init__(self, session: SessionType):
+    def __init__(self, session: Session):
         super().__init__(session, Workflow)
 
     def count_stored_workflow_user_assocs(self, user: MappedType, stored_workflow: MappedType) -> int:

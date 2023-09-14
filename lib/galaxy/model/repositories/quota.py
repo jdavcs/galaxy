@@ -3,16 +3,14 @@ from sqlalchemy import (
     select,
     true,
 )
+from sqlalchemy.orm import Session
 
 from galaxy.model import Quota
-from galaxy.model.repositories import (
-    ModelRepository,
-    SessionType,
-)
+from galaxy.model.repositories import ModelRepository
 
 
 class QuotaRepository(ModelRepository):
-    def __init__(self, session: SessionType):
+    def __init__(self, session: Session):
         super().__init__(session, Quota)
 
     def get_deleted(self, deleted: bool = True):

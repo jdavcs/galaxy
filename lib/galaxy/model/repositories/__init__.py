@@ -1,15 +1,10 @@
-from typing import (
-    Any,
-    Union,
-)
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from galaxy.model import Base
-from galaxy.model.store import SessionlessContext
 
-SessionType = Union[Session, SessionlessContext]
 MappedType = Base
 
 
@@ -17,7 +12,7 @@ class ModelRepository:
     # self.session can be an instance of galaxy.model.store.SessionlessContext,
     # which implements a very small subset of SQLAlchemy's Session attributes.
     # We type-ignore instead of a typecheck+assert for the sake of performance.
-    def __init__(self, session: SessionType, model_class: MappedType):
+    def __init__(self, session: Session, model_class: MappedType):
         self.session = session
         self.model_class = model_class
 
