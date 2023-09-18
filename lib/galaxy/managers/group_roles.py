@@ -8,6 +8,9 @@ from galaxy import model
 from galaxy.exceptions import ObjectNotFound
 from galaxy.managers.context import ProvidesAppContext
 from galaxy.model.base import transaction
+from galaxy.model.repositories.gra.py import GroupRoleAssociationRepository
+from galaxy.model.repositories.group import GroupRepository
+from galaxy.model.repositories.role import RoleRepository
 from galaxy.structured_app import MinimalManagerApp
 
 log = logging.getLogger(__name__)
@@ -61,13 +64,13 @@ class GroupRolesManager:
         return role
 
     def _get_group(self, trans: ProvidesAppContext, group_id: int) -> model.Group:
-        group = trans.sa_session.query(model.Group).get(group_id)
+        group = GroupRepository(trans.sa_session).get(group_id)
         if not group:
             raise ObjectNotFound("Group with the id provided was not found.")
         return group
 
     def _get_role(self, trans: ProvidesAppContext, role_id: int) -> model.Role:
-        role = trans.sa_session.query(model.Role).get(role_id)
+        role = RoleRepository(trans.sa_session).get(role_id)
         if not role:
             raise ObjectNotFound("Role with the id provided was not found.")
         return role
@@ -75,11 +78,7 @@ class GroupRolesManager:
     def _get_group_role(
         self, trans: ProvidesAppContext, group: model.Group, role: model.Role
     ) -> Optional[model.GroupRoleAssociation]:
-        return (
-            trans.sa_session.query(model.GroupRoleAssociation)
-            .filter(model.GroupRoleAssociation.group == group, model.GroupRoleAssociation.role == role)
-            .one_or_none()
-        )
+        return GroupRoleAssociationRepository(trans.sa_session).get_group_role(group, role)
 
     def _add_role_to_group(self, trans: ProvidesAppContext, group: model.Group, role: model.Role):
         gra = model.GroupRoleAssociation(group, role)
