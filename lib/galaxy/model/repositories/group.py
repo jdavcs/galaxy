@@ -1,4 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import (
+    false,
+    select,
+)
 from sqlalchemy.orm import Session
 
 from galaxy.model import Group
@@ -12,3 +15,7 @@ class GroupRepository(ModelRepository):
     def get_by_name(self, name: str):
         stmt = select(Group).filter(Group.name == name).limit(1)
         return self.session.scalars(stmt).first()
+
+    def get_not_deleted_groups(self):
+        stmt = select(Group).where(Group.deleted == false())
+        return self.session.scalars(stmt)

@@ -9,6 +9,10 @@ class UserRepository(ModelRepository):
     def __init__(self, session: Session):
         super().__init__(session, User)
 
+    def get_users_by_ids(self, user_ids):
+        stmt = select(User).where(User.id.in_(user_ids))
+        return self.session.scalars(stmt).all()
+
 
 # The get_user_by_email and get_user_by_username functions may be called from
 # the tool_shed app, which has its own User model, which is different from
