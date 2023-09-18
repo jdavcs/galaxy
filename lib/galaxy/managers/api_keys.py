@@ -5,6 +5,7 @@ from typing import (
 
 from galaxy.model import User
 from galaxy.model.base import transaction
+from galaxy.model.repositories.api_keys import APIKeysRepository
 from galaxy.structured_app import BasicSharedApp
 
 if TYPE_CHECKING:
@@ -14,16 +15,10 @@ if TYPE_CHECKING:
 class ApiKeyManager:
     def __init__(self, app: BasicSharedApp):
         self.app = app
+        self.apikeys_repo = APIKeysRepository(self.app.model.context)
 
     def get_api_key(self, user: User) -> Optional["APIKeys"]:
-        sa_session = self.app.model.context
-        api_key = (
-            sa_session.query(self.app.model.APIKeys)
-            .filter_by(user_id=user.id, deleted=False)
-            .order_by(self.app.model.APIKeys.create_time.desc())
-            .first()
-        )
-        return api_key
+        return self.apikeys_repo.get_api_key(user.id)
 
     def create_api_key(self, user: User) -> "APIKeys":
         guid = self.app.security.get_new_guid()
@@ -46,12 +41,9 @@ class ApiKeyManager:
 
     def delete_api_key(self, user: User) -> None:
         """Marks the current user API key as deleted."""
-        sa_session = self.app.model.context
         # Before it was possible to create multiple API keys for the same user although they were not considered valid
         # So all non-deleted keys are marked as deleted for backward compatibility
-        api_keys = sa_session.query(self.app.model.APIKeys).filter_by(user_id=user.id, deleted=False)
-        for api_key in api_keys:
-            api_key.deleted = True
-            sa_session.add(api_key)
+        self.apikeys_repo.mark_all_as_deleted(user.id)
+        sa_session = self.app.model.context
         with transaction(sa_session):
             sa_session.commit()
