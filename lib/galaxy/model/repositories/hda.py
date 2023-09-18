@@ -18,3 +18,7 @@ class HistoryDatasetAssociationRepository(ModelRepository):
             .order_by(HistoryDatasetAssociation.hid.desc())  # type:ignore[attr-defined]
         )
         return self.session.scalars(stmt).all()  # type:ignore[union-attr]
+
+    def get_len_files_by_history(self, history_id: int):
+        stmt = select(HistoryDatasetAssociation).filter_by(history_id=history_id, extension="len", deleted=False)
+        return self.session.scalars(stmt)

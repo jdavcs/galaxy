@@ -12,6 +12,7 @@ from typing import (
     Tuple,
 )
 
+from galaxy.model.repositories.hda import HistoryDatasetAssociationRepository as HDARepository
 from galaxy.util import (
     galaxy_directory,
     sanitize_lists_to_string,
@@ -96,9 +97,7 @@ class GenomeBuilds:
                 # It does allow one-off, history specific dbkeys to be created by a user. But we are not filtering,
                 # so a len file will be listed twice (as the build name and again as dataset name),
                 # if custom dbkey creation/conversion occurred within the current history.
-                datasets = trans.sa_session.query(self._app.model.HistoryDatasetAssociation).filter_by(
-                    deleted=False, history_id=trans.history.id, extension="len"
-                )
+                datasets = HDARepository(trans.sa_session).get_len_files_by_history(trans.history.id)
                 for dataset in datasets:
                     rval.append((dataset.dbkey, f"{dataset.name} ({dataset.dbkey}) [History]"))
             user = trans.user
@@ -132,6 +131,7 @@ class GenomeBuilds:
                     and (dbkey in loads(trans.user.preferences["dbkeys"]))
                 ):
                     custom_build_dict = loads(trans.user.preferences["dbkeys"])[dbkey]
+                    hda_repo = HDARepository(trans.sa_session)
                     # HACK: the attempt to get chrom_info below will trigger the
                     # fasta-to-len converter if the dataset is not available or,
                     # which will in turn create a recursive loop when
@@ -140,17 +140,11 @@ class GenomeBuilds:
                     # fasta-to-len converter.
                     if "fasta" in custom_build_dict and custom_build_hack_get_len_from_fasta_conversion:
                         # Build is defined by fasta; get len file, which is obtained from converting fasta.
-                        build_fasta_dataset = trans.sa_session.query(trans.app.model.HistoryDatasetAssociation).get(
-                            custom_build_dict["fasta"]
-                        )
+                        build_fasta_dataset = hda_repo.get(custom_build_dict["fasta"])
                         chrom_info = build_fasta_dataset.get_converted_dataset(trans, "len").file_name
                     elif "len" in custom_build_dict:
                         # Build is defined by len file, so use it.
-                        chrom_info = (
-                            trans.sa_session.query(trans.app.model.HistoryDatasetAssociation)
-                            .get(custom_build_dict["len"])
-                            .file_name
-                        )
+                        chrom_info = hda_repo.get(custom_build_dict["len"]).file_name
         # Check Data table
         if not chrom_info:
             dbkey_table = self._app.tool_data_tables.get(self._data_table_name, None)
