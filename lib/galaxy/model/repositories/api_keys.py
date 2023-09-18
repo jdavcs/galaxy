@@ -8,10 +8,9 @@ from galaxy.model import APIKeys
 from galaxy.model.repositories import ModelRepository
 
 
-# Remove type:ignore annotations after LDDA is mapped declaratively.
 class APIKeysRepository(ModelRepository):
     def __init__(self, session: Session):
-        super().__init__(session, APIKeys)  # type:ignore[arg-type]
+        super().__init__(session, APIKeys)
 
     def get_api_key(self, user_id: int):
         stmt = select(APIKeys).filter_by(user_id=user_id, deleted=False).order_by(APIKeys.create_time.desc()).limit(1)

@@ -11,13 +11,12 @@ class HistoryDatasetAssociationRepository(ModelRepository):
         super().__init__(session, HistoryDatasetAssociation)  # type:ignore[arg-type]
 
     def get_fasta_hdas_by_history(self, history_id: int):
-        # type-ignore/SessionlessContext
         stmt = (
             select(HistoryDatasetAssociation)
             .filter_by(history_id=history_id, extension="fasta", deleted=False)
-            .order_by(HistoryDatasetAssociation.hid.desc())  # type:ignore[attr-defined]
+            .order_by(HistoryDatasetAssociation.hid.desc())
         )
-        return self.session.scalars(stmt).all()  # type:ignore[union-attr]
+        return self.session.scalars(stmt).all()
 
     def get_len_files_by_history(self, history_id: int):
         stmt = select(HistoryDatasetAssociation).filter_by(history_id=history_id, extension="len", deleted=False)

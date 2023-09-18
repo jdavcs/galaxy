@@ -20,4 +20,4 @@ class ToolShedRepositoryRepository(ModelRepository):
                 column = ToolShedRepository.table.c[key]
                 stmt = stmt.filter(column == value)
         stmt = stmt.order_by(ToolShedRepository.name).order_by(cast(ToolShedRepository.ctx_rev, Integer).desc())
-        return self.session.scalars(stmt).all()  # type:ignore[union-attr]
+        return self.session.scalars(stmt).all()

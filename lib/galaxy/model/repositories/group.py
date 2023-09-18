@@ -11,4 +11,4 @@ class GroupRepository(ModelRepository):
 
     def get_by_name(self, name: str):
         stmt = select(Group).filter(Group.name == name).limit(1)
-        return self.session.scalars(stmt).first()  # type:ignore[union-attr]
+        return self.session.scalars(stmt).first()

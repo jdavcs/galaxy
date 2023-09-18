@@ -11,4 +11,4 @@ class PageRevisionRepository(ModelRepository):
 
     def get_by_page(self, page_id: int):
         stmt = select(PageRevision).filter_by(page_id=page_id)
-        return self.session.scalars(stmt).all()  # type:ignore[union-attr]
+        return self.session.scalars(stmt).all()
