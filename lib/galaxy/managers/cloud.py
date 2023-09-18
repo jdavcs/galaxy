@@ -17,6 +17,7 @@ from galaxy.exceptions import (
     RequestParameterMissingException,
 )
 from galaxy.managers import sharable
+from galaxy.model.repositories.history import HistoryRepository
 from galaxy.util import Params
 
 try:
@@ -291,7 +292,7 @@ class CloudManager(sharable.SharableModelManager):
 
             params = Params(self._get_inputs(obj, key, input_args), sanitize=False)
             incoming = params.__dict__
-            history = trans.sa_session.query(trans.app.model.History).get(history_id)
+            history = HistoryRepository(trans.sa_session).get(history_id)
             if not history:
                 raise ObjectNotFound("History with the ID provided was not found.")
             output = trans.app.toolbox.get_tool("upload1").handle_input(trans, incoming, history=history)
@@ -358,7 +359,7 @@ class CloudManager(sharable.SharableModelManager):
 
         cloudauthz = trans.app.authnz_manager.try_get_authz_config(trans.sa_session, trans.user.id, authz_id)
 
-        history = trans.sa_session.query(trans.app.model.History).get(history_id)
+        history = HistoryRepository(trans.sa_session).get(history_id)
         if not history:
             raise ObjectNotFound("History with the provided ID not found.")
 
