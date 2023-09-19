@@ -31,6 +31,7 @@ from galaxy.model import (
     Role,
 )
 from galaxy.model.base import transaction
+from galaxy.model.repositories.library import LibraryRepository
 from galaxy.util import (
     pretty_print_time_interval,
     unicodify,
@@ -57,18 +58,7 @@ class LibraryManager:
         :returns:   the requested library
         :rtype:     galaxy.model.Library
         """
-        try:
-            library = (
-                trans.sa_session.query(trans.app.model.Library)
-                .filter(trans.app.model.Library.table.c.id == decoded_library_id)
-                .one()
-            )
-        except MultipleResultsFound:
-            raise exceptions.InconsistentDatabase("Multiple libraries found with the same id.")
-        except NoResultFound:
-            raise exceptions.RequestParameterInvalidException("No library found with the id provided.")
-        except Exception as e:
-            raise exceptions.InternalServerError(f"Error loading from the database.{unicodify(e)}")
+        library = LibraryRepository(trans.sa_session).get(decoded_library_id)
         library = self.secure(trans, library, check_accessible)
         return library
 
@@ -158,15 +148,15 @@ class LibraryManager:
         is_admin = trans.user_is_admin
         query = trans.sa_session.query(trans.app.model.Library)
         library_access_action = trans.app.security_agent.permitted_actions.LIBRARY_ACCESS.action
+
+        libperm_repo = LibraryPermissionsRepository(trans.sa_session)
         restricted_library_ids = {
-            lp.library_id
-            for lp in (
-                trans.sa_session.query(trans.model.LibraryPermissions)
-                .filter(trans.model.LibraryPermissions.table.c.action == library_access_action)
-                .distinct()
-            )
+            lp.library_id for lp in libperm_repo.get_by_action(library_access_action)
         }
         prefetched_ids = {"restricted_library_ids": restricted_library_ids}
+
+
+
         if is_admin:
             if deleted is None:
                 #  Flag is not specified, do not filter on it.
@@ -182,9 +172,9 @@ class LibraryManager:
             else:
                 query = query.filter(trans.app.model.Library.table.c.deleted == false())
                 current_user_role_ids = [role.id for role in trans.get_current_user_roles()]
-                all_actions = trans.sa_session.query(trans.model.LibraryPermissions).filter(
-                    trans.model.LibraryPermissions.table.c.role_id.in_(current_user_role_ids)
-                )
+
+                all_actions = libperm_repo.get_permissions_by_role_ids(current_user_role_ids)
+
                 library_add_action = trans.app.security_agent.permitted_actions.LIBRARY_ADD.action
                 library_modify_action = trans.app.security_agent.permitted_actions.LIBRARY_MODIFY.action
                 library_manage_action = trans.app.security_agent.permitted_actions.LIBRARY_MANAGE.action
@@ -201,16 +191,20 @@ class LibraryManager:
                         allowed_library_modify_ids.add(action.library_id)
                     if action.action == library_manage_action:
                         allowed_library_manage_ids.add(action.library_id)
+
                 query = query.filter(
                     or_(
                         not_(trans.model.Library.table.c.id.in_(restricted_library_ids)),
                         trans.model.Library.table.c.id.in_(accessible_restricted_library_ids),
                     )
                 )
+
                 prefetched_ids["allowed_library_add_ids"] = allowed_library_add_ids
                 prefetched_ids["allowed_library_modify_ids"] = allowed_library_modify_ids
                 prefetched_ids["allowed_library_manage_ids"] = allowed_library_manage_ids
+
         query = query.order_by(asc(func.lower(Library.name)))
+
         return query, prefetched_ids
 
     def secure(self, trans, library: Library, check_accessible: bool = True) -> Library:
@@ -381,9 +375,8 @@ def get_containing_library_from_library_dataset(trans, library_dataset) -> Optio
     while folder.parent:
         folder = folder.parent
     # We have folder set to the library's root folder, which has the same name as the library
-    for library in trans.sa_session.query(trans.model.Library).filter(
-        and_(trans.model.Library.table.c.deleted == false(), trans.model.Library.table.c.name == folder.name)
-    ):
+    repo = LibraryRepository(trans.sa_session)
+    for library in repo.get_not_deleted_by_name(folder.name):
         # Just to double-check
         if library.root_folder == folder:
             return library
