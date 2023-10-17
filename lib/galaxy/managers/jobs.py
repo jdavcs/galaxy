@@ -24,6 +24,7 @@ from sqlalchemy.orm import (
     Session,
 )
 from sqlalchemy.sql import select
+from sqlalchemy.sql.selectable import CompoundSelect
 
 from galaxy import model
 from galaxy.exceptions import (
@@ -222,6 +223,12 @@ class JobManager:
 
         stmt = stmt.offset(payload.offset)
         stmt = stmt.limit(payload.limit)
+
+        if isinstance(stmt, CompoundSelect):
+            # calling union() on a statement creates a CompoundSelect object which requires
+            # a model to be explicitly selected from it.
+            stmt = select(Job).from_statement(stmt)
+
         return trans.sa_session.scalars(stmt)
 
     def job_lock(self) -> JobLock:
