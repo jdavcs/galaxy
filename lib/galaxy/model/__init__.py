@@ -6170,6 +6170,12 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             q = q.add_entity(entity)
             if entity == DatasetCollectionElement:
                 q = q.filter(entity.id == dce.c.id)
+
+        # Since we will apply DISTINCT, ensure all columns from the ORDER BY clause are explicitly selected
+        for col in order_by_columns:
+            if col not in q.statement._raw_columns:  # do not select a column more than once.
+                q = q.add_column(col)
+
         return q.distinct().order_by(*order_by_columns)
 
     @property
