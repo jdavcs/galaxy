@@ -392,18 +392,23 @@ class TestMappings(BaseModelTestCase):
         )
         self.model.session.add_all([d1, d2, c1, dce1, dce2, c2, dce3, c3, c4, dce4])
         self.model.session.flush()
-        q = c2._get_nested_collection_attributes(
+
+        rows = c2._get_nested_collection_attributes(
             element_attributes=("element_identifier",), hda_attributes=("extension",), dataset_attributes=("state",)
-        )
-        assert [(r._fields) for r in q] == [
+        ).all()
+
+        assert [(r._fields) for r in rows] == [
             ("element_identifier_0", "element_identifier_1", "extension", "state"),
             ("element_identifier_0", "element_identifier_1", "extension", "state"),
         ]
-        assert q.all() == [("inner_list", "forward", "bam", "new"), ("inner_list", "reverse", "txt", "new")]
-        q = c2._get_nested_collection_attributes(return_entities=(model.HistoryDatasetAssociation,))
-        assert q.all() == [d1, d2]
-        q = c2._get_nested_collection_attributes(return_entities=(model.HistoryDatasetAssociation, model.Dataset))
-        assert q.all() == [(d1, d1.dataset), (d2, d2.dataset)]
+        assert rows == [("inner_list", "forward", "bam", "new"), ("inner_list", "reverse", "txt", "new")]
+
+        rows = c2._get_nested_collection_attributes(return_entities=(model.HistoryDatasetAssociation,)).all()
+        assert rows == [d1, d2]
+
+        rows = c2._get_nested_collection_attributes(return_entities=(model.HistoryDatasetAssociation, model.Dataset)).all()
+        assert rows == [(d1, d1.dataset), (d2, d2.dataset)]
+
         # Assert properties that use _get_nested_collection_attributes return correct content
         assert c2.dataset_instances == [d1, d2]
         assert c2.dataset_elements == [dce1, dce2]
@@ -422,8 +427,10 @@ class TestMappings(BaseModelTestCase):
         assert c3.dataset_instances == []
         assert c3.dataset_elements == []
         assert c3.dataset_states_and_extensions_summary == (set(), set())
-        q = c4._get_nested_collection_attributes(element_attributes=("element_identifier",))
-        assert q.all() == [("outer_list", "inner_list", "forward"), ("outer_list", "inner_list", "reverse")]
+
+        rows = c4._get_nested_collection_attributes(element_attributes=("element_identifier",)).all()
+        assert rows == [("outer_list", "inner_list", "forward"), ("outer_list", "inner_list", "reverse")]
+
         assert c4.dataset_elements == [dce1, dce2]
         assert c4.element_identifiers_extensions_and_paths == [
             (("outer_list", "inner_list", "forward"), "bam", "mock_dataset_14.dat"),
