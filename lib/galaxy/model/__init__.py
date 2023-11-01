@@ -6171,12 +6171,15 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             if entity == DatasetCollectionElement:
                 q = q.filter(entity.id == dce.c.id)
 
-        # Since we will apply DISTINCT, ensure all columns from the ORDER BY clause are explicitly selected
+        # Since we apply DISTINCT, ensure all columns from the ORDER BY clause are explicitly selected.
+        # We also need to make sure these added columns are not added to the result: this method returns lists of models
+        # or lists of tuples of values. With the latter the additional columns won't cause a problem, but lists of models
+        # will become lists of tuples of models + additional columns, which will break downstream logic.
+        q_columns = q._raw_columns
         for col in order_by_columns:
             if col not in q.statement._raw_columns:  # do not select a column more than once.
                 q = q.add_column(col)
-
-        return q.distinct().order_by(*order_by_columns)
+        return q.distinct().order_by(*order_by_columns).with_entities(*q_columns)
 
     @property
     def dataset_states_and_extensions_summary(self):
