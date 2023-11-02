@@ -6177,8 +6177,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
         # will become lists of tuples of models + additional columns, which will break downstream logic.
         q_columns = q._raw_columns
         for col in order_by_columns:
-            if col not in q.statement._raw_columns:  # do not select a column more than once.
-                q = q.add_column(col)
+            q = q.add_column(col)
         return q.distinct().order_by(*order_by_columns).with_entities(*q_columns)
 
     @property
