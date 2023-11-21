@@ -6102,6 +6102,86 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             self.populated_state = DatasetCollection.populated_states.NEW
         self.element_count = element_count
 
+
+#TODO REFACTORING ===============================================================================
+
+    def _build_nested_collection_attributes_stmt_1(
+        self,
+        hda_attributes,
+        dataset_attributes,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            hda_attributes=hda_attributes,
+            dataset_attributes=dataset_attributes,
+        )
+
+    def _build_nested_collection_attributes_stmt_2(
+        self,
+        dataset_attributes,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            dataset_attributes=dataset_attributes,
+        )
+
+    def _build_nested_collection_attributes_stmt_3(  # TODO
+        self,
+        collection_attributes,
+        inner_filter,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            collection_attributes=collection_attributes,
+            inner_filter=inner_filter,
+        )
+
+    def _build_nested_collection_attributes_stmt_4(
+        self,
+        dataset_permission_attributes,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            dataset_permission_attributes=dataset_permission_attributes,
+        )
+
+    def _build_nested_collection_attributes_stmt_5(
+        self,
+        element_attributes,
+        hda_attributes,
+        return_entities,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            element_attributes=element_attributes,
+            hda_attributes=hda_attributes,
+            return_entities=return_entities,
+        )
+
+    def _build_nested_collection_attributes_stmt_6(
+        self,
+        return_entities,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            return_entities=return_entities,
+        )
+
+    def _build_nested_collection_attributes_stmt_7(
+        self,
+        return_entities,
+        hda_attributes,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            return_entities=return_entities,
+            hda_attributes=hda_attributes,
+        )
+
+    def _build_nested_collection_attributes_stmt_8(
+        self,
+        hda_attributes,
+    ):
+        return self._build_nested_collection_attributes_stmt(
+            hda_attributes=hda_attributes,
+        )
+
+#TODO REFACTORING ===============================================================================
+
+
     def _build_nested_collection_attributes_stmt(
         self,
         collection_attributes: Optional[Iterable[str]] = None,
@@ -6153,7 +6233,8 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             nesting_level += 1
             inner_dc = alias(DatasetCollection)
             inner_dce = alias(DatasetCollectionElement)
-            order_by_columns.append(inner_dce.c.element_index)
+            if nesting_level > 1: # because we already have it for level==1
+                order_by_columns.append(inner_dce.c.element_index)
             q = q.join(
                 inner_dc, and_(inner_dc.c.id == dce.c.child_collection_id, dce.c.dataset_collection_id == dc.c.id)
             ).outerjoin(inner_dce, inner_dce.c.dataset_collection_id == inner_dc.c.id)
@@ -6187,16 +6268,33 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             if entity == DatasetCollectionElement:
                 q = q.filter(entity.id == dce.c.id)
 
+        # DEBUGGING
+        session = object_session(self)
+        sc = q.selected_columns
+        s1 = q                                 # without added cols
+        s2 = q.add_columns(*order_by_columns)  # with added cols
+
+        s1 = s1.distinct().order_by(*order_by_columns)
+        s2 = s2.distinct().order_by(*order_by_columns)
+
+        r1 = session.execute(s1).all()
+        r2 = session.execute(s2).all()
+
+        breakpoint()
+
+        # add the order by cols to select stmt
+        q = q.add_columns(*order_by_columns)
+
         q = q.distinct().order_by(*order_by_columns)
-        return q
+        return q, sc
 
     @property
     def dataset_states_and_extensions_summary(self):
         if not hasattr(self, "_dataset_states_and_extensions_summary"):
-            stmt = self._build_nested_collection_attributes_stmt(
+            stmt, sc = self._build_nested_collection_attributes_stmt_1(
                 hda_attributes=("extension",), dataset_attributes=("state",)
             )
-            col_attrs = object_session(self).execute(stmt)
+            col_attrs = object_session(self).execute(stmt).columns(*sc)
 
             extensions = set()
             states = set()
@@ -6214,8 +6312,8 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             has_deferred_data = False
             if object_session(self):
                 # TODO: Optimize by just querying without returning the states...
-                stmt = self._build_nested_collection_attributes_stmt(dataset_attributes=("state",))
-                col_attrs = object_session(self).execute(stmt)
+                stmt, sc = self._build_nested_collection_attributes_stmt_2(dataset_attributes=("state",))
+                col_attrs = object_session(self).execute(stmt).columns(*sc)
 
                 for (state,) in col_attrs:
                     if state == Dataset.states.DEFERRED:
@@ -6238,7 +6336,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
             if ":" not in self.collection_type:
                 _populated_optimized = self.populated_state == DatasetCollection.populated_states.OK
             else:
-                stmt = self._build_nested_collection_attributes_stmt(
+                stmt, sc = self._build_nested_collection_attributes_stmt_3(
                     collection_attributes=("populated_state",),
                     inner_filter=InnerCollectionFilter(
                         "populated_state", operator.__ne__, DatasetCollection.populated_states.OK
@@ -6263,8 +6361,8 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     @property
     def dataset_action_tuples(self):
         if not hasattr(self, "_dataset_action_tuples"):
-            stmt = self._build_nested_collection_attributes_stmt(dataset_permission_attributes=("action", "role_id"))
-            col_attrs = object_session(self).execute(stmt)
+            stmt, sc = self._build_nested_collection_attributes_stmt_4(dataset_permission_attributes=("action", "role_id"))
+            col_attrs = object_session(self).execute(stmt).columns(*sc)
 
             _dataset_action_tuples = []
             for _dataset_action_tuple in col_attrs:
@@ -6278,10 +6376,10 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
 
     @property
     def element_identifiers_extensions_and_paths(self):
-        stmt = self._build_nested_collection_attributes_stmt(
+        stmt, sc = self._build_nested_collection_attributes_stmt_5(
             element_attributes=("element_identifier",), hda_attributes=("extension",), return_entities=(Dataset,)
         )
-        col_attrs = object_session(self).execute(stmt)
+        col_attrs = object_session(self).execute(stmt).columns(*sc)
         return [(row[:-2], row.extension, row.Dataset.get_file_name()) for row in col_attrs]
 
     @property
@@ -6290,12 +6388,12 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     ) -> List[List[Any]]:
         results = []
         if object_session(self):
-            stmt = self._build_nested_collection_attributes_stmt(
+            stmt, sc = self._build_nested_collection_attributes_stmt_5(
                 element_attributes=("element_identifier",),
                 hda_attributes=("extension",),
                 return_entities=(HistoryDatasetAssociation, Dataset),
             )
-            col_attrs = object_session(self).execute(stmt)
+            col_attrs = object_session(self).execute(stmt).columns(*sc)
             # element_identifiers, extension, path
             for row in col_attrs:
                 result = [row[:-3], row.extension, row.Dataset.get_file_name()]
@@ -6342,7 +6440,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     def dataset_instances(self):
         db_session = object_session(self)
         if db_session and self.id:
-            stmt = self._build_nested_collection_attributes_stmt(return_entities=(HistoryDatasetAssociation,))
+            stmt, sc = self._build_nested_collection_attributes_stmt_6(return_entities=(HistoryDatasetAssociation,))
             return db_session.scalars(stmt).all()
         else:
             # Sessionless context
@@ -6359,7 +6457,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     def dataset_elements(self):
         db_session = object_session(self)
         if db_session and self.id:
-            stmt = self._build_nested_collection_attributes_stmt(return_entities=(DatasetCollectionElement,))
+            stmt, sc = self._build_nested_collection_attributes_stmt_6(return_entities=(DatasetCollectionElement,))
             return db_session.scalars(stmt).all()
         elements = []
         for element in self.elements:
@@ -6445,7 +6543,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
         return new_collection
 
     def replace_failed_elements(self, replacements):
-        stmt = self._build_nested_collection_attributes_stmt(
+        stmt, sc = self._build_nested_collection_attributes_stmt_7(
             return_entities=[DatasetCollectionElement], hda_attributes=["id"]
         )
         col_attrs = object_session(self).execute(stmt).all()
@@ -6714,7 +6812,7 @@ class HistoryDatasetCollectionAssociation(
     @property
     def dataset_dbkeys_and_extensions_summary(self):
         if not hasattr(self, "_dataset_dbkeys_and_extensions_summary"):
-            stmt = self.collection._build_nested_collection_attributes_stmt(hda_attributes=("_metadata", "extension"))
+            stmt, sc = self.collection._build_nested_collection_attributes_stmt_8(hda_attributes=("_metadata", "extension"))
             col_attrs = object_session(self).execute(stmt)
 
             extensions = set()
