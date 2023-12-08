@@ -787,6 +787,8 @@ class User(Base, Dictifiable, RepresentById):
     def __init__(self, *, email, password=None, username=None):
         self.email = email
         self.password = password
+        if not self.password:
+            self.set_random_password()
         self.external = False
         self.deleted = False
         self.purged = False
