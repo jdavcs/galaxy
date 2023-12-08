@@ -10075,6 +10075,10 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
         "update_time",
     ]
 
+    def __init__(self, user, **kwd):
+        self.user = user
+        super().__init__(**kwd)
+
     def to_dict(self, view="element"):
         rval = super().to_dict(view=view)
         rev = []
