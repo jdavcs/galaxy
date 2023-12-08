@@ -784,8 +784,9 @@ class User(Base, Dictifiable, RepresentById):
         "preferred_object_store_id",
     ]
 
-    def __init__(self, *, email, password=None, username=None):
+    def __init__(self, *, email, username, password=None):
         self.email = email
+        self.username = username
         self.password = password
         if not self.password:
             self.set_random_password()
@@ -793,7 +794,6 @@ class User(Base, Dictifiable, RepresentById):
         self.deleted = False
         self.purged = False
         self.active = False
-        self.username = username
 
     def get_user_data_tables(self, data_table: str):
         session = object_session(self)
