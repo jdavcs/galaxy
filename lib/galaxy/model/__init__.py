@@ -784,7 +784,7 @@ class User(Base, Dictifiable, RepresentById):
         "preferred_object_store_id",
     ]
 
-    def __init__(self, email=None, password=None, username=None):
+    def __init__(self, *, email, password=None, username=None):
         self.email = email
         self.password = password
         self.external = False
