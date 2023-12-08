@@ -10114,13 +10114,14 @@ class PageRevision(Base, Dictifiable, RepresentById):
     DEFAULT_CONTENT_FORMAT = "html"
     dict_element_visible_keys = ["id", "page_id", "title", "content", "content_format"]
 
-    def __init__(self):
+    def __init__(self, page):
+        self.page = page
         self.content_format = PageRevision.DEFAULT_CONTENT_FORMAT
 
     def to_dict(self, view="element"):
         rval = super().to_dict(view=view)
-        rval["create_time"] = self.create_time.isoformat()
-        rval["update_time"] = self.update_time.isoformat()
+        rval["create_time"] = self.create_time.isoformat() if self.id else None
+        rval["update_time"] = self.update_time.isoformat() if self.id else None
         return rval
 
 
