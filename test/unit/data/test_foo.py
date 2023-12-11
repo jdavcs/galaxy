@@ -30,6 +30,27 @@ def session(init_model, engine):
         yield s
 
 
+def make_Foo(**kwd):
+    if "a" not in kwd:
+        kwd["a"] = make_A()
+    if "b" not in kwd:
+        kwd["b"] = random_str()
+    if "c" not in kwd:
+        kwd["c"] = random_int()
+    foo = model.Foo(**kwd)
+    session.add(foo)  # session is a fixture available on the class
+    session.flush()   # we don't need to persist, so flush should be fine
+    return foo  # return fully constructed instance of Foo
+
+def test_bar():
+    myfoo = make_Foo()
+    bar = Bar(foo=myfoo)
+    session.add(bar)   # session is a fixture available on the class 
+    session.flush()
+    assert bar.x == "value of x"
+
+
+
 
 
 
