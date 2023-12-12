@@ -219,8 +219,9 @@ if TYPE_CHECKING:
         pass
 
     from galaxy.datatypes.data import Data
-    from galaxy.tools import DefaultToolState
-    from galaxy.workflow.modules import WorkflowModule
+
+    # from galaxy.tools import DefaultToolState
+    # from galaxy.workflow.modules import WorkflowModule
 
     class _HasTable:
         table: Table
@@ -734,7 +735,7 @@ class User(Base, Dictifiable, RepresentById):
         "FormValues", primaryjoin=(lambda: User.form_values_id == FormValues.id)  # type: ignore[has-type]
     )
     # Add type hint (will this work w/SA?)
-    api_keys: "List[APIKeys]" = relationship(
+    api_keys = relationship(
         "APIKeys",
         back_populates="user",
         order_by=lambda: desc(APIKeys.create_time),
@@ -764,7 +765,7 @@ class User(Base, Dictifiable, RepresentById):
         ),
     )
 
-    preferences: association_proxy  # defined at the end of this module
+    preferences = None
 
     # attributes that will be accessed and returned when calling to_dict( view='collection' )
     dict_collection_visible_keys = ["id", "email", "username", "deleted", "active", "last_password_change"]
@@ -1362,8 +1363,8 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
         "WorkflowInvocationStep", back_populates="job", uselist=False, cascade_backrefs=False
     )
 
-    any_output_dataset_collection_instances_deleted: column_property  # defined at the end of this module
-    any_output_dataset_deleted: column_property  # defined at the end of this module
+    any_output_dataset_collection_instances_deleted = None
+    any_output_dataset_deleted = None
 
     dict_collection_visible_keys = ["id", "state", "exit_code", "update_time", "create_time", "galaxy_version"]
     dict_element_visible_keys = [
@@ -3008,8 +3009,8 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
     update_time = column_property(
         select(func.max(HistoryAudit.update_time)).where(HistoryAudit.history_id == id).scalar_subquery(),
     )
-    users_shared_with_count: column_property  # defined at the end of this module
-    average_rating: column_property  # defined at the end of this module
+    users_shared_with_count = None
+    average_rating = None
 
     # Set up proxy so that
     #   History.users_shared_with
@@ -3948,7 +3949,7 @@ class Dataset(Base, StorableObject, Serializable):
 
     permitted_actions = get_permitted_actions(filter="DATASET")
     file_path = "/tmp/"
-    object_store: Optional[ObjectStore] = None  # This get initialized in mapping.py (method init) by app.py
+    object_store = None  # This get initialized in mapping.py (method init) by app.py
     engine = None
 
     def __init__(
@@ -7362,7 +7363,7 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
     )
     users_shared_with = relationship("StoredWorkflowUserShareAssociation", back_populates="stored_workflow")
 
-    average_rating: column_property
+    average_rating = None
 
     # Set up proxy so that
     #   StoredWorkflow.users_shared_with
@@ -7476,7 +7477,7 @@ class Workflow(Base, Dictifiable, RepresentById):
     source_metadata = Column(JSONType)
     uuid = Column(UUIDType, nullable=True)
 
-    steps: List["WorkflowStep"] = relationship(
+    steps = relationship(
         "WorkflowStep",
         back_populates="workflow",
         primaryjoin=(lambda: Workflow.id == WorkflowStep.workflow_id),  # type: ignore[has-type]
@@ -7484,7 +7485,7 @@ class Workflow(Base, Dictifiable, RepresentById):
         cascade="all, delete-orphan",
         lazy=False,
     )
-    comments: List["WorkflowComment"] = relationship(
+    comments = relationship(
         "WorkflowComment",
         back_populates="workflow",
         primaryjoin=(lambda: Workflow.id == WorkflowComment.workflow_id),  # type: ignore[has-type]
@@ -7503,7 +7504,7 @@ class Workflow(Base, Dictifiable, RepresentById):
         back_populates="workflows",
     )
 
-    step_count: column_property
+    step_count = None
 
     dict_collection_visible_keys = ["name", "has_cycles", "has_errors"]
     dict_element_visible_keys = ["name", "has_cycles", "has_errors"]
@@ -7661,7 +7662,7 @@ class WorkflowStep(Base, RepresentById):
     when_expression = Column(JSONType)
     uuid = Column(UUIDType)
     label = Column(Unicode(255))
-    temp_input_connections: Optional[InputConnDictType]
+    temp_input_connections = None
     parent_comment_id = Column(Integer, ForeignKey("workflow_comment.id"), nullable=True)
 
     parent_comment = relationship(
@@ -7670,7 +7671,7 @@ class WorkflowStep(Base, RepresentById):
         back_populates="child_steps",
     )
 
-    subworkflow: Optional[Workflow] = relationship(
+    subworkflow = relationship(
         "Workflow",
         primaryjoin=(lambda: Workflow.id == WorkflowStep.subworkflow_id),
         back_populates="parent_workflow_steps",
@@ -7699,9 +7700,9 @@ class WorkflowStep(Base, RepresentById):
 
     # Injected attributes
     # TODO: code using these should be refactored to not depend on these non-persistent fields
-    module: Optional["WorkflowModule"]
-    state: Optional["DefaultToolState"]
-    upgrade_messages: Optional[Dict]
+    module = None
+    state = None
+    upgrade_messages = None
 
     STEP_TYPE_TO_INPUT_TYPE = {
         "data_input": "dataset",
@@ -8117,20 +8118,20 @@ class WorkflowComment(Base, RepresentById):
         back_populates="comments",
     )
 
-    child_steps: List["WorkflowStep"] = relationship(
+    child_steps = relationship(
         "WorkflowStep",
         primaryjoin=(lambda: WorkflowStep.parent_comment_id == WorkflowComment.id),
         back_populates="parent_comment",
     )
 
-    parent_comment: "WorkflowComment" = relationship(
+    parent_comment = relationship(
         "WorkflowComment",
         primaryjoin=(lambda: WorkflowComment.id == WorkflowComment.parent_comment_id),
         back_populates="child_comments",
         remote_side=[id],
     )
 
-    child_comments: List["WorkflowComment"] = relationship(
+    child_comments = relationship(
         "WorkflowComment",
         primaryjoin=(lambda: WorkflowComment.parent_comment_id == WorkflowComment.id),
         back_populates="parent_comment",
@@ -8242,7 +8243,7 @@ class WorkflowInvocation(Base, UsesCreateAndUpdateTime, Dictifiable, Serializabl
         order_by=lambda: WorkflowInvocationStep.order_index,
         cascade_backrefs=False,
     )
-    workflow: Workflow = relationship("Workflow")
+    workflow = relationship("Workflow")
     output_dataset_collections = relationship(
         "WorkflowInvocationOutputDatasetCollectionAssociation",
         back_populates="workflow_invocation",
@@ -8891,7 +8892,7 @@ class WorkflowInvocationStep(Base, Dictifiable, Serializable):
         select(WorkflowStep.order_index).where(WorkflowStep.id == workflow_step_id).scalar_subquery()
     )
 
-    subworkflow_invocation_id: column_property
+    subworkflow_invocation_id = None
 
     dict_collection_visible_keys = [
         "id",
@@ -9898,7 +9899,7 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
     )
     users_shared_with = relationship("PageUserShareAssociation", back_populates="page")
 
-    average_rating: column_property  # defined at the end of this module
+    average_rating = None
 
     # Set up proxy so that
     #   Page.users_shared_with
@@ -10025,7 +10026,7 @@ class Visualization(Base, HasTags, Dictifiable, RepresentById):
     )
     users_shared_with = relationship("VisualizationUserShareAssociation", back_populates="visualization")
 
-    average_rating: column_property  # defined at the end of this module
+    average_rating = None
 
     # Set up proxy so that
     #   Visualization.users_shared_with
