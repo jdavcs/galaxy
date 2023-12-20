@@ -18,7 +18,10 @@ import random
 import string
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import (
+    datetime,
+    timedelta,
+)
 from enum import Enum
 from secrets import token_hex
 from string import Template
@@ -100,6 +103,8 @@ from sqlalchemy.orm import (
     column_property,
     deferred,
     joinedload,
+    Mapped,
+    mapped_column,
     object_session,
     Query,
     reconstructor,
@@ -436,10 +441,10 @@ class WorkerProcess(Base, UsesCreateAndUpdateTime):
     __tablename__ = "worker_process"
     __table_args__ = (UniqueConstraint("server_name", "hostname"),)
 
-    id = Column(Integer, primary_key=True)
-    server_name = Column(String(255), index=True)
-    hostname = Column(String(255))
-    pid = Column(Integer)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    server_name: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    hostname: Mapped[Optional[str]] = mapped_column(String(255))
+    pid: Mapped[Optional[int]] = mapped_column(Integer)
     update_time = Column(DateTime, default=now, onupdate=now)
 
 
@@ -683,22 +688,22 @@ class User(Base, Dictifiable, RepresentById):
 
     __tablename__ = "galaxy_user"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
-    email = Column(TrimmedString(255), index=True, nullable=False)
-    username = Column(TrimmedString(255), index=True, unique=True)
-    password = Column(TrimmedString(255), nullable=False)
+    email: Mapped[str] = mapped_column(TrimmedString(255), index=True, nullable=False)
+    username: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True, unique=True)
+    password: Mapped[str] = mapped_column(TrimmedString(255), nullable=False)
     last_password_change = Column(DateTime, default=now)
-    external = Column(Boolean, default=False)
-    form_values_id = Column(Integer, ForeignKey("form_values.id"), index=True)
-    preferred_object_store_id = Column(String(255), nullable=True)
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
+    external: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    form_values_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_values.id"), index=True)
+    preferred_object_store_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     disk_usage = Column(Numeric(15, 0), index=True)
     # Column("person_metadata", JSONType),  # TODO: add persistent, configurable metadata rep for workflow creator
-    active = Column(Boolean, index=True, default=True, nullable=False)
-    activation_token = Column(TrimmedString(64), nullable=True, index=True)
+    active: Mapped[bool] = mapped_column(Boolean, index=True, default=True, nullable=False)
+    activation_token: Mapped[Optional[str]] = mapped_column(TrimmedString(64), nullable=True, index=True)
 
     addresses = relationship(
         "UserAddress", back_populates="user", order_by=lambda: desc(UserAddress.update_time), cascade_backrefs=False
@@ -1212,10 +1217,10 @@ ON CONFLICT
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_token"
 
-    token = Column(String(32), primary_key=True, unique=True, index=True)
+    token: Mapped[str] = mapped_column(String(32), primary_key=True, unique=True, index=True)
     expiration_time = Column(DateTime)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    user = relationship("User")
+    user: Mapped["User"] = relationship("User")
 
     def __init__(self, user, token=None):
         if token:
@@ -1229,7 +1234,7 @@ class PasswordResetToken(Base):
 class DynamicTool(Base, Dictifiable, RepresentById):
     __tablename__ = "dynamic_tool"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     uuid = Column(UUIDType())
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, index=True, default=now, onupdate=now)
@@ -1266,7 +1271,7 @@ class BaseJobMetric(Base):
 class JobMetricText(BaseJobMetric, RepresentById):
     __tablename__ = "job_metric_text"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     plugin = Column(Unicode(255))
     metric_name = Column(Unicode(255))
@@ -1276,7 +1281,7 @@ class JobMetricText(BaseJobMetric, RepresentById):
 class JobMetricNumeric(BaseJobMetric, RepresentById):
     __tablename__ = "job_metric_numeric"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     plugin = Column(Unicode(255))
     metric_name = Column(Unicode(255))
@@ -1286,7 +1291,7 @@ class JobMetricNumeric(BaseJobMetric, RepresentById):
 class TaskMetricText(BaseJobMetric, RepresentById):
     __tablename__ = "task_metric_text"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_id = Column(Integer, ForeignKey("task.id"), index=True)
     plugin = Column(Unicode(255))
     metric_name = Column(Unicode(255))
@@ -1296,7 +1301,7 @@ class TaskMetricText(BaseJobMetric, RepresentById):
 class TaskMetricNumeric(BaseJobMetric, RepresentById):
     __tablename__ = "task_metric_numeric"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_id = Column(Integer, ForeignKey("task.id"), index=True)
     plugin = Column(Unicode(255))
     metric_name = Column(Unicode(255))
@@ -1317,40 +1322,44 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
 
     __tablename__ = "job"
 
-    id = Column(Integer, primary_key=True)
-    create_time = Column(DateTime, default=now)
-    update_time = Column(DateTime, default=now, onupdate=now, index=True)
-    history_id = Column(Integer, ForeignKey("history.id"), index=True)
-    library_folder_id = Column(Integer, ForeignKey("library_folder.id"), index=True)
-    tool_id = Column(String(255))
-    tool_version = Column(TEXT, default="1.0.0")
-    galaxy_version = Column(String(64), default=None)
-    dynamic_tool_id = Column(Integer, ForeignKey("dynamic_tool.id"), index=True, nullable=True)
-    state = Column(String(64), index=True)
-    info = Column(TrimmedString(255))
-    copied_from_job_id = Column(Integer, nullable=True)
-    command_line = Column(TEXT)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now, index=True)
+    history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
+    library_folder_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library_folder.id"), index=True)
+    tool_id: Mapped[Optional[str]] = mapped_column(String(255))
+    tool_version: Mapped[Optional[str]] = mapped_column(TEXT, default="1.0.0")
+    galaxy_version: Mapped[Optional[str]] = mapped_column(String(64), default=None)
+    dynamic_tool_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("dynamic_tool.id"), index=True, nullable=True
+    )
+    state: Mapped[Optional[str]] = mapped_column(String(64), index=True)
+    info: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
+    copied_from_job_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    command_line: Mapped[Optional[str]] = mapped_column(TEXT)
     dependencies = Column(MutableJSONType, nullable=True)
     job_messages = Column(MutableJSONType, nullable=True)
-    param_filename = Column(String(1024))
-    runner_name = Column(String(255))
-    job_stdout = Column(TEXT)
-    job_stderr = Column(TEXT)
-    tool_stdout = Column(TEXT)
-    tool_stderr = Column(TEXT)
-    exit_code = Column(Integer, nullable=True)
-    traceback = Column(TEXT)
-    session_id = Column(Integer, ForeignKey("galaxy_session.id"), index=True, nullable=True)
-    user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=True)
-    job_runner_name = Column(String(255))
-    job_runner_external_id = Column(String(255), index=True)
-    destination_id = Column(String(255), nullable=True)
+    param_filename: Mapped[Optional[str]] = mapped_column(String(1024))
+    runner_name: Mapped[Optional[str]] = mapped_column(String(255))
+    job_stdout: Mapped[Optional[str]] = mapped_column(TEXT)
+    job_stderr: Mapped[Optional[str]] = mapped_column(TEXT)
+    tool_stdout: Mapped[Optional[str]] = mapped_column(TEXT)
+    tool_stderr: Mapped[Optional[str]] = mapped_column(TEXT)
+    exit_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    traceback: Mapped[Optional[str]] = mapped_column(TEXT)
+    session_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("galaxy_session.id"), index=True, nullable=True
+    )
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=True)
+    job_runner_name: Mapped[Optional[str]] = mapped_column(String(255))
+    job_runner_external_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
+    destination_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     destination_params = Column(MutableJSONType, nullable=True)
-    object_store_id = Column(TrimmedString(255), index=True)
-    imported = Column(Boolean, default=False, index=True)
-    params = Column(TrimmedString(255), index=True)
-    handler = Column(TrimmedString(255), index=True)
-    preferred_object_store_id = Column(String(255), nullable=True)
+    object_store_id: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
+    imported: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, index=True)
+    params: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
+    handler: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
+    preferred_object_store_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     object_store_id_overrides = Column(JSONType)
 
     user = relationship("User")
@@ -2085,7 +2094,7 @@ class Task(Base, JobLike, RepresentById):
 
     __tablename__ = "task"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     execution_time = Column(DateTime)
     update_time = Column(DateTime, default=now, onupdate=now)
@@ -2255,7 +2264,7 @@ class Task(Base, JobLike, RepresentById):
 class JobParameter(Base, RepresentById):
     __tablename__ = "job_parameter"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     name = Column(String(255))
     value = Column(TEXT)
@@ -2271,7 +2280,7 @@ class JobParameter(Base, RepresentById):
 class JobToInputDatasetAssociation(Base, RepresentById):
     __tablename__ = "job_to_input_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     dataset_version = Column(Integer)
@@ -2289,7 +2298,7 @@ class JobToInputDatasetAssociation(Base, RepresentById):
 class JobToOutputDatasetAssociation(Base, RepresentById):
     __tablename__ = "job_to_output_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     name = Column(String(255))
@@ -2309,7 +2318,7 @@ class JobToOutputDatasetAssociation(Base, RepresentById):
 class JobToInputDatasetCollectionAssociation(Base, RepresentById):
     __tablename__ = "job_to_input_dataset_collection"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     name = Column(String(255))
@@ -2324,7 +2333,7 @@ class JobToInputDatasetCollectionAssociation(Base, RepresentById):
 class JobToInputDatasetCollectionElementAssociation(Base, RepresentById):
     __tablename__ = "job_to_input_dataset_collection_element"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_collection_element_id = Column(Integer, ForeignKey("dataset_collection_element.id"), index=True)
     name = Column(Unicode(255))
@@ -2341,7 +2350,7 @@ class JobToInputDatasetCollectionElementAssociation(Base, RepresentById):
 class JobToOutputDatasetCollectionAssociation(Base, RepresentById):
     __tablename__ = "job_to_output_dataset_collection"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     name = Column(Unicode(255))
@@ -2363,7 +2372,7 @@ class JobToOutputDatasetCollectionAssociation(Base, RepresentById):
 class JobToImplicitOutputDatasetCollectionAssociation(Base, RepresentById):
     __tablename__ = "job_to_implicit_output_dataset_collection"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_collection_id = Column(Integer, ForeignKey("dataset_collection.id"), index=True)
     name = Column(Unicode(255))
@@ -2378,7 +2387,7 @@ class JobToImplicitOutputDatasetCollectionAssociation(Base, RepresentById):
 class JobToInputLibraryDatasetAssociation(Base, RepresentById):
     __tablename__ = "job_to_input_library_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     ldda_id = Column(Integer, ForeignKey("library_dataset_dataset_association.id"), index=True)
     name = Column(Unicode(255))
@@ -2394,7 +2403,7 @@ class JobToInputLibraryDatasetAssociation(Base, RepresentById):
 class JobToOutputLibraryDatasetAssociation(Base, RepresentById):
     __tablename__ = "job_to_output_library_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     ldda_id = Column(Integer, ForeignKey("library_dataset_dataset_association.id"), index=True)
     name = Column(Unicode(255))
@@ -2412,7 +2421,7 @@ class JobToOutputLibraryDatasetAssociation(Base, RepresentById):
 class JobStateHistory(Base, RepresentById):
     __tablename__ = "job_state_history"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     state = Column(String(64), index=True)
@@ -2427,7 +2436,7 @@ class JobStateHistory(Base, RepresentById):
 class ImplicitlyCreatedDatasetCollectionInput(Base, RepresentById):
     __tablename__ = "implicitly_created_dataset_collection_inputs"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     input_dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     name = Column(Unicode(255))
@@ -2448,7 +2457,7 @@ class ImplicitlyCreatedDatasetCollectionInput(Base, RepresentById):
 class ImplicitCollectionJobs(Base, Serializable):
     __tablename__ = "implicit_collection_jobs"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     populated_state = Column(TrimmedString(64), default="new", nullable=False)
     jobs = relationship(
         "ImplicitCollectionJobsJobAssociation", back_populates="implicit_collection_jobs", cascade_backrefs=False
@@ -2479,7 +2488,7 @@ class ImplicitCollectionJobs(Base, Serializable):
 class ImplicitCollectionJobsJobAssociation(Base, RepresentById):
     __tablename__ = "implicit_collection_jobs_job_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     implicit_collection_jobs_id = Column(Integer, ForeignKey("implicit_collection_jobs.id"), index=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)  # Consider making this nullable...
     order_index = Column(Integer, nullable=False)
@@ -2490,7 +2499,7 @@ class ImplicitCollectionJobsJobAssociation(Base, RepresentById):
 class PostJobAction(Base, RepresentById):
     __tablename__ = "post_job_action"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True, nullable=True)
     action_type = Column(String(255), nullable=False)
     output_name = Column(String(255), nullable=True)
@@ -2512,7 +2521,7 @@ class PostJobAction(Base, RepresentById):
 class PostJobActionAssociation(Base, RepresentById):
     __tablename__ = "post_job_action_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True, nullable=False)
     post_job_action_id = Column(Integer, ForeignKey("post_job_action.id"), index=True, nullable=False)
     post_job_action = relationship("PostJobAction")
@@ -2532,7 +2541,7 @@ class PostJobActionAssociation(Base, RepresentById):
 class JobExternalOutputMetadata(Base, RepresentById):
     __tablename__ = "job_external_output_metadata"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     history_dataset_association_id = Column(
         Integer, ForeignKey("history_dataset_association.id"), index=True, nullable=True
@@ -2589,7 +2598,7 @@ class FakeDatasetAssociation:
 class JobExportHistoryArchive(Base, RepresentById):
     __tablename__ = "job_export_history_archive"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     dataset_id = Column(Integer, ForeignKey("dataset.id"), index=True)
@@ -2677,7 +2686,7 @@ class JobExportHistoryArchive(Base, RepresentById):
 class JobImportHistoryArchive(Base, RepresentById):
     __tablename__ = "job_import_history_archive"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     archive_dir = Column(TEXT)
@@ -2689,7 +2698,7 @@ class StoreExportAssociation(Base, RepresentById):
     __tablename__ = "store_export_association"
     __table_args__ = (Index("ix_store_export_object", "object_id", "object_type"),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_uuid = Column(UUIDType(), index=True, unique=True)
     create_time = Column(DateTime, default=now)
     object_type = Column(TrimmedString(32))
@@ -2700,7 +2709,7 @@ class StoreExportAssociation(Base, RepresentById):
 class JobContainerAssociation(Base, RepresentById):
     __tablename__ = "job_container_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     container_type = Column(TEXT)
     container_name = Column(TEXT)
@@ -2719,7 +2728,7 @@ class JobContainerAssociation(Base, RepresentById):
 class InteractiveToolEntryPoint(Base, Dictifiable, RepresentById):
     __tablename__ = "interactivetool_entry_point"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     name = Column(TEXT)
     token = Column(TEXT)
@@ -2795,7 +2804,7 @@ class InteractiveToolEntryPoint(Base, Dictifiable, RepresentById):
 class GenomeIndexToolData(Base, RepresentById):  # TODO: params arg is lost
     __tablename__ = "genome_index_tool_data"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
     dataset_id = Column(Integer, ForeignKey("dataset.id"), index=True)
     fasta_path = Column(String(255))
@@ -2811,7 +2820,7 @@ class GenomeIndexToolData(Base, RepresentById):  # TODO: params arg is lost
 class Group(Base, Dictifiable, RepresentById):
     __tablename__ = "galaxy_group"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     name = Column(String(255), index=True, unique=True)
@@ -2831,7 +2840,7 @@ class Group(Base, Dictifiable, RepresentById):
 class UserGroupAssociation(Base, RepresentById):
     __tablename__ = "user_group_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     group_id = Column(Integer, ForeignKey("galaxy_group.id"), index=True)
     create_time = Column(DateTime, default=now)
@@ -2848,7 +2857,7 @@ class UserGroupAssociation(Base, RepresentById):
 class Notification(Base, Dictifiable, RepresentById):
     __tablename__ = "notification"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     publication_time = Column(
@@ -2880,7 +2889,7 @@ class Notification(Base, Dictifiable, RepresentById):
 class UserNotificationAssociation(Base, RepresentById):
     __tablename__ = "user_notification_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     notification_id = Column(Integer, ForeignKey("notification.id"), index=True)
     seen_time = Column(DateTime, nullable=True)
@@ -2939,22 +2948,24 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
     __tablename__ = "history"
     __table_args__ = (Index("ix_history_slug", "slug", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
-    create_time = Column(DateTime, default=now)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now)
     _update_time = Column("update_time", DateTime, index=True, default=now, onupdate=now)
-    user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    name = Column(TrimmedString(255))
-    hid_counter = Column(Integer, default=1)
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
-    importing = Column(Boolean, index=True, default=False)
-    genome_build = Column(TrimmedString(40))
-    importable = Column(Boolean, default=False)
-    slug = Column(TEXT)
-    published = Column(Boolean, index=True, default=False)
-    preferred_object_store_id = Column(String(255), nullable=True)
-    archived = Column(Boolean, index=True, default=False, server_default=false())
-    archive_export_id = Column(Integer, ForeignKey("store_export_association.id"), nullable=True, default=None)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
+    name: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
+    hid_counter: Mapped[Optional[int]] = mapped_column(Integer, default=1)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    importing: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    genome_build: Mapped[Optional[str]] = mapped_column(TrimmedString(40))
+    importable: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    slug: Mapped[Optional[str]] = mapped_column(TEXT)
+    published: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    preferred_object_store_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    archived: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False, server_default=false())
+    archive_export_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("store_export_association.id"), nullable=True, default=None
+    )
 
     datasets = relationship(
         "HistoryDatasetAssociation", back_populates="history", cascade_backrefs=False, order_by=lambda: asc(HistoryDatasetAssociation.hid)  # type: ignore[has-type]
@@ -3518,7 +3529,7 @@ class UserShareAssociation(RepresentById):
 class HistoryUserShareAssociation(Base, UserShareAssociation):
     __tablename__ = "history_user_share_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     user = relationship("User")
@@ -3528,7 +3539,7 @@ class HistoryUserShareAssociation(Base, UserShareAssociation):
 class UserRoleAssociation(Base, RepresentById):
     __tablename__ = "user_role_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     role_id = Column(Integer, ForeignKey("role.id"), index=True)
     create_time = Column(DateTime, default=now)
@@ -3546,7 +3557,7 @@ class UserRoleAssociation(Base, RepresentById):
 class GroupRoleAssociation(Base, RepresentById):
     __tablename__ = "group_role_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     group_id = Column(Integer, ForeignKey("galaxy_group.id"), index=True)
     role_id = Column(Integer, ForeignKey("role.id"), index=True)
     create_time = Column(DateTime, default=now)
@@ -3563,7 +3574,7 @@ class GroupRoleAssociation(Base, RepresentById):
 class Role(Base, Dictifiable, RepresentById):
     __tablename__ = "role"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     name = Column(String(255), index=True, unique=True)
@@ -3598,7 +3609,7 @@ class UserQuotaSourceUsage(Base, Dictifiable, RepresentById):
 
     dict_element_visible_keys = ["disk_usage", "quota_source_label"]
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     quota_source_label = Column(String(32), index=True)
     # user had an index on disk_usage - does that make any sense? -John
@@ -3609,7 +3620,7 @@ class UserQuotaSourceUsage(Base, Dictifiable, RepresentById):
 class UserQuotaAssociation(Base, Dictifiable, RepresentById):
     __tablename__ = "user_quota_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     quota_id = Column(Integer, ForeignKey("quota.id"), index=True)
     create_time = Column(DateTime, default=now)
@@ -3628,7 +3639,7 @@ class UserQuotaAssociation(Base, Dictifiable, RepresentById):
 class GroupQuotaAssociation(Base, Dictifiable, RepresentById):
     __tablename__ = "group_quota_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     group_id = Column(Integer, ForeignKey("galaxy_group.id"), index=True)
     quota_id = Column(Integer, ForeignKey("quota.id"), index=True)
     create_time = Column(DateTime, default=now)
@@ -3648,7 +3659,7 @@ class Quota(Base, Dictifiable, RepresentById):
     __tablename__ = "quota"
     __table_args__ = (Index("ix_quota_quota_source_label", "quota_source_label"),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     name = Column(String(255), index=True, unique=True)
@@ -3710,7 +3721,7 @@ class Quota(Base, Dictifiable, RepresentById):
 class DefaultQuotaAssociation(Base, Dictifiable, RepresentById):
     __tablename__ = "default_quota_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     type = Column(String(32))
@@ -3733,7 +3744,7 @@ class DefaultQuotaAssociation(Base, Dictifiable, RepresentById):
 class DatasetPermissions(Base, RepresentById):
     __tablename__ = "dataset_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     action = Column(TEXT)
@@ -3755,7 +3766,7 @@ class DatasetPermissions(Base, RepresentById):
 class LibraryPermissions(Base, RepresentById):
     __tablename__ = "library_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     action = Column(TEXT)
@@ -3777,7 +3788,7 @@ class LibraryPermissions(Base, RepresentById):
 class LibraryFolderPermissions(Base, RepresentById):
     __tablename__ = "library_folder_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     action = Column(TEXT)
@@ -3799,7 +3810,7 @@ class LibraryFolderPermissions(Base, RepresentById):
 class LibraryDatasetPermissions(Base, RepresentById):
     __tablename__ = "library_dataset_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     action = Column(TEXT)
@@ -3821,7 +3832,7 @@ class LibraryDatasetPermissions(Base, RepresentById):
 class LibraryDatasetDatasetAssociationPermissions(Base, RepresentById):
     __tablename__ = "library_dataset_dataset_association_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     action = Column(TEXT)
@@ -3845,7 +3856,7 @@ class LibraryDatasetDatasetAssociationPermissions(Base, RepresentById):
 class DefaultUserPermissions(Base, RepresentById):
     __tablename__ = "default_user_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     action = Column(TEXT)
     role_id = Column(Integer, ForeignKey("role.id"), index=True)
@@ -3862,7 +3873,7 @@ class DefaultUserPermissions(Base, RepresentById):
 class DefaultHistoryPermissions(Base, RepresentById):
     __tablename__ = "default_history_permissions"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     action = Column(TEXT)
     role_id = Column(Integer, ForeignKey("role.id"), index=True)
@@ -3886,7 +3897,7 @@ class StorableObject:
 class Dataset(Base, StorableObject, Serializable):
     __tablename__ = "dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id = Column(Integer, ForeignKey("job.id"), index=True, nullable=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, index=True, default=now, onupdate=now)
@@ -4266,7 +4277,7 @@ class Dataset(Base, StorableObject, Serializable):
 class DatasetSource(Base, Dictifiable, Serializable):
     __tablename__ = "dataset_source"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     dataset_id = Column(Integer, ForeignKey("dataset.id"), index=True)
     source_uri = Column(TEXT)
     extra_files_path = Column(TEXT)
@@ -4304,7 +4315,7 @@ class DatasetSource(Base, Dictifiable, Serializable):
 class DatasetSourceHash(Base, Serializable):
     __tablename__ = "dataset_source_hash"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     dataset_source_id = Column(Integer, ForeignKey("dataset_source.id"), index=True)
     hash_function = Column(TEXT)
     hash_value = Column(TEXT)
@@ -4329,7 +4340,7 @@ class DatasetSourceHash(Base, Serializable):
 class DatasetHash(Base, Dictifiable, Serializable):
     __tablename__ = "dataset_hash"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     dataset_id = Column(Integer, ForeignKey("dataset.id"), index=True)
     hash_function = Column(TEXT)
     hash_value = Column(TEXT)
@@ -5359,7 +5370,7 @@ class HistoryDatasetAssociation(DatasetInstance, HasTags, Dictifiable, UsesAnnot
 class HistoryDatasetAssociationHistory(Base, Serializable):
     __tablename__ = "history_dataset_association_history"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_association_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     update_time = Column(DateTime, default=now)
     version = Column(Integer)
@@ -5393,7 +5404,7 @@ class HistoryDatasetAssociationHistory(Base, Serializable):
 class HistoryDatasetAssociationDisplayAtAuthorization(Base, RepresentById):
     __tablename__ = "history_dataset_association_display_at_authorization"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, index=True, default=now, onupdate=now)
     history_dataset_association_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
@@ -5411,7 +5422,7 @@ class HistoryDatasetAssociationDisplayAtAuthorization(Base, RepresentById):
 class HistoryDatasetAssociationSubset(Base, RepresentById):
     __tablename__ = "history_dataset_association_subset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_association_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     history_dataset_association_subset_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     location = Column(Unicode(255), index=True)
@@ -5439,7 +5450,7 @@ class HistoryDatasetAssociationSubset(Base, RepresentById):
 class Library(Base, Dictifiable, HasName, Serializable):
     __tablename__ = "library"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     root_folder_id = Column(Integer, ForeignKey("library_folder.id"), index=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
@@ -5517,7 +5528,7 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
     __tablename__ = "library_folder"
     __table_args__ = (Index("ix_library_folder_name", "name", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     parent_id = Column(Integer, ForeignKey("library_folder.id"), nullable=True, index=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
@@ -5658,7 +5669,7 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
 class LibraryDataset(Base, Serializable):
     __tablename__ = "library_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     # current version of dataset, if null, there is not a current version selected
     library_dataset_dataset_association_id = Column(
         Integer,
@@ -5964,7 +5975,7 @@ class LibraryDatasetDatasetAssociation(DatasetInstance, HasName, Serializable):
 class ExtendedMetadata(Base, RepresentById):
     __tablename__ = "extended_metadata"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     data = Column(MutableJSONType)
     children = relationship("ExtendedMetadataIndex", back_populates="extended_metadata")
 
@@ -5975,7 +5986,7 @@ class ExtendedMetadata(Base, RepresentById):
 class ExtendedMetadataIndex(Base, RepresentById):
     __tablename__ = "extended_metadata_index"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     extended_metadata_id = Column(
         Integer, ForeignKey("extended_metadata.id", onupdate="CASCADE", ondelete="CASCADE"), index=True
     )
@@ -5992,7 +6003,7 @@ class ExtendedMetadataIndex(Base, RepresentById):
 class LibraryInfoAssociation(Base, RepresentById):
     __tablename__ = "library_info_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_id = Column(Integer, ForeignKey("library.id"), index=True)
     form_definition_id = Column(Integer, ForeignKey("form_definition.id"), index=True)
     form_values_id = Column(Integer, ForeignKey("form_values.id"), index=True)
@@ -6022,7 +6033,7 @@ class LibraryInfoAssociation(Base, RepresentById):
 class LibraryFolderInfoAssociation(Base, RepresentById):
     __tablename__ = "library_folder_info_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_folder_id = Column(Integer, ForeignKey("library_folder.id"), nullable=True, index=True)
     form_definition_id = Column(Integer, ForeignKey("form_definition.id"), index=True)
     form_values_id = Column(Integer, ForeignKey("form_values.id"), index=True)
@@ -6053,7 +6064,7 @@ class LibraryFolderInfoAssociation(Base, RepresentById):
 class LibraryDatasetDatasetInfoAssociation(Base, RepresentById):
     __tablename__ = "library_dataset_dataset_info_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_dataset_dataset_association_id = Column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), nullable=True, index=True
     )
@@ -6093,7 +6104,7 @@ class LibraryDatasetDatasetInfoAssociation(Base, RepresentById):
 class ImplicitlyConvertedDatasetAssociation(Base, Serializable):
     __tablename__ = "implicitly_converted_dataset_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     hda_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True, nullable=True)
@@ -6203,7 +6214,7 @@ class InnerCollectionFilter(NamedTuple):
 class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     __tablename__ = "dataset_collection"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     collection_type = Column(Unicode(255), nullable=False)
     populated_state = Column(TrimmedString(64), default="ok", nullable=False)
     populated_state_message = Column(TEXT)
@@ -6661,7 +6672,7 @@ class HistoryDatasetCollectionAssociation(
 
     __tablename__ = "history_dataset_collection_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     collection_id = Column(Integer, ForeignKey("dataset_collection.id"), index=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     name = Column(TrimmedString(255))
@@ -7041,7 +7052,7 @@ class LibraryDatasetCollectionAssociation(Base, DatasetCollectionInstance, Repre
 
     __tablename__ = "library_dataset_collection_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     collection_id = Column(Integer, ForeignKey("dataset_collection.id"), index=True)
     folder_id = Column(Integer, ForeignKey("library_folder.id"), index=True)
     name = Column(TrimmedString(255))
@@ -7085,7 +7096,7 @@ class DatasetCollectionElement(Base, Dictifiable, Serializable):
 
     __tablename__ = "dataset_collection_element"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     # Parent collection id describing what collection this element belongs to.
     dataset_collection_id = Column(Integer, ForeignKey("dataset_collection.id"), index=True, nullable=False)
     # Child defined by this association - HDA, LDDA, or another dataset association...
@@ -7273,7 +7284,7 @@ class DatasetCollectionElement(Base, Dictifiable, Serializable):
 class Event(Base, RepresentById):
     __tablename__ = "event"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     history_id = Column(Integer, ForeignKey("history.id"), index=True, nullable=True)
@@ -7290,7 +7301,7 @@ class Event(Base, RepresentById):
 class GalaxySession(Base, RepresentById):
     __tablename__ = "galaxy_session"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=True)
@@ -7336,7 +7347,7 @@ class GalaxySession(Base, RepresentById):
 class GalaxySessionToHistoryAssociation(Base, RepresentById):
     __tablename__ = "galaxy_session_to_history"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     session_id = Column(Integer, ForeignKey("galaxy_session.id"), index=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
@@ -7368,7 +7379,7 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
     __tablename__ = "stored_workflow"
     __table_args__ = (Index("ix_stored_workflow_slug", "slug", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now, index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=False)
@@ -7541,18 +7552,22 @@ class Workflow(Base, Dictifiable, RepresentById):
 
     __tablename__ = "workflow"
 
-    id = Column(Integer, primary_key=True)
-    create_time = Column(DateTime, default=now)
-    update_time = Column(DateTime, default=now, onupdate=now)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
     # workflows will belong to either a stored workflow or a parent/nesting workflow.
-    stored_workflow_id = Column(Integer, ForeignKey("stored_workflow.id"), index=True, nullable=True)
-    parent_workflow_id = Column(Integer, ForeignKey("workflow.id"), index=True, nullable=True)
-    name = Column(TEXT)
-    has_cycles = Column(Boolean)
-    has_errors = Column(Boolean)
+    stored_workflow_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("stored_workflow.id"), index=True, nullable=True
+    )
+    parent_workflow_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("workflow.id"), index=True, nullable=True
+    )
+    name: Mapped[Optional[str]] = mapped_column(TEXT)
+    has_cycles: Mapped[Optional[bool]] = mapped_column(Boolean)
+    has_errors: Mapped[Optional[bool]] = mapped_column(Boolean)
     reports_config = Column(JSONType)
     creator_metadata = Column(JSONType)
-    license = Column(TEXT)
+    license: Mapped[Optional[str]] = mapped_column(TEXT)
     source_metadata = Column(JSONType)
     uuid = Column(UUIDType, nullable=True)
 
@@ -7724,25 +7739,27 @@ class WorkflowStep(Base, RepresentById):
 
     __tablename__ = "workflow_step"
 
-    id = Column(Integer, primary_key=True)
-    create_time = Column(DateTime, default=now)
-    update_time = Column(DateTime, default=now, onupdate=now)
-    workflow_id = Column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
-    subworkflow_id = Column(Integer, ForeignKey("workflow.id"), index=True, nullable=True)
-    dynamic_tool_id = Column(Integer, ForeignKey("dynamic_tool.id"), index=True, nullable=True)
-    type: str = Column(String(64))
-    tool_id = Column(TEXT)
-    tool_version = Column(TEXT)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    workflow_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
+    subworkflow_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow.id"), index=True, nullable=True)
+    dynamic_tool_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("dynamic_tool.id"), index=True, nullable=True
+    )
+    type: Mapped[Optional[str]] = mapped_column(String(64))
+    tool_id: Mapped[Optional[str]] = mapped_column(TEXT)
+    tool_version: Mapped[Optional[str]] = mapped_column(TEXT)
     tool_inputs = Column(JSONType)
     tool_errors = Column(JSONType)
     position = Column(MutableJSONType)
     config = Column(JSONType)
-    order_index: int = Column(Integer)
+    order_index: Mapped[Optional[int]] = mapped_column(Integer)
     when_expression = Column(JSONType)
     uuid = Column(UUIDType)
     label = Column(Unicode(255))
     temp_input_connections = None
-    parent_comment_id = Column(Integer, ForeignKey("workflow_comment.id"), nullable=True)
+    parent_comment_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow_comment.id"), nullable=True)
 
     parent_comment = relationship(
         "WorkflowComment",
@@ -8040,16 +8057,16 @@ class WorkflowStepInput(Base, RepresentById):
         ),
     )
 
-    id = Column(Integer, primary_key=True)
-    workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True)
-    name = Column(TEXT)
-    merge_type = Column(TEXT)
-    scatter_type = Column(TEXT)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    workflow_step_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow_step.id"), index=True)
+    name: Mapped[Optional[str]] = mapped_column(TEXT)
+    merge_type: Mapped[Optional[str]] = mapped_column(TEXT)
+    scatter_type: Mapped[Optional[str]] = mapped_column(TEXT)
     value_from = Column(MutableJSONType)
-    value_from_type = Column(TEXT)
+    value_from_type: Mapped[Optional[str]] = mapped_column(TEXT)
     default_value = Column(MutableJSONType)
-    default_value_set = Column(Boolean, default=False)
-    runtime_value = Column(Boolean, default=False)
+    default_value_set: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    runtime_value: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     workflow_step = relationship(
         "WorkflowStep",
@@ -8084,7 +8101,7 @@ class WorkflowStepInput(Base, RepresentById):
 class WorkflowStepConnection(Base, RepresentById):
     __tablename__ = "workflow_step_connection"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     output_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True)
     input_step_input_id = Column(Integer, ForeignKey("workflow_step_input.id"), index=True)
     output_name = Column(TEXT)
@@ -8140,7 +8157,7 @@ class WorkflowStepConnection(Base, RepresentById):
 class WorkflowOutput(Base, Serializable):
     __tablename__ = "workflow_output"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True, nullable=False)
     output_name = Column(String(255), nullable=True)
     label = Column(Unicode(255))
@@ -8181,7 +8198,7 @@ class WorkflowComment(Base, RepresentById):
 
     __tablename__ = "workflow_comment"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     order_index: int = Column(Integer)
     workflow_id = Column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
     position = Column(MutableJSONType)
@@ -8252,7 +8269,7 @@ class WorkflowComment(Base, RepresentById):
 class StoredWorkflowUserShareAssociation(Base, UserShareAssociation):
     __tablename__ = "stored_workflow_user_share_connection"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     stored_workflow_id = Column(Integer, ForeignKey("stored_workflow.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     user = relationship("User")
@@ -8262,7 +8279,7 @@ class StoredWorkflowUserShareAssociation(Base, UserShareAssociation):
 class StoredWorkflowMenuEntry(Base, RepresentById):
     __tablename__ = "stored_workflow_menu_entry"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     stored_workflow_id = Column(Integer, ForeignKey("stored_workflow.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     order_index = Column(Integer)
@@ -8282,7 +8299,7 @@ class StoredWorkflowMenuEntry(Base, RepresentById):
 class WorkflowInvocation(Base, UsesCreateAndUpdateTime, Dictifiable, Serializable):
     __tablename__ = "workflow_invocation"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now, index=True)
     workflow_id = Column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
@@ -8828,7 +8845,7 @@ class WorkflowInvocation(Base, UsesCreateAndUpdateTime, Dictifiable, Serializabl
 class WorkflowInvocationToSubworkflowInvocationAssociation(Base, Dictifiable, RepresentById):
     __tablename__ = "workflow_invocation_to_subworkflow_invocation_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id", name="fk_wfi_swi_wfi"), index=True)
     subworkflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id", name="fk_wfi_swi_swi"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id", name="fk_wfi_swi_ws"))
@@ -8856,7 +8873,7 @@ class WorkflowInvocationToSubworkflowInvocationAssociation(Base, Dictifiable, Re
 
 class WorkflowInvocationMessage(Base, Dictifiable, Serializable):
     __tablename__ = "workflow_invocation_message"
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True, nullable=False)
     reason = Column(String(32))
     details = Column(TrimmedString(255), nullable=True)
@@ -8929,7 +8946,7 @@ class WorkflowInvocationStepObjectStores(NamedTuple):
 class WorkflowInvocationStep(Base, Dictifiable, Serializable):
     __tablename__ = "workflow_invocation_step"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True, nullable=False)
@@ -9137,7 +9154,7 @@ class WorkflowRequestInputParameter(Base, Dictifiable, Serializable):
 
     __tablename__ = "workflow_request_input_parameters"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(
         Integer, ForeignKey("workflow_invocation.id", onupdate="CASCADE", ondelete="CASCADE"), index=True
     )
@@ -9167,7 +9184,7 @@ class WorkflowRequestStepState(Base, Dictifiable, Serializable):
 
     __tablename__ = "workflow_request_step_states"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(
         Integer, ForeignKey("workflow_invocation.id", onupdate="CASCADE", ondelete="CASCADE"), index=True
     )
@@ -9190,7 +9207,7 @@ class WorkflowRequestToInputDatasetAssociation(Base, Dictifiable, Serializable):
 
     __tablename__ = "workflow_request_to_input_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name = Column(String(255))
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"))
@@ -9218,7 +9235,7 @@ class WorkflowRequestToInputDatasetCollectionAssociation(Base, Dictifiable, Seri
 
     __tablename__ = "workflow_request_to_input_collection_dataset"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name = Column(String(255))
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"))
@@ -9245,7 +9262,7 @@ class WorkflowRequestInputStepParameter(Base, Dictifiable, Serializable):
 
     __tablename__ = "workflow_request_input_step_parameter"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"))
     parameter_value = Column(MutableJSONType)
@@ -9267,7 +9284,7 @@ class WorkflowInvocationOutputDatasetAssociation(Base, Dictifiable, Serializable
 
     __tablename__ = "workflow_invocation_output_dataset_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True)
     dataset_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
@@ -9294,7 +9311,7 @@ class WorkflowInvocationOutputDatasetCollectionAssociation(Base, Dictifiable, Se
 
     __tablename__ = "workflow_invocation_output_dataset_collection_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id", name="fk_wiodca_wii"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id", name="fk_wiodca_wsi"), index=True)
     dataset_collection_id = Column(
@@ -9325,7 +9342,7 @@ class WorkflowInvocationOutputValue(Base, Dictifiable, Serializable):
 
     __tablename__ = "workflow_invocation_output_value"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_id = Column(Integer, ForeignKey("workflow_invocation.id"), index=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"))
     workflow_output_id = Column(Integer, ForeignKey("workflow_output.id"), index=True)
@@ -9364,7 +9381,7 @@ class WorkflowInvocationStepOutputDatasetAssociation(Base, Dictifiable, Represen
 
     __tablename__ = "workflow_invocation_step_output_dataset_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_step_id = Column(Integer, ForeignKey("workflow_invocation_step.id"), index=True)
     dataset_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     output_name = Column(String(255), nullable=True)
@@ -9379,7 +9396,7 @@ class WorkflowInvocationStepOutputDatasetCollectionAssociation(Base, Dictifiable
 
     __tablename__ = "workflow_invocation_step_output_dataset_collection_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_invocation_step_id = Column(
         Integer, ForeignKey("workflow_invocation_step.id", name="fk_wisodca_wisi"), index=True
     )
@@ -9398,7 +9415,7 @@ class WorkflowInvocationStepOutputDatasetCollectionAssociation(Base, Dictifiable
 class MetadataFile(Base, StorableObject, Serializable):
     __tablename__ = "metadata_file"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name = Column(TEXT)
     hda_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True, nullable=True)
     lda_id = Column(Integer, ForeignKey("library_dataset_dataset_association.id"), index=True, nullable=True)
@@ -9480,7 +9497,7 @@ class MetadataFile(Base, StorableObject, Serializable):
 class FormDefinition(Base, Dictifiable, RepresentById):
     __tablename__ = "form_definition"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     name = Column(TrimmedString(255), nullable=False)
@@ -9552,7 +9569,7 @@ class FormDefinition(Base, Dictifiable, RepresentById):
 class FormDefinitionCurrent(Base, RepresentById):
     __tablename__ = "form_definition_current"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     latest_form_id = Column(Integer, ForeignKey("form_definition.id"), index=True)
@@ -9576,7 +9593,7 @@ class FormDefinitionCurrent(Base, RepresentById):
 class FormValues(Base, RepresentById):
     __tablename__ = "form_values"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     form_definition_id = Column(Integer, ForeignKey("form_definition.id"), index=True)
@@ -9593,7 +9610,7 @@ class FormValues(Base, RepresentById):
 class UserAddress(Base, RepresentById):
     __tablename__ = "user_address"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -9630,7 +9647,7 @@ class UserAddress(Base, RepresentById):
 class PSAAssociation(Base, AssociationMixin, RepresentById):
     __tablename__ = "psa_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     server_url = Column(VARCHAR(255))
     handle = Column(VARCHAR(255))
     secret = Column(VARCHAR(255))
@@ -9681,7 +9698,7 @@ class PSACode(Base, CodeMixin, RepresentById):
     __tablename__ = "psa_code"
     __table_args__ = (UniqueConstraint("code", "email"),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     email = Column(VARCHAR(200))
     code = Column(VARCHAR(32))
 
@@ -9706,7 +9723,7 @@ class PSACode(Base, CodeMixin, RepresentById):
 class PSANonce(Base, NonceMixin, RepresentById):
     __tablename__ = "psa_nonce"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     server_url = Column(VARCHAR(255))
     timestamp = Column(Integer)
     salt = Column(VARCHAR(40))
@@ -9740,7 +9757,7 @@ class PSANonce(Base, NonceMixin, RepresentById):
 class PSAPartial(Base, PartialMixin, RepresentById):
     __tablename__ = "psa_partial"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     token = Column(VARCHAR(32))
     data = Column(TEXT)
     next_step = Column(Integer)
@@ -9778,7 +9795,7 @@ class UserAuthnzToken(Base, UserMixin, RepresentById):
     __tablename__ = "oidc_user_authnz_tokens"
     __table_args__ = (UniqueConstraint("provider", "uid"),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     uid = Column(VARCHAR(255))
     provider = Column(VARCHAR(32))
@@ -9891,7 +9908,7 @@ class CustosAuthnzToken(Base, RepresentById):
         UniqueConstraint("external_user_id", "provider"),
     )
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"))
     external_user_id = Column(String(255))
     provider = Column(String(255))
@@ -9906,7 +9923,7 @@ class CustosAuthnzToken(Base, RepresentById):
 class CloudAuthz(Base):
     __tablename__ = "cloudauthz"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     provider = Column(String(255))
     config = Column(MutableJSONType)
@@ -9943,7 +9960,7 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
     __tablename__ = "page"
     __table_args__ = (Index("ix_page_slug", "slug", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=False)
@@ -10022,7 +10039,7 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
 class PageRevision(Base, Dictifiable, RepresentById):
     __tablename__ = "page_revision"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     page_id = Column(Integer, ForeignKey("page.id"), index=True, nullable=False)
@@ -10046,7 +10063,7 @@ class PageRevision(Base, Dictifiable, RepresentById):
 class PageUserShareAssociation(Base, UserShareAssociation):
     __tablename__ = "page_user_share_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     page_id = Column(Integer, ForeignKey("page.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     user = relationship("User")
@@ -10060,7 +10077,7 @@ class Visualization(Base, HasTags, Dictifiable, RepresentById):
         Index("ix_visualization_slug", "slug", mysql_length=200),
     )
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=False)
@@ -10174,7 +10191,7 @@ class VisualizationRevision(Base, RepresentById):
     __tablename__ = "visualization_revision"
     __table_args__ = (Index("ix_visualization_revision_dbkey", "dbkey", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, default=now, onupdate=now)
     visualization_id = Column(Integer, ForeignKey("visualization.id"), index=True, nullable=False)
@@ -10202,7 +10219,7 @@ class VisualizationRevision(Base, RepresentById):
 class VisualizationUserShareAssociation(Base, UserShareAssociation):
     __tablename__ = "visualization_user_share_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     visualization_id = Column(Integer, ForeignKey("visualization.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     user = relationship("User")
@@ -10213,7 +10230,7 @@ class Tag(Base, RepresentById):
     __tablename__ = "tag"
     __table_args__ = (UniqueConstraint("name"),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     type = Column(Integer)
     parent_id = Column(Integer, ForeignKey("tag.id"))
     name = Column(TrimmedString(255))
@@ -10248,7 +10265,7 @@ class ItemTagAssociation(Dictifiable):
 class HistoryTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "history_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10262,7 +10279,7 @@ class HistoryTagAssociation(Base, ItemTagAssociation, RepresentById):
 class HistoryDatasetAssociationTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "history_dataset_association_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_association_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10276,7 +10293,7 @@ class HistoryDatasetAssociationTagAssociation(Base, ItemTagAssociation, Represen
 class LibraryDatasetDatasetAssociationTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "library_dataset_dataset_association_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_dataset_dataset_association_id = Column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), index=True
     )
@@ -10292,7 +10309,7 @@ class LibraryDatasetDatasetAssociationTagAssociation(Base, ItemTagAssociation, R
 class PageTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "page_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     page_id = Column(Integer, ForeignKey("page.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10306,7 +10323,7 @@ class PageTagAssociation(Base, ItemTagAssociation, RepresentById):
 class WorkflowStepTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "workflow_step_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10320,7 +10337,7 @@ class WorkflowStepTagAssociation(Base, ItemTagAssociation, RepresentById):
 class StoredWorkflowTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "stored_workflow_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     stored_workflow_id = Column(Integer, ForeignKey("stored_workflow.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10334,7 +10351,7 @@ class StoredWorkflowTagAssociation(Base, ItemTagAssociation, RepresentById):
 class VisualizationTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "visualization_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     visualization_id = Column(Integer, ForeignKey("visualization.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10348,7 +10365,7 @@ class VisualizationTagAssociation(Base, ItemTagAssociation, RepresentById):
 class HistoryDatasetCollectionTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "history_dataset_collection_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10362,7 +10379,7 @@ class HistoryDatasetCollectionTagAssociation(Base, ItemTagAssociation, Represent
 class LibraryDatasetCollectionTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "library_dataset_collection_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_dataset_collection_id = Column(Integer, ForeignKey("library_dataset_collection_association.id"), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10376,7 +10393,7 @@ class LibraryDatasetCollectionTagAssociation(Base, ItemTagAssociation, Represent
 class ToolTagAssociation(Base, ItemTagAssociation, RepresentById):
     __tablename__ = "tool_tag_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tool_id = Column(TrimmedString(255), index=True)
     tag_id = Column(Integer, ForeignKey("tag.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
@@ -10391,7 +10408,7 @@ class HistoryAnnotationAssociation(Base, RepresentById):
     __tablename__ = "history_annotation_association"
     __table_args__ = (Index("ix_history_anno_assoc_annotation", "annotation", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10403,7 +10420,7 @@ class HistoryDatasetAssociationAnnotationAssociation(Base, RepresentById):
     __tablename__ = "history_dataset_association_annotation_association"
     __table_args__ = (Index("ix_history_dataset_anno_assoc_annotation", "annotation", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_association_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10415,7 +10432,7 @@ class StoredWorkflowAnnotationAssociation(Base, RepresentById):
     __tablename__ = "stored_workflow_annotation_association"
     __table_args__ = (Index("ix_stored_workflow_ann_assoc_annotation", "annotation", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     stored_workflow_id = Column(Integer, ForeignKey("stored_workflow.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10427,7 +10444,7 @@ class WorkflowStepAnnotationAssociation(Base, RepresentById):
     __tablename__ = "workflow_step_annotation_association"
     __table_args__ = (Index("ix_workflow_step_ann_assoc_annotation", "annotation", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_step_id = Column(Integer, ForeignKey("workflow_step.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10439,7 +10456,7 @@ class PageAnnotationAssociation(Base, RepresentById):
     __tablename__ = "page_annotation_association"
     __table_args__ = (Index("ix_page_annotation_association_annotation", "annotation", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     page_id = Column(Integer, ForeignKey("page.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10451,7 +10468,7 @@ class VisualizationAnnotationAssociation(Base, RepresentById):
     __tablename__ = "visualization_annotation_association"
     __table_args__ = (Index("ix_visualization_annotation_association_annotation", "annotation", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     visualization_id = Column(Integer, ForeignKey("visualization.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10462,7 +10479,7 @@ class VisualizationAnnotationAssociation(Base, RepresentById):
 class HistoryDatasetCollectionAssociationAnnotationAssociation(Base, RepresentById):
     __tablename__ = "history_dataset_collection_annotation_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10473,7 +10490,7 @@ class HistoryDatasetCollectionAssociationAnnotationAssociation(Base, RepresentBy
 class LibraryDatasetCollectionAnnotationAssociation(Base, RepresentById):
     __tablename__ = "library_dataset_collection_annotation_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_dataset_collection_id = Column(Integer, ForeignKey("library_dataset_collection_association.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     annotation = Column(TEXT)
@@ -10510,7 +10527,7 @@ class ItemRatingAssociation(Base):
 class HistoryRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "history_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10525,7 +10542,7 @@ class HistoryRatingAssociation(ItemRatingAssociation, RepresentById):
 class HistoryDatasetAssociationRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "history_dataset_association_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_association_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10540,7 +10557,7 @@ class HistoryDatasetAssociationRatingAssociation(ItemRatingAssociation, Represen
 class StoredWorkflowRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "stored_workflow_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     stored_workflow_id = Column(Integer, ForeignKey("stored_workflow.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10555,7 +10572,7 @@ class StoredWorkflowRatingAssociation(ItemRatingAssociation, RepresentById):
 class PageRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "page_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     page_id = Column(Integer, ForeignKey("page.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10570,7 +10587,7 @@ class PageRatingAssociation(ItemRatingAssociation, RepresentById):
 class VisualizationRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "visualization_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     visualization_id = Column(Integer, ForeignKey("visualization.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10585,7 +10602,7 @@ class VisualizationRatingAssociation(ItemRatingAssociation, RepresentById):
 class HistoryDatasetCollectionRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "history_dataset_collection_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_dataset_collection_id = Column(Integer, ForeignKey("history_dataset_collection_association.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10600,7 +10617,7 @@ class HistoryDatasetCollectionRatingAssociation(ItemRatingAssociation, Represent
 class LibraryDatasetCollectionRatingAssociation(ItemRatingAssociation, RepresentById):
     __tablename__ = "library_dataset_collection_rating_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     library_dataset_collection_id = Column(Integer, ForeignKey("library_dataset_collection_association.id"), index=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     rating = Column(Integer, index=True)
@@ -10616,7 +10633,7 @@ class LibraryDatasetCollectionRatingAssociation(ItemRatingAssociation, Represent
 class DataManagerHistoryAssociation(Base, RepresentById):
     __tablename__ = "data_manager_history_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, index=True, default=now, onupdate=now)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
@@ -10629,7 +10646,7 @@ class DataManagerJobAssociation(Base, RepresentById):
     __tablename__ = "data_manager_job_association"
     __table_args__ = (Index("ix_data_manager_job_association_data_manager_id", "data_manager_id", mysql_length=200),)
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     update_time = Column(DateTime, index=True, default=now, onupdate=now)
     job_id = Column(Integer, ForeignKey("job.id"), index=True)
@@ -10640,7 +10657,7 @@ class DataManagerJobAssociation(Base, RepresentById):
 class UserPreference(Base, RepresentById):
     __tablename__ = "user_preference"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     name = Column(Unicode(255), index=True)
     value = Column(Text)
@@ -10655,7 +10672,7 @@ class UserPreference(Base, RepresentById):
 class UserAction(Base, RepresentById):
     __tablename__ = "user_action"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     session_id = Column(Integer, ForeignKey("galaxy_session.id"), index=True)
@@ -10668,7 +10685,7 @@ class UserAction(Base, RepresentById):
 class APIKeys(Base, RepresentById):
     __tablename__ = "api_keys"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     user_id = Column(Integer, ForeignKey("galaxy_user.id"), index=True)
     key = Column(TrimmedString(32), index=True, unique=True)
@@ -10706,7 +10723,7 @@ def _prepare_metadata_for_serialization(id_encoder, serialization_options, metad
 class CleanupEvent(Base):
     __tablename__ = "cleanup_event"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     message = Column(TrimmedString(1024))
 
@@ -10714,7 +10731,7 @@ class CleanupEvent(Base):
 class CleanupEventDatasetAssociation(Base):
     __tablename__ = "cleanup_event_dataset_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     dataset_id = Column(Integer, ForeignKey("dataset.id"), index=True)
@@ -10723,7 +10740,7 @@ class CleanupEventDatasetAssociation(Base):
 class CleanupEventMetadataFileAssociation(Base):
     __tablename__ = "cleanup_event_metadata_file_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     metadata_file_id = Column(Integer, ForeignKey("metadata_file.id"), index=True)
@@ -10732,7 +10749,7 @@ class CleanupEventMetadataFileAssociation(Base):
 class CleanupEventHistoryAssociation(Base):
     __tablename__ = "cleanup_event_history_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     history_id = Column(Integer, ForeignKey("history.id"), index=True)
@@ -10741,7 +10758,7 @@ class CleanupEventHistoryAssociation(Base):
 class CleanupEventHistoryDatasetAssociationAssociation(Base):
     __tablename__ = "cleanup_event_hda_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     hda_id = Column(Integer, ForeignKey("history_dataset_association.id"), index=True)
@@ -10750,7 +10767,7 @@ class CleanupEventHistoryDatasetAssociationAssociation(Base):
 class CleanupEventLibraryAssociation(Base):
     __tablename__ = "cleanup_event_library_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     library_id = Column(Integer, ForeignKey("library.id"), index=True)
@@ -10759,7 +10776,7 @@ class CleanupEventLibraryAssociation(Base):
 class CleanupEventLibraryFolderAssociation(Base):
     __tablename__ = "cleanup_event_library_folder_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     library_folder_id = Column(Integer, ForeignKey("library_folder.id"), index=True)
@@ -10768,7 +10785,7 @@ class CleanupEventLibraryFolderAssociation(Base):
 class CleanupEventLibraryDatasetAssociation(Base):
     __tablename__ = "cleanup_event_library_dataset_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     library_dataset_id = Column(Integer, ForeignKey("library_dataset.id"), index=True)
@@ -10777,7 +10794,7 @@ class CleanupEventLibraryDatasetAssociation(Base):
 class CleanupEventLibraryDatasetDatasetAssociationAssociation(Base):
     __tablename__ = "cleanup_event_ldda_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     ldda_id = Column(Integer, ForeignKey("library_dataset_dataset_association.id"), index=True)
@@ -10786,7 +10803,7 @@ class CleanupEventLibraryDatasetDatasetAssociationAssociation(Base):
 class CleanupEventImplicitlyConvertedDatasetAssociationAssociation(Base):
     __tablename__ = "cleanup_event_icda_association"
 
-    id = Column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     create_time = Column(DateTime, default=now)
     cleanup_event_id = Column(Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True)
     icda_id = Column(Integer, ForeignKey("implicitly_converted_dataset_association.id"), index=True)
