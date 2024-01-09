@@ -143,7 +143,6 @@ from galaxy.model.item_attrs import (
 )
 from galaxy.model.orm.now import now
 from galaxy.model.orm.util import add_object_to_object_session
-from galaxy.objectstore import ObjectStore
 from galaxy.schema.invocation import (
     InvocationCancellationUserRequest,
     InvocationState,
