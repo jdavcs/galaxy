@@ -1218,8 +1218,8 @@ class DynamicTool(Base, Dictifiable, RepresentById):
     tool_format = Column(Unicode(255))
     tool_path = Column(Unicode(255))
     tool_directory = Column(Unicode(255))
-    hidden = Column(Boolean, default=True)
-    active = Column(Boolean, default=True)
+    hidden: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     value = Column(MutableJSONType)
 
     dict_collection_visible_keys = ("id", "tool_id", "tool_format", "tool_version", "uuid", "active", "hidden")
@@ -2548,7 +2548,7 @@ class JobExternalOutputMetadata(Base, RepresentById):
     library_dataset_dataset_association_id = Column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), index=True, nullable=True
     )
-    is_valid = Column(Boolean, default=True)
+    is_valid: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     filename_in = Column(String(255))
     filename_out = Column(String(255))
     filename_results_code = Column(String(255))
@@ -2601,7 +2601,7 @@ class JobExportHistoryArchive(Base, RepresentById):
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True)
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
     dataset_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("dataset.id"), index=True)
-    compressed = Column(Boolean, index=True, default=False)
+    compressed: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     history_attrs_filename = Column(TEXT)
     job = relationship("Job")
     dataset = relationship("Dataset")
@@ -2736,12 +2736,12 @@ class InteractiveToolEntryPoint(Base, Dictifiable, RepresentById):
     port: Mapped[Optional[int]] = mapped_column(Integer)
     protocol = Column(TEXT)
     entry_url = Column(TEXT)
-    requires_domain = Column(Boolean, default=True)
-    requires_path_in_url = Column(Boolean, default=False)
+    requires_domain: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    requires_path_in_url: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     requires_path_in_header_named = Column(TEXT)
     info = Column(MutableJSONType, nullable=True)
-    configured = Column(Boolean, default=False)
-    deleted = Column(Boolean, default=False)
+    configured: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     created_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     modified_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
     label = Column(TEXT)
@@ -2823,7 +2823,7 @@ class Group(Base, Dictifiable, RepresentById):
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
     name = Column(String(255), index=True, unique=True)
-    deleted = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     quotas = relationship("GroupQuotaAssociation", back_populates="group")
     roles = relationship("GroupRoleAssociation", back_populates="group", cascade_backrefs=False)
     users = relationship("UserGroupAssociation", back_populates="group")
@@ -2892,7 +2892,7 @@ class UserNotificationAssociation(Base, RepresentById):
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     notification_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("notification.id"), index=True)
     seen_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    deleted = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
 
     user = relationship("User", back_populates="all_notifications")
@@ -3581,7 +3581,7 @@ class Role(Base, Dictifiable, RepresentById):
     name = Column(String(255), index=True, unique=True)
     description = Column(TEXT)
     type = Column(String(40), index=True)
-    deleted = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     dataset_actions = relationship("DatasetPermissions", back_populates="role")
     groups = relationship("GroupRoleAssociation", back_populates="role")
     users = relationship("UserRoleAssociation", back_populates="role")
@@ -3667,7 +3667,7 @@ class Quota(Base, Dictifiable, RepresentById):
     description = Column(TEXT)
     bytes = Column(BigInteger)
     operation = Column(String(8))
-    deleted = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     quota_source_label = Column(String(32), default=None)
     default = relationship("DefaultQuotaAssociation", back_populates="quota", cascade_backrefs=False)
     groups = relationship("GroupQuotaAssociation", back_populates="quota")
@@ -3907,9 +3907,9 @@ class Dataset(Base, StorableObject, Serializable):
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
     state = Column(TrimmedString(64), index=True)
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
-    purgable = Column(Boolean, default=True)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purgable: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     object_store_id = Column(TrimmedString(255), index=True)
     external_filename = Column(TEXT)
     _extra_files_path = Column(TEXT)
@@ -5451,8 +5451,8 @@ class Library(Base, Dictifiable, HasName, Serializable):
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
     name = Column(String(255), index=True)
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     description = Column(TEXT)
     synopsis = Column(TEXT)
     root_folder = relationship("LibraryFolder", back_populates="library_root")
@@ -5534,8 +5534,8 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
     description = Column(TEXT)
     order_id: Mapped[Optional[int]] = mapped_column(Integer)  # not currently being used, but for possible future use
     item_count: Mapped[Optional[int]] = mapped_column(Integer)
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     genome_build = Column(TrimmedString(40))
 
     folders = relationship(
@@ -5686,8 +5686,8 @@ class LibraryDataset(Base, Serializable):
     _name = Column("name", TrimmedString(255), index=True)
     # when not None/null this will supercede display in library (but not when imported into user's history?)
     _info = Column("info", TrimmedString(255))
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     folder = relationship("LibraryFolder")
     library_dataset_dataset_association = relationship(
         "LibraryDatasetDatasetAssociation", foreign_keys=library_dataset_dataset_association_id, post_update=True
@@ -6005,8 +6005,8 @@ class LibraryInfoAssociation(Base, RepresentById):
     library_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library.id"), index=True)
     form_definition_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
     form_values_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_values.id"), index=True)
-    inheritable = Column(Boolean, index=True, default=False)
-    deleted = Column(Boolean, index=True, default=False)
+    inheritable: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
     library = relationship(
         "Library",
@@ -6037,8 +6037,8 @@ class LibraryFolderInfoAssociation(Base, RepresentById):
     )
     form_definition_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
     form_values_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_values.id"), index=True)
-    inheritable = Column(Boolean, index=True, default=False)
-    deleted = Column(Boolean, index=True, default=False)
+    inheritable: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
     folder = relationship(
         "LibraryFolder",
@@ -6070,7 +6070,7 @@ class LibraryDatasetDatasetInfoAssociation(Base, RepresentById):
     )
     form_definition_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
     form_values_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_values.id"), index=True)
-    deleted = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
     library_dataset_dataset_association = relationship(
         "LibraryDatasetDatasetAssociation",
@@ -6119,8 +6119,8 @@ class ImplicitlyConvertedDatasetAssociation(Base, RepresentById):
     ldda_parent_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), index=True
     )
-    deleted = Column(Boolean, index=True, default=False)
-    metadata_safe = Column(Boolean, index=True, default=True)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    metadata_safe: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=True)
     type = Column(TrimmedString(255))
 
     parent_hda = relationship(
@@ -6661,8 +6661,8 @@ class HistoryDatasetCollectionAssociation(
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
     name = Column(TrimmedString(255))
     hid: Mapped[Optional[int]] = mapped_column(Integer)
-    visible = Column(Boolean)
-    deleted = Column(Boolean, default=False)
+    visible: Mapped[Optional[bool]] = mapped_column(Boolean)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     copied_from_history_dataset_collection_association_id = Column(
         Integer, ForeignKey("history_dataset_collection_association.id"), nullable=True
     )
@@ -7040,7 +7040,7 @@ class LibraryDatasetCollectionAssociation(Base, DatasetCollectionInstance, Repre
     collection_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("dataset_collection.id"), index=True)
     folder_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library_folder.id"), index=True)
     name = Column(TrimmedString(255))
-    deleted = Column(Boolean, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
 
     collection = relationship("DatasetCollection")
     folder = relationship("LibraryFolder")
@@ -7305,7 +7305,7 @@ class GalaxySession(Base, RepresentById):
     current_history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), nullable=True)
     # unique 128 bit random number coerced to a string
     session_key = Column(TrimmedString(255), index=True, unique=True)
-    is_valid = Column(Boolean, default=False)
+    is_valid: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     # saves a reference to the previous session so we have a way to chain them together
     prev_session_id: Mapped[Optional[int]] = mapped_column(Integer)
     disk_usage = Column(Numeric(15, 0), index=True)
@@ -7381,12 +7381,12 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
         Integer, ForeignKey("workflow.id", use_alter=True, name="stored_workflow_latest_workflow_id_fk"), index=True
     )
     name = Column(TEXT)
-    deleted = Column(Boolean, default=False)
-    hidden = Column(Boolean, default=False)
-    importable = Column(Boolean, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    hidden: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
+    importable: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     slug = Column(TEXT)
     from_path = Column(TEXT)
-    published = Column(Boolean, index=True, default=False)
+    published: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
     user = relationship(
         "User", primaryjoin=(lambda: User.id == StoredWorkflow.user_id), back_populates="stored_workflows"
@@ -9447,8 +9447,8 @@ class MetadataFile(Base, StorableObject, Serializable):
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
     object_store_id = Column(TrimmedString(255), index=True)
     uuid = Column(UUIDType(), index=True)
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
     history_dataset = relationship("HistoryDatasetAssociation")
     library_dataset = relationship("LibraryDatasetDatasetAssociation")
@@ -9597,7 +9597,7 @@ class FormDefinitionCurrent(Base, RepresentById):
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
     latest_form_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
-    deleted = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     forms = relationship(
         "FormDefinition",
         back_populates="form_definition_current",
@@ -9647,8 +9647,8 @@ class UserAddress(Base, RepresentById):
     postal_code = Column(TrimmedString(255), nullable=False)
     country = Column(TrimmedString(255), nullable=False)
     phone = Column(TrimmedString(255))
-    deleted = Column(Boolean, index=True, default=False)
-    purged = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     # `desc` needs to be fully qualified because it is shadowed by `desc` Column defined above
     # TODO: db migration to rename column, then use `desc`
     user = relationship("User", back_populates="addresses", order_by=sqlalchemy.desc("update_time"))
@@ -9991,10 +9991,10 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
         Integer, ForeignKey("page_revision.id", use_alter=True, name="page_latest_revision_id_fk"), index=True
     )
     title = Column(TEXT)
-    deleted = Column(Boolean, index=True, default=False)
-    importable = Column(Boolean, index=True, default=False)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
+    importable: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     slug = Column(TEXT)
-    published = Column(Boolean, index=True, default=False)
+    published: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     user = relationship("User")
     revisions = relationship(
         "PageRevision",
@@ -10112,10 +10112,10 @@ class Visualization(Base, HasTags, Dictifiable, RepresentById):
     title = Column(TEXT)
     type = Column(TEXT)
     dbkey = Column(TEXT)
-    deleted = Column(Boolean, default=False, index=True)
-    importable = Column(Boolean, default=False, index=True)
+    deleted: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, index=True)
+    importable: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, index=True)
     slug = Column(TEXT)
-    published = Column(Boolean, default=False, index=True)
+    published: Mapped[Optional[bool]] = mapped_column(Boolean, default=False, index=True)
 
     user = relationship("User")
     revisions = relationship(
@@ -10731,7 +10731,7 @@ class APIKeys(Base, RepresentById):
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     key = Column(TrimmedString(32), index=True, unique=True)
     user = relationship("User", back_populates="api_keys")
-    deleted = Column(Boolean, index=True, server_default=false(), nullable=False)
+    deleted: Mapped[bool] = mapped_column(Boolean, index=True, server_default=false(), nullable=False)
 
 
 def copy_list(lst, *args, **kwds):
