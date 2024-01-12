@@ -1237,11 +1237,11 @@ class DynamicTool(Base, Dictifiable, RepresentById):
     uuid = Column(UUIDType())
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
-    tool_id = Column(Unicode(255))
-    tool_version = Column(Unicode(255))
-    tool_format = Column(Unicode(255))
-    tool_path = Column(Unicode(255))
-    tool_directory = Column(Unicode(255))
+    tool_id: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    tool_version: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    tool_format: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    tool_path: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    tool_directory: Mapped[Optional[str]] = mapped_column(Unicode(255))
     hidden: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     active: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
     value = Column(MutableJSONType)
@@ -1272,9 +1272,9 @@ class JobMetricText(BaseJobMetric, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True)
-    plugin = Column(Unicode(255))
-    metric_name = Column(Unicode(255))
-    metric_value = Column(Unicode(JOB_METRIC_MAX_LENGTH))
+    plugin: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    metric_name: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    metric_value: Mapped[Optional[str]] = mapped_column(Unicode(JOB_METRIC_MAX_LENGTH))
 
 
 class JobMetricNumeric(BaseJobMetric, RepresentById):
@@ -1282,8 +1282,8 @@ class JobMetricNumeric(BaseJobMetric, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True)
-    plugin = Column(Unicode(255))
-    metric_name = Column(Unicode(255))
+    plugin: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    metric_name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     metric_value = Column(Numeric(JOB_METRIC_PRECISION, JOB_METRIC_SCALE))
 
 
@@ -1292,9 +1292,9 @@ class TaskMetricText(BaseJobMetric, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("task.id"), index=True)
-    plugin = Column(Unicode(255))
-    metric_name = Column(Unicode(255))
-    metric_value = Column(Unicode(JOB_METRIC_MAX_LENGTH))
+    plugin: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    metric_name: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    metric_value: Mapped[Optional[str]] = mapped_column(Unicode(JOB_METRIC_MAX_LENGTH))
 
 
 class TaskMetricNumeric(BaseJobMetric, RepresentById):
@@ -1302,8 +1302,8 @@ class TaskMetricNumeric(BaseJobMetric, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("task.id"), index=True)
-    plugin = Column(Unicode(255))
-    metric_name = Column(Unicode(255))
+    plugin: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    metric_name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     metric_value = Column(Numeric(JOB_METRIC_PRECISION, JOB_METRIC_SCALE))
 
 
@@ -2339,7 +2339,7 @@ class JobToInputDatasetCollectionElementAssociation(Base, RepresentById):
     dataset_collection_element_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("dataset_collection_element.id"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     dataset_collection_element = relationship("DatasetCollectionElement", lazy="joined")
     job = relationship("Job", back_populates="input_dataset_collection_elements")
 
@@ -2358,7 +2358,7 @@ class JobToOutputDatasetCollectionAssociation(Base, RepresentById):
     dataset_collection_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("history_dataset_collection_association.id"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     dataset_collection_instance = relationship("HistoryDatasetCollectionAssociation", lazy="joined")
     job = relationship("Job", back_populates="output_dataset_collection_instances")
 
@@ -2382,7 +2382,7 @@ class JobToImplicitOutputDatasetCollectionAssociation(Base, RepresentById):
     dataset_collection_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("dataset_collection.id"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     dataset_collection = relationship("DatasetCollection")
     job = relationship("Job", back_populates="output_dataset_collections")
 
@@ -2399,7 +2399,7 @@ class JobToInputLibraryDatasetAssociation(Base, RepresentById):
     ldda_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     job = relationship("Job", back_populates="input_library_datasets")
     dataset = relationship("LibraryDatasetDatasetAssociation", lazy="joined", back_populates="dependent_jobs")
 
@@ -2417,7 +2417,7 @@ class JobToOutputLibraryDatasetAssociation(Base, RepresentById):
     ldda_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     job = relationship("Job", back_populates="output_library_datasets")
     dataset = relationship(
         "LibraryDatasetDatasetAssociation", lazy="joined", back_populates="creating_job_associations"
@@ -2454,7 +2454,7 @@ class ImplicitlyCreatedDatasetCollectionInput(Base, RepresentById):
     input_dataset_collection_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("history_dataset_collection_association.id"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
 
     input_dataset_collection = relationship(
         "HistoryDatasetCollectionAssociation",
@@ -5462,7 +5462,7 @@ class HistoryDatasetAssociationSubset(Base, RepresentById):
     history_dataset_association_subset_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("history_dataset_association.id"), index=True
     )
-    location = Column(Unicode(255), index=True)
+    location: Mapped[Optional[str]] = mapped_column(Unicode(255), index=True)
 
     hda = relationship(
         "HistoryDatasetAssociation",
@@ -6264,7 +6264,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     __tablename__ = "dataset_collection"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    collection_type = Column(Unicode(255), nullable=False)
+    collection_type: Mapped[str] = mapped_column(Unicode(255), nullable=False)
     populated_state = Column(TrimmedString(64), default="ok", nullable=False)
     populated_state_message = Column(TEXT)
     element_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -6731,7 +6731,7 @@ class HistoryDatasetCollectionAssociation(
     copied_from_history_dataset_collection_association_id = Column(
         Integer, ForeignKey("history_dataset_collection_association.id"), nullable=True
     )
-    implicit_output_name = Column(Unicode(255), nullable=True)
+    implicit_output_name: Mapped[Optional[str]] = mapped_column(Unicode(255), nullable=True)
     job_id = Column(ForeignKey("job.id"), index=True, nullable=True)
     implicit_collection_jobs_id = Column(ForeignKey("implicit_collection_jobs.id"), index=True, nullable=True)
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
@@ -7162,7 +7162,7 @@ class DatasetCollectionElement(Base, Dictifiable, Serializable):
     )
     # Element index and identifier to define this parent-child relationship.
     element_index: Mapped[Optional[int]] = mapped_column(Integer)
-    element_identifier = Column(Unicode(255))
+    element_identifier: Mapped[Optional[str]] = mapped_column(Unicode(255))
 
     hda = relationship(
         "HistoryDatasetAssociation",
@@ -7816,7 +7816,7 @@ class WorkflowStep(Base, RepresentById):
     order_index: Mapped[Optional[int]] = mapped_column(Integer)
     when_expression = Column(JSONType)
     uuid = Column(UUIDType)
-    label = Column(Unicode(255))
+    label: Mapped[Optional[str]] = mapped_column(Unicode(255))
     temp_input_connections = None
     parent_comment_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow_comment.id"), nullable=True)
 
@@ -8223,7 +8223,7 @@ class WorkflowOutput(Base, Serializable):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workflow_step_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflow_step.id"), index=True, nullable=False)
     output_name = Column(String(255), nullable=True)
-    label = Column(Unicode(255))
+    label: Mapped[Optional[str]] = mapped_column(Unicode(255))
     uuid = Column(UUIDType)
     workflow_step = relationship(
         "WorkflowStep",
@@ -9237,9 +9237,9 @@ class WorkflowRequestInputParameter(Base, Dictifiable, Serializable):
     workflow_invocation_id = Column(
         Integer, ForeignKey("workflow_invocation.id", onupdate="CASCADE", ondelete="CASCADE"), index=True
     )
-    name = Column(Unicode(255))
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255))
     value = Column(TEXT)
-    type = Column(Unicode(255))
+    type: Mapped[Optional[str]] = mapped_column(Unicode(255))
     workflow_invocation = relationship("WorkflowInvocation", back_populates="input_parameters")
 
     dict_collection_visible_keys = ["id", "name", "value", "type"]
@@ -10780,7 +10780,7 @@ class UserPreference(Base, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    name = Column(Unicode(255), index=True)
+    name: Mapped[Optional[str]] = mapped_column(Unicode(255), index=True)
     value = Column(Text)
 
     def __init__(self, name=None, value=None):
@@ -10797,9 +10797,9 @@ class UserAction(Base, RepresentById):
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     session_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_session.id"), index=True)
-    action = Column(Unicode(255))
-    context = Column(Unicode(512))
-    params = Column(Unicode(1024))
+    action: Mapped[Optional[str]] = mapped_column(Unicode(255))
+    context: Mapped[Optional[str]] = mapped_column(Unicode(512))
+    params: Mapped[Optional[str]] = mapped_column(Unicode(1024))
     user = relationship("User")
 
 
