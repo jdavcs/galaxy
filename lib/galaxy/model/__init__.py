@@ -704,29 +704,33 @@ class User(Base, Dictifiable, RepresentById):
     active: Mapped[bool] = mapped_column(Boolean, index=True, default=True, nullable=False)
     activation_token: Mapped[Optional[str]] = mapped_column(TrimmedString(64), nullable=True, index=True)
 
-    addresses = relationship(
+    addresses: Mapped[List["UserAddress"]] = relationship(
         "UserAddress", back_populates="user", order_by=lambda: desc(UserAddress.update_time), cascade_backrefs=False
     )
     cloudauthz = relationship("CloudAuthz", back_populates="user")
     custos_auth = relationship("CustosAuthnzToken", back_populates="user")
-    default_permissions = relationship("DefaultUserPermissions", back_populates="user")
-    groups = relationship("UserGroupAssociation", back_populates="user")
-    histories = relationship(
+    default_permissions: Mapped[List["DefaultUserPermissions"]] = relationship(
+        "DefaultUserPermissions", back_populates="user"
+    )
+    groups: Mapped[List["UserGroupAssociation"]] = relationship("UserGroupAssociation", back_populates="user")
+    histories: Mapped[List["History"]] = relationship(
         "History", back_populates="user", order_by=lambda: desc(History.update_time), cascade_backrefs=False  # type: ignore[has-type]
     )
-    active_histories = relationship(
+    active_histories: Mapped[List["History"]] = relationship(
         "History",
         primaryjoin=(lambda: (History.user_id == User.id) & (not_(History.deleted)) & (not_(History.archived))),  # type: ignore[has-type]
         viewonly=True,
         order_by=lambda: desc(History.update_time),  # type: ignore[has-type]
     )
-    galaxy_sessions = relationship(
+    galaxy_sessions: Mapped[List["GalaxySession"]] = relationship(
         "GalaxySession", back_populates="user", order_by=lambda: desc(GalaxySession.update_time), cascade_backrefs=False  # type: ignore[has-type]
     )
-    quotas = relationship("UserQuotaAssociation", back_populates="user")
-    quota_source_usages = relationship("UserQuotaSourceUsage", back_populates="user")
+    quotas: Mapped[List["UserQuotaAssociation"]] = relationship("UserQuotaAssociation", back_populates="user")
+    quota_source_usages: Mapped[List["UserQuotaSourceUsage"]] = relationship(
+        "UserQuotaSourceUsage", back_populates="user"
+    )
     social_auth = relationship("UserAuthnzToken", back_populates="user")
-    stored_workflow_menu_entries = relationship(
+    stored_workflow_menu_entries: Mapped[List["StoredWorkflowMenuEntry"]] = relationship(
         "StoredWorkflowMenuEntry",
         primaryjoin=(
             lambda: (StoredWorkflowMenuEntry.user_id == User.id)
@@ -737,12 +741,14 @@ class User(Base, Dictifiable, RepresentById):
         cascade="all, delete-orphan",
         collection_class=ordering_list("order_index"),
     )
-    _preferences = relationship("UserPreference", collection_class=attribute_mapped_collection("name"))
-    values = relationship(
+    _preferences: Mapped[List["UserPreference"]] = relationship(
+        "UserPreference", collection_class=attribute_mapped_collection("name")
+    )
+    values: Mapped[List["FormValues"]] = relationship(
         "FormValues", primaryjoin=(lambda: User.form_values_id == FormValues.id)  # type: ignore[has-type]
     )
     # Add type hint (will this work w/SA?)
-    api_keys = relationship(
+    api_keys: Mapped[List["APIKeys"]] = relationship(
         "APIKeys",
         back_populates="user",
         order_by=lambda: desc(APIKeys.create_time),
@@ -753,16 +759,20 @@ class User(Base, Dictifiable, RepresentById):
             )
         ),
     )
-    data_manager_histories = relationship("DataManagerHistoryAssociation", back_populates="user")
-    roles = relationship("UserRoleAssociation", back_populates="user")
-    stored_workflows = relationship(
+    data_manager_histories: Mapped[List["DataManagerHistoryAssociation"]] = relationship(
+        "DataManagerHistoryAssociation", back_populates="user"
+    )
+    roles: Mapped[List["UserRoleAssociation"]] = relationship("UserRoleAssociation", back_populates="user")
+    stored_workflows: Mapped[List["StoredWorkflow"]] = relationship(
         "StoredWorkflow",
         back_populates="user",
         primaryjoin=(lambda: User.id == StoredWorkflow.user_id),  # type: ignore[has-type]
         cascade_backrefs=False,
     )
-    all_notifications = relationship("UserNotificationAssociation", back_populates="user", cascade_backrefs=False)
-    non_private_roles = relationship(
+    all_notifications: Mapped[List["UserNotificationAssociation"]] = relationship(
+        "UserNotificationAssociation", back_populates="user", cascade_backrefs=False
+    )
+    non_private_roles: Mapped[List["UserRoleAssociation"]] = relationship(
         "UserRoleAssociation",
         viewonly=True,
         primaryjoin=(
