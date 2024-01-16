@@ -1212,7 +1212,7 @@ class DynamicTool(Base, Dictifiable, RepresentById):
     __tablename__ = "dynamic_tool"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    uuid = Column(UUIDType())
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType())
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
     tool_id: Mapped[Optional[str]] = mapped_column(Unicode(255))
@@ -2702,7 +2702,7 @@ class StoreExportAssociation(Base, RepresentById):
     __table_args__ = (Index("ix_store_export_object", "object_id", "object_type"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    task_uuid = Column(UUIDType(), index=True, unique=True)
+    task_uuid: Mapped[Optional[str]] = mapped_column(UUIDType(), index=True, unique=True)
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     object_type: Mapped[Optional[str]] = mapped_column(TrimmedString(32))
     object_id: Mapped[Optional[int]] = mapped_column(Integer)
@@ -3920,7 +3920,7 @@ class Dataset(Base, StorableObject, Serializable):
     created_from_basename: Mapped[Optional[str]] = mapped_column(TEXT)
     file_size = Column(Numeric(15, 0))
     total_size = Column(Numeric(15, 0))
-    uuid = Column(UUIDType())
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType())
 
     actions = relationship("DatasetPermissions", back_populates="dataset")
     job = relationship(Job, primaryjoin=(lambda: Dataset.job_id == Job.id))
@@ -7579,7 +7579,7 @@ class Workflow(Base, Dictifiable, RepresentById):
     creator_metadata = Column(JSONType)
     license: Mapped[Optional[str]] = mapped_column(TEXT)
     source_metadata = Column(JSONType)
-    uuid = Column(UUIDType, nullable=True)
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType, nullable=True)
 
     steps = relationship(
         "WorkflowStep",
@@ -7766,7 +7766,7 @@ class WorkflowStep(Base, RepresentById):
     config = Column(JSONType)
     order_index: Mapped[Optional[int]] = mapped_column(Integer)
     when_expression = Column(JSONType)
-    uuid = Column(UUIDType)
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType)
     label: Mapped[Optional[str]] = mapped_column(Unicode(255))
     temp_input_connections = None
     parent_comment_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow_comment.id"), nullable=True)
@@ -8175,7 +8175,7 @@ class WorkflowOutput(Base, Serializable):
     workflow_step_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflow_step.id"), index=True, nullable=False)
     output_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     label: Mapped[Optional[str]] = mapped_column(Unicode(255))
-    uuid = Column(UUIDType)
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType)
     workflow_step = relationship(
         "WorkflowStep",
         back_populates="workflow_outputs",
@@ -8320,7 +8320,7 @@ class WorkflowInvocation(Base, UsesCreateAndUpdateTime, Dictifiable, Serializabl
     state: Mapped[Optional[str]] = mapped_column(TrimmedString(64), index=True)
     scheduler: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
     handler: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
-    uuid = Column(UUIDType())
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType())
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
 
     history = relationship("History", back_populates="workflow_invocations")
@@ -9476,7 +9476,7 @@ class MetadataFile(Base, StorableObject, Serializable):
     create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
     update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
     object_store_id: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
-    uuid = Column(UUIDType(), index=True)
+    uuid: Mapped[Optional[str]] = mapped_column(UUIDType(), index=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
