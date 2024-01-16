@@ -22,6 +22,7 @@ from datetime import (
     datetime,
     timedelta,
 )
+from decimal import Decimal
 from enum import Enum
 from secrets import token_hex
 from string import Template
@@ -698,7 +699,7 @@ class User(Base, Dictifiable, RepresentById):
     preferred_object_store_id: Mapped[str] = mapped_column(String(255), nullable=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
-    disk_usage = Column(Numeric(15, 0), index=True)
+    disk_usage: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 0), index=True)
     # Column("person_metadata", JSONType),  # TODO: add persistent, configurable metadata rep for workflow creator
     active: Mapped[bool] = mapped_column(Boolean, index=True, default=True, nullable=False)
     activation_token: Mapped[Optional[str]] = mapped_column(TrimmedString(64), nullable=True, index=True)
@@ -1262,7 +1263,7 @@ class JobMetricNumeric(BaseJobMetric, RepresentById):
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True)
     plugin: Mapped[Optional[str]] = mapped_column(Unicode(255))
     metric_name: Mapped[Optional[str]] = mapped_column(Unicode(255))
-    metric_value = Column(Numeric(JOB_METRIC_PRECISION, JOB_METRIC_SCALE))
+    metric_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(JOB_METRIC_PRECISION, JOB_METRIC_SCALE))
 
 
 class TaskMetricText(BaseJobMetric, RepresentById):
@@ -1282,7 +1283,7 @@ class TaskMetricNumeric(BaseJobMetric, RepresentById):
     task_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("task.id"), index=True)
     plugin: Mapped[Optional[str]] = mapped_column(Unicode(255))
     metric_name: Mapped[Optional[str]] = mapped_column(Unicode(255))
-    metric_value = Column(Numeric(JOB_METRIC_PRECISION, JOB_METRIC_SCALE))
+    metric_value: Mapped[Optional[Decimal]] = mapped_column(Numeric(JOB_METRIC_PRECISION, JOB_METRIC_SCALE))
 
 
 class IoDicts(NamedTuple):
@@ -3618,7 +3619,7 @@ class UserQuotaSourceUsage(Base, Dictifiable, RepresentById):
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     quota_source_label: Mapped[Optional[str]] = mapped_column(String(32), index=True)
     # user had an index on disk_usage - does that make any sense? -John
-    disk_usage = Column(Numeric(15, 0), default=0, nullable=False)
+    disk_usage: Mapped[Decimal] = mapped_column(Numeric(15, 0), default=0, nullable=False)
     user = relationship("User", back_populates="quota_source_usages")
 
 
@@ -3918,8 +3919,8 @@ class Dataset(Base, StorableObject, Serializable):
     external_filename: Mapped[Optional[str]] = mapped_column(TEXT)
     _extra_files_path: Mapped[Optional[str]] = mapped_column(TEXT)
     created_from_basename: Mapped[Optional[str]] = mapped_column(TEXT)
-    file_size = Column(Numeric(15, 0))
-    total_size = Column(Numeric(15, 0))
+    file_size: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 0))
+    total_size: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 0))
     uuid: Mapped[Optional[str]] = mapped_column(UUIDType())
 
     actions = relationship("DatasetPermissions", back_populates="dataset")
@@ -7338,7 +7339,7 @@ class GalaxySession(Base, RepresentById):
     is_valid: Mapped[Optional[bool]] = mapped_column(Boolean, default=False)
     # saves a reference to the previous session so we have a way to chain them together
     prev_session_id: Mapped[Optional[int]] = mapped_column(Integer)
-    disk_usage = Column(Numeric(15, 0), index=True)
+    disk_usage: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 0), index=True)
     last_action: Mapped[Optional[datetime]] = mapped_column(DateTime)
     current_history = relationship("History")
     histories = relationship(
