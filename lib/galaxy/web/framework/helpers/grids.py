@@ -121,7 +121,7 @@ class GridColumn:
             column_name = self.key
         column = getattr(self.model_class, column_name)
         if column is None:
-            column = self.model_class.table.c.get(column_name)
+            column = self.model_class.__table__.c.get(column_name)
         if ascending:
             query = query.order_by(column.asc())
         else:
@@ -176,9 +176,9 @@ class TextColumn(GridColumn):
         if column_name is None:
             column_name = self.key
         if ascending:
-            query = query.order_by(func.lower(self.model_class.table.c.get(column_name)).asc())
+            query = query.order_by(func.lower(self.model_class.__table__.c.get(column_name)).asc())
         else:
-            query = query.order_by(func.lower(self.model_class.table.c.get(column_name)).desc())
+            query = query.order_by(func.lower(self.model_class.__table__.c.get(column_name)).desc())
         return query
 
 
@@ -256,7 +256,7 @@ class CommunityRatingColumn(GridColumn, UsesItemRatings):
         item_rating_assoc_class = getattr(trans.model, f"{self.model_class.__name__}RatingAssociation")
         foreign_key = get_foreign_key(item_rating_assoc_class, self.model_class)
         fk_col = foreign_key.parent
-        referent_col = foreign_key.get_referent(self.model_class.table)
+        referent_col = foreign_key.get_referent(self.model_class.__table__)
         # Do sorting using a subquery.
         # Subquery to get average rating for each item.
         ave_rating_subquery = (
