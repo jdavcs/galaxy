@@ -1481,7 +1481,7 @@ class ValidRepositoryGrid(RepositoryGrid):
                     .join(model.Category.table)
                     .filter(
                         and_(
-                            model.Category.table.c.id == trans.security.decode_id(kwd["id"]),
+                            model.Category.__table__.c.id == trans.security.decode_id(kwd["id"]),
                             model.RepositoryMetadata.table.c.downloadable == true(),
                         )
                     )
