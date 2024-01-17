@@ -680,7 +680,7 @@ class RepositoriesICanAdministerGrid(RepositoryGrid):
         return (
             trans.sa_session.query(model.Repository)
             .filter(model.Repository.table.c.deleted == false())
-            .outerjoin(model.RepositoryRoleAssociation.table)
+            .outerjoin(model.RepositoryRoleAssociation)
             .outerjoin(model.Role.table)
             .filter(or_(*clause_list))
             .join(model.User.table)
