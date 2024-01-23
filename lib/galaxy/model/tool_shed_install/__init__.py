@@ -79,14 +79,14 @@ class ToolShedRepository(Base):
     __tablename__ = "tool_shed_repository"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
-    tool_shed: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
-    name: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
+    tool_shed: Mapped[str] = mapped_column(TrimmedString(255), index=True, nullable=True)
+    name: Mapped[str] = mapped_column(TrimmedString(255), index=True, nullable=True)
     description: Mapped[Optional[str]] = mapped_column(TEXT)
-    owner: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
-    installed_changeset_revision: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
-    changeset_revision: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
+    owner: Mapped[str] = mapped_column(TrimmedString(255), index=True, nullable=True)
+    installed_changeset_revision: Mapped[str] = mapped_column(TrimmedString(255), nullable=True)
+    changeset_revision: Mapped[str] = mapped_column(TrimmedString(255), index=True, nullable=True)
     ctx_rev: Mapped[Optional[str]] = mapped_column(TrimmedString(10))
     metadata_ = Column("metadata", MutableJSONType, nullable=True)
     includes_datatypes: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
@@ -694,8 +694,8 @@ class ToolDependency(Base):
     tool_shed_repository_id: Mapped[int] = mapped_column(
         ForeignKey("tool_shed_repository.id"), index=True, nullable=False
     )
-    name: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
-    version: Mapped[Optional[str]] = mapped_column(TEXT)
+    name: Mapped[str] = mapped_column(TrimmedString(255), nullable=True)
+    version: Mapped[str] = mapped_column(TEXT, nullable=True)
     type: Mapped[Optional[str]] = mapped_column(TrimmedString(40))
     status: Mapped[str] = mapped_column(TrimmedString(255), nullable=False)
     error_message: Mapped[Optional[str]] = mapped_column(TEXT)
