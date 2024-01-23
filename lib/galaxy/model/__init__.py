@@ -10288,7 +10288,7 @@ class Tag(Base, RepresentById):
 class ItemTagAssociation(Dictifiable):
     dict_collection_visible_keys = ["id", "user_tname", "user_value"]
     dict_element_visible_keys = dict_collection_visible_keys
-    user_tname: Column
+    user_tname: Mapped[Optional[str]]
     user_value: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
 
     def __init_subclass__(cls, **kwargs):
