@@ -3547,7 +3547,7 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
 
 
 class UserShareAssociation(RepresentById):
-    user: Optional[User]
+    user: Mapped[User]
 
 
 class HistoryUserShareAssociation(Base, UserShareAssociation):
@@ -3556,7 +3556,7 @@ class HistoryUserShareAssociation(Base, UserShareAssociation):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    user = relationship("User")
+    user: Mapped[User] = relationship("User")
     history = relationship("History", back_populates="users_shared_with")
 
 
@@ -8281,7 +8281,7 @@ class StoredWorkflowUserShareAssociation(Base, UserShareAssociation):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     stored_workflow_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("stored_workflow.id"), index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    user = relationship("User")
+    user: Mapped[User] = relationship("User")
     stored_workflow = relationship("StoredWorkflow", back_populates="users_shared_with")
 
 
@@ -10114,7 +10114,7 @@ class PageUserShareAssociation(Base, UserShareAssociation):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     page_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("page.id"), index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    user = relationship("User")
+    user: Mapped[User] = relationship("User")
     page = relationship("Page", back_populates="users_shared_with")
 
 
@@ -10270,7 +10270,7 @@ class VisualizationUserShareAssociation(Base, UserShareAssociation):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     visualization_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("visualization.id"), index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
-    user = relationship("User")
+    user: Mapped[User] = relationship("User")
     visualization = relationship("Visualization", back_populates="users_shared_with")
 
 
