@@ -1221,6 +1221,7 @@ ON CONFLICT
         stmt = select(StoredWorkflowUserShareAssociation).filter_by(user=self, stored_workflow=stored_workflow)
         stmt = select(func.count()).select_from(stmt)
         session = object_session(self)
+        assert session
         return session.scalar(stmt)
 
 
