@@ -1198,7 +1198,7 @@ ON CONFLICT
         stmt = select(func.count()).select_from(stmt)
         session = object_session(self)
         assert session
-        return session.scalar(stmt)
+        return session.scalar(stmt) or 0
 
 
 class PasswordResetToken(Base):
