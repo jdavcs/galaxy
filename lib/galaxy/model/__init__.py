@@ -685,8 +685,8 @@ class User(Base, Dictifiable, RepresentById):
     __tablename__ = "galaxy_user"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     email: Mapped[str] = mapped_column(TrimmedString(255), index=True, nullable=False)
     username: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True, unique=True)
     password: Mapped[str] = mapped_column(TrimmedString(255), nullable=False)
@@ -1222,8 +1222,8 @@ class DynamicTool(Base, Dictifiable, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     uuid: Mapped[Optional[str]] = mapped_column(UUIDType())
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, index=True, default=now, onupdate=now, nullable=True)
     tool_id: Mapped[Optional[str]] = mapped_column(Unicode(255))
     tool_version: Mapped[Optional[str]] = mapped_column(Unicode(255))
     tool_format: Mapped[Optional[str]] = mapped_column(Unicode(255))
@@ -1309,8 +1309,8 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
     __tablename__ = "job"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now, index=True)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, index=True, nullable=True)
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
     library_folder_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library_folder.id"), index=True)
     tool_id: Mapped[Optional[str]] = mapped_column(String(255))
@@ -2081,9 +2081,9 @@ class Task(Base, JobLike, RepresentById):
     __tablename__ = "task"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     execution_time: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     state: Mapped[Optional[str]] = mapped_column(String(64), index=True)
     command_line: Mapped[Optional[str]] = mapped_column(TEXT)
     param_filename: Mapped[Optional[str]] = mapped_column(String(1024))
@@ -2422,7 +2422,7 @@ class JobStateHistory(Base, RepresentById):
     __tablename__ = "job_state_history"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True)
     state: Mapped[Optional[str]] = mapped_column(String(64), index=True)
     info: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
@@ -2712,7 +2712,7 @@ class StoreExportAssociation(Base, RepresentById):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     task_uuid: Mapped[Optional[str]] = mapped_column(UUIDType(), index=True, unique=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     object_type: Mapped[Optional[str]] = mapped_column(TrimmedString(32))
     object_id: Mapped[Optional[int]] = mapped_column(Integer)
     export_metadata = Column(JSONType)
@@ -2833,8 +2833,8 @@ class Group(Base, Dictifiable, RepresentById):
     __tablename__ = "galaxy_group"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     name: Mapped[Optional[str]] = mapped_column(String(255), index=True, unique=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     quotas = relationship("GroupQuotaAssociation", back_populates="group")
@@ -2855,8 +2855,8 @@ class UserGroupAssociation(Base, RepresentById):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     group_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_group.id"), index=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     user = relationship("User", back_populates="groups")
     group = relationship("Group", back_populates="users")
 
@@ -2870,8 +2870,8 @@ class Notification(Base, Dictifiable, RepresentById):
     __tablename__ = "notification"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     publication_time: Mapped[Optional[datetime]] = mapped_column(
         DateTime, default=now
     )  # The date of publication, can be a future date to allow scheduling
@@ -2969,9 +2969,9 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
     __table_args__ = (Index("ix_history_slug", "slug", mysql_length=200),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    _update_time: Mapped[Optional[datetime]] = mapped_column(
-        "update_time", DateTime, index=True, default=now, onupdate=now
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    _update_time: Mapped[datetime] = mapped_column(
+        "update_time", DateTime, index=True, default=now, onupdate=now, nullable=True
     )
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     name: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
@@ -3566,8 +3566,8 @@ class UserRoleAssociation(Base, RepresentById):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     role_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("role.id"), index=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
 
     user = relationship("User", back_populates="roles")
     role = relationship("Role", back_populates="users")
@@ -3584,8 +3584,8 @@ class GroupRoleAssociation(Base, RepresentById):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     group_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_group.id"), index=True)
     role_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("role.id"), index=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     group = relationship("Group", back_populates="roles")
     role = relationship("Role", back_populates="groups")
 
@@ -3599,8 +3599,8 @@ class Role(Base, Dictifiable, RepresentById):
     __tablename__ = "role"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     name: Mapped[Optional[str]] = mapped_column(String(255), index=True, unique=True)
     description: Mapped[Optional[str]] = mapped_column(TEXT)
     type: Mapped[Optional[str]] = mapped_column(String(40), index=True)
@@ -3647,8 +3647,8 @@ class UserQuotaAssociation(Base, Dictifiable, RepresentById):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     quota_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("quota.id"), index=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     user = relationship("User", back_populates="quotas")
     quota = relationship("Quota", back_populates="users")
 
@@ -3666,8 +3666,8 @@ class GroupQuotaAssociation(Base, Dictifiable, RepresentById):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     group_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_group.id"), index=True)
     quota_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("quota.id"), index=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     group = relationship("Group", back_populates="quotas")
     quota = relationship("Quota", back_populates="groups")
 
@@ -3684,8 +3684,8 @@ class Quota(Base, Dictifiable, RepresentById):
     __table_args__ = (Index("ix_quota_quota_source_label", "quota_source_label"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     name: Mapped[Optional[str]] = mapped_column(String(255), index=True, unique=True)
     description: Mapped[Optional[str]] = mapped_column(TEXT)
     bytes: Mapped[Optional[int]] = mapped_column(BigInteger)
@@ -3746,8 +3746,8 @@ class DefaultQuotaAssociation(Base, Dictifiable, RepresentById):
     __tablename__ = "default_quota_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     type: Mapped[Optional[str]] = mapped_column(String(32))
     quota_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("quota.id"), index=True)
     quota = relationship("Quota", back_populates="default")
@@ -3769,8 +3769,8 @@ class DatasetPermissions(Base, RepresentById):
     __tablename__ = "dataset_permissions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     action: Mapped[Optional[str]] = mapped_column(TEXT)
     dataset_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("dataset.id"), index=True)
     role_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("role.id"), index=True)
@@ -3791,8 +3791,8 @@ class LibraryPermissions(Base, RepresentById):
     __tablename__ = "library_permissions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     action: Mapped[Optional[str]] = mapped_column(TEXT)
     library_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library.id"), nullable=True, index=True)
     role_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("role.id"), index=True)
@@ -3813,8 +3813,8 @@ class LibraryFolderPermissions(Base, RepresentById):
     __tablename__ = "library_folder_permissions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     action: Mapped[Optional[str]] = mapped_column(TEXT)
     library_folder_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_folder.id"), nullable=True, index=True
@@ -3837,8 +3837,8 @@ class LibraryDatasetPermissions(Base, RepresentById):
     __tablename__ = "library_dataset_permissions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     action: Mapped[Optional[str]] = mapped_column(TEXT)
     library_dataset_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_dataset.id"), nullable=True, index=True
@@ -3861,8 +3861,8 @@ class LibraryDatasetDatasetAssociationPermissions(Base, RepresentById):
     __tablename__ = "library_dataset_dataset_association_permissions"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     action: Mapped[Optional[str]] = mapped_column(TEXT)
     library_dataset_dataset_association_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), nullable=True, index=True
@@ -3927,8 +3927,8 @@ class Dataset(Base, StorableObject, Serializable):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True, nullable=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, index=True, default=now, onupdate=now, nullable=True)
     state: Mapped[Optional[str]] = mapped_column(TrimmedString(64), index=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
@@ -5418,8 +5418,8 @@ class HistoryDatasetAssociationDisplayAtAuthorization(Base, RepresentById):
     __tablename__ = "history_dataset_association_display_at_authorization"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, index=True, default=now, onupdate=now, nullable=True)
     history_dataset_association_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("history_dataset_association.id"), index=True
     )
@@ -5471,8 +5471,8 @@ class Library(Base, Dictifiable, HasName, Serializable):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     root_folder_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library_folder.id"), index=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     name: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     purged: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
@@ -5551,8 +5551,8 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
     parent_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_folder.id"), nullable=True, index=True
     )
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     name: Mapped[Optional[str]] = mapped_column(TEXT)
     description: Mapped[Optional[str]] = mapped_column(TEXT)
     order_id: Mapped[Optional[int]] = mapped_column(Integer)  # not currently being used, but for possible future use
@@ -5703,8 +5703,8 @@ class LibraryDataset(Base, Serializable):
     folder_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("library_folder.id"), index=True)
     # not currently being used, but for possible future use
     order_id: Mapped[Optional[int]] = mapped_column(Integer)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     # when not None/null this will supercede display in library (but not when imported into user's history?)
     _name: Mapped[Optional[str]] = mapped_column("name", TrimmedString(255), index=True)
     # when not None/null this will supercede display in library (but not when imported into user's history?)
@@ -6128,8 +6128,8 @@ class ImplicitlyConvertedDatasetAssociation(Base, RepresentById):
     __tablename__ = "implicitly_converted_dataset_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     hda_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("history_dataset_association.id"), index=True, nullable=True
     )
@@ -6226,8 +6226,8 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
     populated_state: Mapped[str] = mapped_column(TrimmedString(64), default="ok", nullable=False)
     populated_state_message: Mapped[Optional[str]] = mapped_column(TEXT)
     element_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
 
     elements = relationship(
         "DatasetCollectionElement",
@@ -6694,8 +6694,8 @@ class HistoryDatasetCollectionAssociation(
     implicit_collection_jobs_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("implicit_collection_jobs.id"), index=True, nullable=True
     )
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now, index=True)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, index=True, nullable=True)
 
     collection = relationship("DatasetCollection")
     history = relationship("History", back_populates="dataset_collections")
@@ -7302,8 +7302,8 @@ class Event(Base, RepresentById):
     __tablename__ = "event"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True, nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=True)
     message: Mapped[Optional[str]] = mapped_column(TrimmedString(1024))
@@ -7321,8 +7321,8 @@ class GalaxySession(Base, RepresentById):
     __tablename__ = "galaxy_session"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=True)
     remote_host: Mapped[Optional[str]] = mapped_column(String(255))
     remote_addr: Mapped[Optional[str]] = mapped_column(String(255))
@@ -7367,7 +7367,7 @@ class GalaxySessionToHistoryAssociation(Base, RepresentById):
     __tablename__ = "galaxy_session_to_history"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     session_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_session.id"), index=True)
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
     galaxy_session = relationship("GalaxySession", back_populates="histories")
@@ -7399,8 +7399,8 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
     __table_args__ = (Index("ix_stored_workflow_slug", "slug", mysql_length=200),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now, index=True)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, index=True, nullable=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=False)
     latest_workflow_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("workflow.id", use_alter=True, name="stored_workflow_latest_workflow_id_fk"), index=True
@@ -7558,8 +7558,8 @@ class Workflow(Base, Dictifiable, RepresentById):
     __tablename__ = "workflow"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     # workflows will belong to either a stored workflow or a parent/nesting workflow.
     stored_workflow_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("stored_workflow.id"), index=True, nullable=True
@@ -7745,8 +7745,8 @@ class WorkflowStep(Base, RepresentById):
     __tablename__ = "workflow_step"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     workflow_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
     subworkflow_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow.id"), index=True, nullable=True)
     dynamic_tool_id: Mapped[Optional[int]] = mapped_column(
@@ -8309,8 +8309,8 @@ class WorkflowInvocation(Base, UsesCreateAndUpdateTime, Dictifiable, Serializabl
     __tablename__ = "workflow_invocation"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now, index=True)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, index=True, nullable=True)
     workflow_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
     state: Mapped[Optional[str]] = mapped_column(TrimmedString(64), index=True)
     scheduler: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
@@ -8968,8 +8968,8 @@ class WorkflowInvocationStep(Base, Dictifiable, Serializable):
     __tablename__ = "workflow_invocation_step"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     workflow_invocation_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("workflow_invocation.id"), index=True, nullable=False
     )
@@ -9466,8 +9466,8 @@ class MetadataFile(Base, StorableObject, Serializable):
     lda_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("library_dataset_dataset_association.id"), index=True, nullable=True
     )
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, index=True, default=now, onupdate=now, nullable=True)
     object_store_id: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
     uuid: Mapped[Optional[str]] = mapped_column(UUIDType(), index=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
@@ -9617,8 +9617,8 @@ class FormDefinitionCurrent(Base, RepresentById):
     __tablename__ = "form_definition_current"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     latest_form_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
     deleted: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
     forms = relationship(
@@ -9641,8 +9641,8 @@ class FormValues(Base, RepresentById):
     __tablename__ = "form_values"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     form_definition_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
     content = Column(MutableJSONType)
     form_definition = relationship(
@@ -9658,8 +9658,8 @@ class UserAddress(Base, RepresentById):
     __tablename__ = "user_address"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     desc: Mapped[Optional[str]] = mapped_column(TrimmedString(255))
     name: Mapped[str] = mapped_column(TrimmedString(255), nullable=False)
@@ -9978,7 +9978,7 @@ class CloudAuthz(Base):
     last_update: Mapped[Optional[datetime]] = mapped_column(DateTime)
     last_activity: Mapped[Optional[datetime]] = mapped_column(DateTime)
     description: Mapped[Optional[str]] = mapped_column(TEXT)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     user = relationship("User", back_populates="cloudauthz")
     authn = relationship("UserAuthnzToken")
 
@@ -10007,8 +10007,8 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
     __table_args__ = (Index("ix_page_slug", "slug", mysql_length=200),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=False)
     latest_revision_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("page_revision.id", use_alter=True, name="page_latest_revision_id_fk"), index=True
@@ -10088,8 +10088,8 @@ class PageRevision(Base, Dictifiable, RepresentById):
     __tablename__ = "page_revision"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     page_id: Mapped[int] = mapped_column(Integer, ForeignKey("page.id"), index=True, nullable=False)
     title: Mapped[Optional[str]] = mapped_column(TEXT)
     content: Mapped[Optional[str]] = mapped_column(TEXT)
@@ -10126,8 +10126,8 @@ class Visualization(Base, HasTags, Dictifiable, RepresentById):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True, nullable=False)
     latest_revision_id: Mapped[Optional[int]] = mapped_column(
         Integer,
@@ -10240,8 +10240,8 @@ class VisualizationRevision(Base, RepresentById):
     __table_args__ = (Index("ix_visualization_revision_dbkey", "dbkey", mysql_length=200),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     visualization_id: Mapped[int] = mapped_column(Integer, ForeignKey("visualization.id"), index=True, nullable=False)
     title: Mapped[Optional[str]] = mapped_column(TEXT)
     dbkey: Mapped[Optional[str]] = mapped_column(TEXT)
@@ -10566,8 +10566,8 @@ class Vault(Base):
     children = relationship("Vault", back_populates="parent")
     parent = relationship("Vault", back_populates="children", remote_side=[key])
     value: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
 
 
 # Item rating classes.
@@ -10700,8 +10700,8 @@ class DataManagerHistoryAssociation(Base, RepresentById):
     __tablename__ = "data_manager_history_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, index=True, default=now, onupdate=now, nullable=True)
     history_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("history.id"), index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     history = relationship("History")
@@ -10713,8 +10713,8 @@ class DataManagerJobAssociation(Base, RepresentById):
     __table_args__ = (Index("ix_data_manager_job_association_data_manager_id", "data_manager_id", mysql_length=200),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
-    update_time: Mapped[Optional[datetime]] = mapped_column(DateTime, index=True, default=now, onupdate=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
+    update_time: Mapped[datetime] = mapped_column(DateTime, index=True, default=now, onupdate=now, nullable=True)
     job_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("job.id"), index=True)
     data_manager_id: Mapped[Optional[str]] = mapped_column(TEXT)
     job = relationship("Job", back_populates="data_manager_association", uselist=False)
@@ -10739,7 +10739,7 @@ class UserAction(Base, RepresentById):
     __tablename__ = "user_action"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     session_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_session.id"), index=True)
     action: Mapped[Optional[str]] = mapped_column(Unicode(255))
@@ -10752,7 +10752,7 @@ class APIKeys(Base, RepresentById):
     __tablename__ = "api_keys"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("galaxy_user.id"), index=True)
     key: Mapped[Optional[str]] = mapped_column(TrimmedString(32), index=True, unique=True)
     user = relationship("User", back_populates="api_keys")
@@ -10790,7 +10790,7 @@ class CleanupEvent(Base):
     __tablename__ = "cleanup_event"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     message: Mapped[Optional[str]] = mapped_column(TrimmedString(1024))
 
 
@@ -10798,7 +10798,7 @@ class CleanupEventDatasetAssociation(Base):
     __tablename__ = "cleanup_event_dataset_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10809,7 +10809,7 @@ class CleanupEventMetadataFileAssociation(Base):
     __tablename__ = "cleanup_event_metadata_file_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10820,7 +10820,7 @@ class CleanupEventHistoryAssociation(Base):
     __tablename__ = "cleanup_event_history_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10831,7 +10831,7 @@ class CleanupEventHistoryDatasetAssociationAssociation(Base):
     __tablename__ = "cleanup_event_hda_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10842,7 +10842,7 @@ class CleanupEventLibraryAssociation(Base):
     __tablename__ = "cleanup_event_library_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10853,7 +10853,7 @@ class CleanupEventLibraryFolderAssociation(Base):
     __tablename__ = "cleanup_event_library_folder_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10864,7 +10864,7 @@ class CleanupEventLibraryDatasetAssociation(Base):
     __tablename__ = "cleanup_event_library_dataset_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10875,7 +10875,7 @@ class CleanupEventLibraryDatasetDatasetAssociationAssociation(Base):
     __tablename__ = "cleanup_event_ldda_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
@@ -10888,7 +10888,7 @@ class CleanupEventImplicitlyConvertedDatasetAssociationAssociation(Base):
     __tablename__ = "cleanup_event_icda_association"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    create_time: Mapped[Optional[datetime]] = mapped_column(DateTime, default=now)
+    create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     cleanup_event_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("cleanup_event.id"), index=True, nullable=True
     )
