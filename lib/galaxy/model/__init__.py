@@ -308,7 +308,7 @@ def set_datatypes_registry(d_registry):
 class HasTags:
     dict_collection_visible_keys = ["tags"]
     dict_element_visible_keys = ["tags"]
-    tags: List["ItemTagAssociation"]
+    tags: Mapped[List["ItemTagAssociation"]]
 
     def to_dict(self, *args, **kwargs):
         rval = super().to_dict(*args, **kwargs)
@@ -3072,7 +3072,9 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
         order_by=lambda: asc(HistoryDatasetCollectionAssociation.hid),  # type: ignore[has-type]
         viewonly=True,
     )
-    tags = relationship("HistoryTagAssociation", order_by=lambda: HistoryTagAssociation.id, back_populates="history")
+    tags: Mapped[List["HistoryTagAssociation"]] = relationship(
+        "HistoryTagAssociation", order_by=lambda: HistoryTagAssociation.id, back_populates="history"
+    )
     annotations = relationship(
         "HistoryAnnotationAssociation", order_by=lambda: HistoryAnnotationAssociation.id, back_populates="history"
     )
@@ -6788,7 +6790,7 @@ class HistoryDatasetCollectionAssociation(
         back_populates="history_dataset_collection_associations",
         uselist=False,
     )
-    tags = relationship(
+    tags: Mapped[List["HistoryDatasetCollectionTagAssociation"]] = relationship(
         "HistoryDatasetCollectionTagAssociation",
         order_by=lambda: HistoryDatasetCollectionTagAssociation.id,
         back_populates="dataset_collection",
@@ -7134,7 +7136,7 @@ class LibraryDatasetCollectionAssociation(Base, DatasetCollectionInstance, Repre
     collection = relationship("DatasetCollection")
     folder = relationship("LibraryFolder")
 
-    tags = relationship(
+    tags: Mapped[List["LibraryDatasetCollectionTagAssociation"]] = relationship(
         "LibraryDatasetCollectionTagAssociation",
         order_by=lambda: LibraryDatasetCollectionTagAssociation.id,
         back_populates="dataset_collection",
@@ -7494,12 +7496,12 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
         primaryjoin=(lambda: StoredWorkflow.latest_workflow_id == Workflow.id),  # type: ignore[has-type]
         lazy=False,
     )
-    tags = relationship(
+    tags: Mapped[List["StoredWorkflowTagAssociation"]] = relationship(
         "StoredWorkflowTagAssociation",
         order_by=lambda: StoredWorkflowTagAssociation.id,
         back_populates="stored_workflow",
     )
-    owner_tags = relationship(
+    owner_tags: Mapped[List["StoredWorkflowTagAssociation"]] = relationship(
         "StoredWorkflowTagAssociation",
         primaryjoin=(
             lambda: and_(
@@ -7856,7 +7858,7 @@ class WorkflowStep(Base, RepresentById):
         back_populates="parent_workflow_steps",
     )
     dynamic_tool = relationship("DynamicTool", primaryjoin=(lambda: DynamicTool.id == WorkflowStep.dynamic_tool_id))
-    tags = relationship(
+    tags: Mapped[List["WorkflowStepTagAssociation"]] = relationship(
         "WorkflowStepTagAssociation", order_by=lambda: WorkflowStepTagAssociation.id, back_populates="workflow_step"
     )
     annotations = relationship(
@@ -10110,7 +10112,9 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
         primaryjoin=(lambda: Page.latest_revision_id == PageRevision.id),  # type: ignore[has-type]
         lazy=False,
     )
-    tags = relationship("PageTagAssociation", order_by=lambda: PageTagAssociation.id, back_populates="page")
+    tags: Mapped[List["PageTagAssociation"]] = relationship(
+        "PageTagAssociation", order_by=lambda: PageTagAssociation.id, back_populates="page"
+    )
     annotations = relationship(
         "PageAnnotationAssociation", order_by=lambda: PageAnnotationAssociation.id, back_populates="page"
     )
@@ -10233,7 +10237,7 @@ class Visualization(Base, HasTags, Dictifiable, RepresentById):
         primaryjoin=(lambda: Visualization.latest_revision_id == VisualizationRevision.id),
         lazy=False,
     )
-    tags = relationship(
+    tags: Mapped[List["VisualizationTagAssociation"]] = relationship(
         "VisualizationTagAssociation", order_by=lambda: VisualizationTagAssociation.id, back_populates="visualization"
     )
     annotations = relationship(
