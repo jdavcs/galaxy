@@ -23,7 +23,6 @@ from sqlalchemy import (
     select,
     true,
 )
-from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import NoResultFound
 
 from galaxy import (
@@ -44,6 +43,7 @@ from galaxy.model import (
     UserQuotaUsage,
 )
 from galaxy.model.base import transaction
+from galaxy.model.scoped_session import galaxy_scoped_session
 from galaxy.security.validate_user_input import (
     VALID_EMAIL_RE,
     validate_email,
@@ -856,7 +856,7 @@ class AdminUserFilterParser(base.ModelFilterParser, deletable.PurgableFiltersMix
         self.fn_filter_parsers.update({})
 
 
-def get_users_by_ids(session: Session, user_ids):
+def get_users_by_ids(session: galaxy_scoped_session, user_ids):
     stmt = select(User).where(User.id.in_(user_ids))
     return session.scalars(stmt).all()
 
