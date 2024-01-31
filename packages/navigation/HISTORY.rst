@@ -75,7 +75,7 @@ No recorded changes since last release
 No recorded changes since last release
 
 ------------------------
-22.9.0.dev0 (2022-06-24)
+22.9.0 (2024-01-31) (2022-06-24)
 ------------------------
 
 * First release from the 22.09 branch of Galaxy.
