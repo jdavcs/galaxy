@@ -1370,7 +1370,7 @@ class Job(Base, JobLike, UsesCreateAndUpdateTime, Dictifiable, Serializable):
     params: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
     handler: Mapped[Optional[str]] = mapped_column(TrimmedString(255), index=True)
     preferred_object_store_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    object_store_id_overrides = Column(JSONType)
+    object_store_id_overrides: Mapped[Optional[bytes]] = mapped_column(JSONType)
 
     user = relationship("User")
     galaxy_session = relationship("GalaxySession")
@@ -2739,7 +2739,7 @@ class StoreExportAssociation(Base, RepresentById):
     create_time: Mapped[datetime] = mapped_column(DateTime, default=now, nullable=True)
     object_type: Mapped[Optional[str]] = mapped_column(TrimmedString(32))
     object_id: Mapped[Optional[int]] = mapped_column(Integer)
-    export_metadata = Column(JSONType)
+    export_metadata: Mapped[Optional[bytes]] = mapped_column(JSONType)
 
 
 class JobContainerAssociation(Base, RepresentById):
@@ -7649,10 +7649,10 @@ class Workflow(Base, Dictifiable, RepresentById):
     name: Mapped[Optional[str]] = mapped_column(TEXT)
     has_cycles: Mapped[Optional[bool]] = mapped_column(Boolean)
     has_errors: Mapped[Optional[bool]] = mapped_column(Boolean)
-    reports_config = Column(JSONType)
-    creator_metadata = Column(JSONType)
+    reports_config: Mapped[Optional[bytes]] = mapped_column(JSONType)
+    creator_metadata: Mapped[Optional[bytes]] = mapped_column(JSONType)
     license: Mapped[Optional[str]] = mapped_column(TEXT)
-    source_metadata = Column(JSONType)
+    source_metadata: Mapped[Optional[bytes]] = mapped_column(JSONType)
     uuid: Mapped[Optional[str]] = mapped_column(UUIDType, nullable=True)
 
     steps = relationship(
@@ -7834,12 +7834,12 @@ class WorkflowStep(Base, RepresentById):
     type: Mapped[Optional[str]] = mapped_column(String(64))
     tool_id: Mapped[Optional[str]] = mapped_column(TEXT)
     tool_version: Mapped[Optional[str]] = mapped_column(TEXT)
-    tool_inputs = Column(JSONType)
-    tool_errors = Column(JSONType)
+    tool_inputs: Mapped[Optional[bytes]] = mapped_column(JSONType)
+    tool_errors: Mapped[Optional[bytes]] = mapped_column(JSONType)
     position: Mapped[Optional[bytes]] = mapped_column(MutableJSONType)
-    config = Column(JSONType)
+    config: Mapped[Optional[bytes]] = mapped_column(JSONType)
     order_index: Mapped[Optional[int]] = mapped_column(Integer)
-    when_expression = Column(JSONType)
+    when_expression: Mapped[Optional[bytes]] = mapped_column(JSONType)
     uuid: Mapped[Optional[str]] = mapped_column(UUIDType)
     label: Mapped[Optional[str]] = mapped_column(Unicode(255))
     temp_input_connections = None
@@ -8290,10 +8290,10 @@ class WorkflowComment(Base, RepresentById):
     order_index: Mapped[Optional[int]] = mapped_column(Integer)
     workflow_id: Mapped[int] = mapped_column(Integer, ForeignKey("workflow.id"), index=True, nullable=False)
     position: Mapped[Optional[bytes]] = mapped_column(MutableJSONType)
-    size = Column(JSONType)
+    size: Mapped[Optional[bytes]] = mapped_column(JSONType)
     type: Mapped[Optional[str]] = mapped_column(String(16))
     color: Mapped[Optional[str]] = mapped_column(String(16))
-    data = Column(JSONType)
+    data: Mapped[Optional[bytes]] = mapped_column(JSONType)
     parent_comment_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("workflow_comment.id"), nullable=True)
 
     workflow = relationship(
