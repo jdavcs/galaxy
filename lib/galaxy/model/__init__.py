@@ -2911,7 +2911,7 @@ class Notification(Base, Dictifiable, RepresentById):
     )  # Defines the 'importance' of the notification ('info', 'warning', 'urgent', etc.). Used for filtering, highlight rendering, etc
     # A bug in early 23.1 led to values being stored as json string, so we use this special type to process the result value twice.
     # content should always be a dict
-    content = Column(DoubleEncodedJsonType)
+    content: Mapped[Optional[bytes]] = mapped_column(DoubleEncodedJsonType)
 
     user_notification_associations = relationship("UserNotificationAssociation", back_populates="notification")
 
