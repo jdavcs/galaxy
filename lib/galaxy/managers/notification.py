@@ -18,6 +18,7 @@ from sqlalchemy import (
     union,
     update,
 )
+from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy.sql import Select
 from typing_extensions import Protocol
 
@@ -64,7 +65,7 @@ class NotificationManager:
         self.sa_session = sa_session
         self.config = config
         self.recipient_resolver = NotificationRecipientResolver(strategy=DefaultStrategy(sa_session))
-        self.user_notification_columns = [
+        self.user_notification_columns: List[InstrumentedAttribute] = [
             Notification.id,
             Notification.source,
             Notification.category,
@@ -77,7 +78,7 @@ class NotificationManager:
             UserNotificationAssociation.seen_time,
             UserNotificationAssociation.deleted,
         ]
-        self.broadcast_notification_columns = [
+        self.broadcast_notification_columns: List[InstrumentedAttribute] = [
             Notification.id,
             Notification.source,
             Notification.category,
@@ -199,8 +200,7 @@ class NotificationManager:
                 )
             )
         )
-        result = self.sa_session.execute(stmt).scalar()
-        return result
+        return self.sa_session.execute(stmt).scalar() or 0
 
     def get_broadcasted_notification(self, notification_id: int, active_only: Optional[bool] = True):
         stmt = (
@@ -413,7 +413,7 @@ class DefaultStrategy(NotificationRecipientResolverStrategy):
         unique_user_ids.update(user_ids_from_groups_and_roles)
 
         stmt = select(User).where(User.id.in_(unique_user_ids))
-        return self.sa_session.scalars(stmt).all()
+        return self.sa_session.scalars(stmt).all()  # type:ignore[return-value]
 
     def _get_all_user_ids_from_roles_query(self, role_ids: Set[int]) -> Select:
         stmt = (
