@@ -3018,7 +3018,7 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
             lambda: (
                 and_(
                     HistoryDatasetCollectionAssociation.history_id == History.id,  # type: ignore[has-type]
-                    not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type]
+                    not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type, arg-type]
                 )
             )
         ),
@@ -3042,7 +3042,7 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
         primaryjoin=(
             lambda: and_(
                 HistoryDatasetCollectionAssociation.history_id == History.id,  # type: ignore[has-type]
-                not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type]
+                not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type, arg-type]
                 HistoryDatasetCollectionAssociation.visible,  # type: ignore[has-type]
             )
         ),
@@ -3951,7 +3951,7 @@ class Dataset(Base, StorableObject, Serializable):
             lambda: and_(
                 Dataset.id == HistoryDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
                 HistoryDatasetAssociation.deleted == false(),  # type: ignore[has-type]
-                HistoryDatasetAssociation.purged == false(),  # type: ignore[attr-defined]
+                HistoryDatasetAssociation.purged == false(),  # type: ignore[attr-defined, arg-type]
             )
         ),
         viewonly=True,
@@ -3961,7 +3961,7 @@ class Dataset(Base, StorableObject, Serializable):
         primaryjoin=(
             lambda: and_(
                 Dataset.id == HistoryDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
-                HistoryDatasetAssociation.purged == true(),  # type: ignore[attr-defined]
+                HistoryDatasetAssociation.purged == true(),  # type: ignore[attr-defined, arg-type]
             )
         ),
         viewonly=True,
@@ -6036,7 +6036,9 @@ class LibraryInfoAssociation(Base, RepresentById):
     library = relationship(
         "Library",
         primaryjoin=(
-            lambda: and_(LibraryInfoAssociation.library_id == Library.id, not_(LibraryInfoAssociation.deleted))
+            lambda: and_(
+                LibraryInfoAssociation.library_id == Library.id, not_(LibraryInfoAssociation.deleted)
+            )  # type:ignore[arg-type]
         ),
     )
     template = relationship(
@@ -6357,7 +6359,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
         for entity in return_entities:
             q = q.add_columns(entity)
             if entity == DatasetCollectionElement:
-                q = q.filter(entity.id == dce.c.id)
+                q = q.filter(entity.id == dce.c.id)  # type:ignore[arg-type]
 
         q = q.order_by(*order_by_columns)
         return q
