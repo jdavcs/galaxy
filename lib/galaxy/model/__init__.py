@@ -717,7 +717,7 @@ class User(Base, Dictifiable, RepresentById):
     )
     active_histories: Mapped[List["History"]] = relationship(
         "History",
-        primaryjoin=(lambda: (History.user_id == User.id) & (not_(History.deleted)) & (not_(History.archived))),  # type: ignore[has-type]
+        primaryjoin="(History.user_id == User.id) & (not_(History.deleted)) & (not_(History.archived))",
         viewonly=True,
         order_by=lambda: desc(History.update_time),  # type: ignore[has-type]
     )
@@ -731,11 +731,7 @@ class User(Base, Dictifiable, RepresentById):
     social_auth = relationship("UserAuthnzToken", back_populates="user")
     stored_workflow_menu_entries: Mapped[List["StoredWorkflowMenuEntry"]] = relationship(
         "StoredWorkflowMenuEntry",
-        primaryjoin=(
-            lambda: (StoredWorkflowMenuEntry.user_id == User.id)
-            & (StoredWorkflowMenuEntry.stored_workflow_id == StoredWorkflow.id)  # type: ignore[has-type]
-            & not_(StoredWorkflow.deleted)  # type: ignore[has-type]
-        ),
+        primaryjoin="(StoredWorkflowMenuEntry.user_id == User.id) & (StoredWorkflowMenuEntry.stored_workflow_id == StoredWorkflow.id) & not_(StoredWorkflow.deleted)",
         back_populates="user",
         cascade="all, delete-orphan",
         collection_class=ordering_list("order_index"),
@@ -743,20 +739,13 @@ class User(Base, Dictifiable, RepresentById):
     _preferences: Mapped[List["UserPreference"]] = relationship(
         "UserPreference", collection_class=attribute_keyed_dict("name")
     )
-    values: Mapped[List["FormValues"]] = relationship(
-        "FormValues", primaryjoin=(lambda: User.form_values_id == FormValues.id)  # type: ignore[has-type]
-    )
+    values: Mapped[List["FormValues"]] = relationship("FormValues", primaryjoin="User.form_values_id == FormValues.id")
     # Add type hint (will this work w/SA?)
     api_keys: Mapped[List["APIKeys"]] = relationship(
         "APIKeys",
         back_populates="user",
         order_by=lambda: desc(APIKeys.create_time),
-        primaryjoin=(
-            lambda: and_(
-                User.id == APIKeys.user_id,  # type: ignore[attr-defined]
-                not_(APIKeys.deleted == true()),  # type: ignore[has-type]
-            )
-        ),
+        primaryjoin="and_(User.id == APIKeys.user_id, not_(APIKeys.deleted == true()))",
     )
     data_manager_histories: Mapped[List["DataManagerHistoryAssociation"]] = relationship(
         "DataManagerHistoryAssociation", back_populates="user"
@@ -765,7 +754,7 @@ class User(Base, Dictifiable, RepresentById):
     stored_workflows: Mapped[List["StoredWorkflow"]] = relationship(
         "StoredWorkflow",
         back_populates="user",
-        primaryjoin=(lambda: User.id == StoredWorkflow.user_id),  # type: ignore[has-type]
+        primaryjoin="User.id == StoredWorkflow.user_id",
         cascade_backrefs=False,
     )
     all_notifications: Mapped[List["UserNotificationAssociation"]] = relationship(
@@ -775,9 +764,9 @@ class User(Base, Dictifiable, RepresentById):
         "UserRoleAssociation",
         viewonly=True,
         primaryjoin=(
-            lambda: (User.id == UserRoleAssociation.user_id)  # type: ignore[has-type]
-            & (UserRoleAssociation.role_id == Role.id)  # type: ignore[has-type]
-            & not_(Role.name == User.email)  # type: ignore[has-type]
+            "(User.id == UserRoleAssociation.user_id)"
+            "& (UserRoleAssociation.role_id == Role.id)"
+            "& not_(Role.name == User.email)"
         ),
     )
 
@@ -2449,10 +2438,7 @@ class ImplicitlyCreatedDatasetCollectionInput(Base, RepresentById):
 
     input_dataset_collection = relationship(
         "HistoryDatasetCollectionAssociation",
-        primaryjoin=(
-            lambda: HistoryDatasetCollectionAssociation.id  # type: ignore[has-type]
-            == ImplicitlyCreatedDatasetCollectionInput.input_dataset_collection_id
-        ),  # type: ignore[has-type]
+        primaryjoin="HistoryDatasetCollectionAssociation.id == ImplicitlyCreatedDatasetCollectionInput.input_dataset_collection_id",
     )
 
     def __init__(self, name, input_dataset_collection):
@@ -2519,7 +2505,7 @@ class PostJobAction(Base, RepresentById):
     workflow_step = relationship(
         "WorkflowStep",
         back_populates="post_job_actions",
-        primaryjoin=(lambda: WorkflowStep.id == PostJobAction.workflow_step_id),  # type: ignore[has-type]
+        primaryjoin="WorkflowStep.id == PostJobAction.workflow_step_id",
     )
 
     def __init__(self, action_type, workflow_step=None, output_name=None, action_arguments=None):
@@ -2997,42 +2983,30 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
     exports = relationship(
         "JobExportHistoryArchive",
         back_populates="history",
-        primaryjoin=lambda: JobExportHistoryArchive.history_id == History.id,
+        primaryjoin="JobExportHistoryArchive.history_id == History.id",
         order_by=lambda: desc(JobExportHistoryArchive.id),
     )
     active_datasets = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(
-            lambda: and_(
-                HistoryDatasetAssociation.history_id == History.id,  # type: ignore[attr-defined]
-                not_(HistoryDatasetAssociation.deleted),  # type: ignore[has-type]
-            )
-        ),
+        primaryjoin="and_(HistoryDatasetAssociation.history_id == History.id, not_(HistoryDatasetAssociation.deleted))",
         order_by=lambda: asc(HistoryDatasetAssociation.hid),  # type: ignore[has-type]
         viewonly=True,
     )
     dataset_collections = relationship("HistoryDatasetCollectionAssociation", back_populates="history")
     active_dataset_collections = relationship(
         "HistoryDatasetCollectionAssociation",
-        primaryjoin=(
-            lambda: (
-                and_(
-                    HistoryDatasetCollectionAssociation.history_id == History.id,  # type: ignore[has-type]
-                    not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type, arg-type]
-                )
-            )
-        ),
+        primaryjoin="and_(HistoryDatasetCollectionAssociation.history_id == History.id, not_(HistoryDatasetCollectionAssociation.deleted))",
         order_by=lambda: asc(HistoryDatasetCollectionAssociation.hid),  # type: ignore[has-type]
         viewonly=True,
     )
     visible_datasets = relationship(
         "HistoryDatasetAssociation",
         primaryjoin=(
-            lambda: and_(
-                HistoryDatasetAssociation.history_id == History.id,  # type: ignore[attr-defined]
-                not_(HistoryDatasetAssociation.deleted),  # type: ignore[has-type]
-                HistoryDatasetAssociation.visible,  # type: ignore[has-type]
-            )
+            "and_("
+            "HistoryDatasetAssociation.history_id == History.id,"
+            "not_(HistoryDatasetAssociation.deleted),"
+            "HistoryDatasetAssociation.visible,"
+            ")"
         ),
         order_by=lambda: asc(HistoryDatasetAssociation.hid),  # type: ignore[has-type]
         viewonly=True,
@@ -3040,11 +3014,11 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
     visible_dataset_collections = relationship(
         "HistoryDatasetCollectionAssociation",
         primaryjoin=(
-            lambda: and_(
-                HistoryDatasetCollectionAssociation.history_id == History.id,  # type: ignore[has-type]
-                not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type, arg-type]
-                HistoryDatasetCollectionAssociation.visible,  # type: ignore[has-type]
-            )
+            "and_("
+            "HistoryDatasetCollectionAssociation.history_id == History.id,"
+            "not_(HistoryDatasetCollectionAssociation.deleted),"
+            "HistoryDatasetCollectionAssociation.visible,"
+            ")"
         ),
         order_by=lambda: asc(HistoryDatasetCollectionAssociation.hid),  # type: ignore[has-type]
         viewonly=True,
@@ -3944,36 +3918,26 @@ class Dataset(Base, StorableObject, Serializable):
     uuid: Mapped[Optional[str]] = mapped_column(UUIDType())
 
     actions = relationship("DatasetPermissions", back_populates="dataset")
-    job = relationship(Job, primaryjoin=(lambda: Dataset.job_id == Job.id))
+    job = relationship(Job, primaryjoin="Dataset.job_id == Job.id")
     active_history_associations = relationship(
         "HistoryDatasetAssociation",
         primaryjoin=(
-            lambda: and_(
-                Dataset.id == HistoryDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
-                HistoryDatasetAssociation.deleted == false(),  # type: ignore[has-type]
-                HistoryDatasetAssociation.purged == false(),  # type: ignore[attr-defined, arg-type]
-            )
+            "and_("
+            "Dataset.id == HistoryDatasetAssociation.dataset_id, "
+            "HistoryDatasetAssociation.deleted == false(), "
+            "HistoryDatasetAssociation.purged == false(), "
+            ")"
         ),
         viewonly=True,
     )
     purged_history_associations = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(
-            lambda: and_(
-                Dataset.id == HistoryDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
-                HistoryDatasetAssociation.purged == true(),  # type: ignore[attr-defined, arg-type]
-            )
-        ),
+        primaryjoin="and_(Dataset.id == HistoryDatasetAssociation.dataset_id, HistoryDatasetAssociation.purged == true())",
         viewonly=True,
     )
     active_library_associations = relationship(
         "LibraryDatasetDatasetAssociation",
-        primaryjoin=(
-            lambda: and_(
-                Dataset.id == LibraryDatasetDatasetAssociation.dataset_id,  # type: ignore[attr-defined]
-                LibraryDatasetDatasetAssociation.deleted == false(),  # type: ignore[has-type]
-            )
-        ),
+        primaryjoin="and_(Dataset.id == LibraryDatasetDatasetAssociation.dataset_id, LibraryDatasetDatasetAssociation.deleted == false())",
         viewonly=True,
     )
     hashes = relationship("DatasetHash", back_populates="dataset", cascade_backrefs=False)
@@ -3981,7 +3945,7 @@ class Dataset(Base, StorableObject, Serializable):
     history_associations = relationship("HistoryDatasetAssociation", back_populates="dataset", cascade_backrefs=False)
     library_associations = relationship(
         "LibraryDatasetDatasetAssociation",
-        primaryjoin=(lambda: LibraryDatasetDatasetAssociation.table.c.dataset_id == Dataset.id),
+        primaryjoin="LibraryDatasetDatasetAssociation.table.c.dataset_id == Dataset.id",
         back_populates="dataset",
         cascade_backrefs=False,
     )
@@ -5450,16 +5414,11 @@ class HistoryDatasetAssociationSubset(Base, RepresentById):
 
     hda = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(
-            lambda: HistoryDatasetAssociationSubset.history_dataset_association_id == HistoryDatasetAssociation.id
-        ),
+        primaryjoin="HistoryDatasetAssociationSubset.history_dataset_association_id == HistoryDatasetAssociation.id",
     )
     subset = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(
-            lambda: HistoryDatasetAssociationSubset.history_dataset_association_subset_id
-            == HistoryDatasetAssociation.id
-        ),
+        primaryjoin="HistoryDatasetAssociationSubset.history_dataset_association_subset_id == HistoryDatasetAssociation.id",
     )
 
     def __init__(self, hda, subset, location):
@@ -5565,7 +5524,7 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
 
     folders = relationship(
         "LibraryFolder",
-        primaryjoin=(lambda: LibraryFolder.id == LibraryFolder.parent_id),
+        primaryjoin="LibraryFolder.id == LibraryFolder.parent_id",
         order_by=asc(name),
         back_populates="parent",
     )
@@ -5573,7 +5532,7 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
 
     active_folders = relationship(
         "LibraryFolder",
-        primaryjoin=("and_(LibraryFolder.parent_id == LibraryFolder.id, not_(LibraryFolder.deleted))"),
+        primaryjoin="and_(LibraryFolder.parent_id == LibraryFolder.id, not_(LibraryFolder.deleted))",
         order_by=asc(name),
         # """sqlalchemy.exc.ArgumentError: Error creating eager relationship 'active_folders'
         # on parent class '<class 'galaxy.model.LibraryFolder'>' to child class '<class 'galaxy.model.LibraryFolder'>':
@@ -5584,19 +5543,14 @@ class LibraryFolder(Base, Dictifiable, HasName, Serializable):
 
     datasets = relationship(
         "LibraryDataset",
-        primaryjoin=(
-            lambda: LibraryDataset.folder_id == LibraryFolder.id
-            and LibraryDataset.library_dataset_dataset_association_id.isnot(None)
-        ),
+        primaryjoin="LibraryDataset.folder_id == LibraryFolder.id and LibraryDataset.library_dataset_dataset_association_id.isnot(None)",
         order_by=(lambda: asc(LibraryDataset._name)),
         viewonly=True,
     )
 
     active_datasets = relationship(
         "LibraryDataset",
-        primaryjoin=(
-            "and_(LibraryDataset.folder_id == LibraryFolder.id, not_(LibraryDataset.deleted), LibraryDataset.library_dataset_dataset_association_id.isnot(None))"
-        ),
+        primaryjoin="and_(LibraryDataset.folder_id == LibraryFolder.id, not_(LibraryDataset.deleted), LibraryDataset.library_dataset_dataset_association_id.isnot(None))",
         order_by=(lambda: asc(LibraryDataset._name)),
         viewonly=True,
     )
@@ -5721,8 +5675,10 @@ class LibraryDataset(Base, Serializable):
         "LibraryDatasetDatasetAssociation",
         foreign_keys=[id, library_dataset_dataset_association_id],
         primaryjoin=(
-            "and_(LibraryDataset.id == LibraryDatasetDatasetAssociation.library_dataset_id, \
-             not_(LibraryDataset.library_dataset_dataset_association_id == LibraryDatasetDatasetAssociation.id))"
+            "and_("
+            "LibraryDataset.id == LibraryDatasetDatasetAssociation.library_dataset_id,"
+            "not_(LibraryDataset.library_dataset_dataset_association_id == LibraryDatasetDatasetAssociation.id)"
+            ")"
         ),
         viewonly=True,
         uselist=True,
@@ -6035,18 +5991,12 @@ class LibraryInfoAssociation(Base, RepresentById):
 
     library = relationship(
         "Library",
-        primaryjoin=(
-            lambda: and_(
-                LibraryInfoAssociation.library_id == Library.id, not_(LibraryInfoAssociation.deleted)
-            )  # type:ignore[arg-type]
-        ),
+        primaryjoin="and_(LibraryInfoAssociation.library_id == Library.id, not_(LibraryInfoAssociation.deleted))",
     )
     template = relationship(
-        "FormDefinition", primaryjoin=lambda: LibraryInfoAssociation.form_definition_id == FormDefinition.id
+        "FormDefinition", primaryjoin="LibraryInfoAssociation.form_definition_id == FormDefinition.id"
     )
-    info = relationship(
-        "FormValues", primaryjoin=lambda: LibraryInfoAssociation.form_values_id == FormValues.id  # type: ignore[has-type]
-    )
+    info = relationship("FormValues", primaryjoin="LibraryInfoAssociation.form_values_id == FormValues.id")
 
     def __init__(self, library, form_definition, info, inheritable=False):
         self.library = library
@@ -6069,17 +6019,12 @@ class LibraryFolderInfoAssociation(Base, RepresentById):
 
     folder = relationship(
         "LibraryFolder",
-        primaryjoin=(
-            lambda: (LibraryFolderInfoAssociation.library_folder_id == LibraryFolder.id)
-            & (not_(LibraryFolderInfoAssociation.deleted))
-        ),
+        primaryjoin="(LibraryFolderInfoAssociation.library_folder_id == LibraryFolder.id) & (not_(LibraryFolderInfoAssociation.deleted))",
     )
     template = relationship(
-        "FormDefinition", primaryjoin=(lambda: LibraryFolderInfoAssociation.form_definition_id == FormDefinition.id)
+        "FormDefinition", primaryjoin="LibraryFolderInfoAssociation.form_definition_id == FormDefinition.id"
     )
-    info = relationship(
-        "FormValues", primaryjoin=(lambda: LibraryFolderInfoAssociation.form_values_id == FormValues.id)  # type: ignore[has-type]
-    )
+    info = relationship("FormValues", primaryjoin="LibraryFolderInfoAssociation.form_values_id == FormValues.id)")
 
     def __init__(self, folder, form_definition, info, inheritable=False):
         self.folder = folder
@@ -6102,19 +6047,16 @@ class LibraryDatasetDatasetInfoAssociation(Base, RepresentById):
     library_dataset_dataset_association = relationship(
         "LibraryDatasetDatasetAssociation",
         primaryjoin=(
-            lambda: (
-                LibraryDatasetDatasetInfoAssociation.library_dataset_dataset_association_id
-                == LibraryDatasetDatasetAssociation.id
-            )
-            & (not_(LibraryDatasetDatasetInfoAssociation.deleted))
+            "(LibraryDatasetDatasetInfoAssociation.library_dataset_dataset_association_id == LibraryDatasetDatasetAssociation.id)"
+            "& (not_(LibraryDatasetDatasetInfoAssociation.deleted))"
         ),
     )
     template = relationship(
         "FormDefinition",
-        primaryjoin=(lambda: LibraryDatasetDatasetInfoAssociation.form_definition_id == FormDefinition.id),
+        primaryjoin="LibraryDatasetDatasetInfoAssociation.form_definition_id == FormDefinition.id",
     )
     info = relationship(
-        "FormValues", primaryjoin=(lambda: LibraryDatasetDatasetInfoAssociation.form_values_id == FormValues.id)  # type: ignore[has-type]
+        "FormValues", primaryjoin="LibraryDatasetDatasetInfoAssociation.form_values_id == FormValues.id"
     )
 
     def __init__(self, library_dataset_dataset_association, form_definition, info):
@@ -6152,24 +6094,22 @@ class ImplicitlyConvertedDatasetAssociation(Base, Serializable):
 
     parent_hda = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.hda_parent_id == HistoryDatasetAssociation.id),
+        primaryjoin="ImplicitlyConvertedDatasetAssociation.hda_parent_id == HistoryDatasetAssociation.id",
         back_populates="implicitly_converted_datasets",
     )
     dataset_ldda = relationship(
         "LibraryDatasetDatasetAssociation",
-        primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.ldda_id == LibraryDatasetDatasetAssociation.id),
+        primaryjoin="ImplicitlyConvertedDatasetAssociation.ldda_id == LibraryDatasetDatasetAssociation.id",
         back_populates="implicitly_converted_parent_datasets",
     )
     dataset = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.hda_id == HistoryDatasetAssociation.id),
+        primaryjoin="ImplicitlyConvertedDatasetAssociation.hda_id == HistoryDatasetAssociation.id",
         back_populates="implicitly_converted_parent_datasets",
     )
     parent_ldda = relationship(
         "LibraryDatasetDatasetAssociation",
-        primaryjoin=(
-            lambda: ImplicitlyConvertedDatasetAssociation.ldda_parent_id == LibraryDatasetDatasetAssociation.table.c.id
-        ),
+        primaryjoin="ImplicitlyConvertedDatasetAssociation.ldda_parent_id == LibraryDatasetDatasetAssociation.table.c.id",
         back_populates="implicitly_converted_datasets",
     )
 
@@ -6259,7 +6199,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
 
     elements = relationship(
         "DatasetCollectionElement",
-        primaryjoin=(lambda: DatasetCollection.id == DatasetCollectionElement.dataset_collection_id),  # type: ignore[has-type]
+        primaryjoin="DatasetCollection.id == DatasetCollectionElement.dataset_collection_id",
         back_populates="collection",
         order_by=lambda: DatasetCollectionElement.element_index,  # type: ignore[has-type]
     )
@@ -6730,7 +6670,7 @@ class HistoryDatasetCollectionAssociation(
 
     copied_from_history_dataset_collection_association = relationship(
         "HistoryDatasetCollectionAssociation",
-        primaryjoin=copied_from_history_dataset_collection_association_id == id,
+        primaryjoin="copied_from_history_dataset_collection_association_id == id",
         remote_side=[id],
         uselist=False,
         back_populates="copied_to_history_dataset_collection_association",
@@ -6741,10 +6681,7 @@ class HistoryDatasetCollectionAssociation(
     )
     implicit_input_collections = relationship(
         "ImplicitlyCreatedDatasetCollectionInput",
-        primaryjoin=(
-            lambda: HistoryDatasetCollectionAssociation.id
-            == ImplicitlyCreatedDatasetCollectionInput.dataset_collection_id
-        ),
+        primaryjoin="HistoryDatasetCollectionAssociation.id == ImplicitlyCreatedDatasetCollectionInput.dataset_collection_id",
     )
     implicit_collection_jobs = relationship("ImplicitCollectionJobs", uselist=False)
     job = relationship(
@@ -7154,18 +7091,19 @@ class DatasetCollectionElement(Base, Dictifiable, Serializable):
 
     hda = relationship(
         "HistoryDatasetAssociation",
-        primaryjoin=(lambda: DatasetCollectionElement.hda_id == HistoryDatasetAssociation.id),
+        primaryjoin="DatasetCollectionElement.hda_id == HistoryDatasetAssociation.id",
     )
     ldda = relationship(
         "LibraryDatasetDatasetAssociation",
-        primaryjoin=(lambda: DatasetCollectionElement.ldda_id == LibraryDatasetDatasetAssociation.id),
+        primaryjoin="DatasetCollectionElement.ldda_id == LibraryDatasetDatasetAssociation.id",
     )
     child_collection = relationship(
-        "DatasetCollection", primaryjoin=(lambda: DatasetCollectionElement.child_collection_id == DatasetCollection.id)
+        "DatasetCollection",
+        primaryjoin="DatasetCollectionElement.child_collection_id == DatasetCollection.id",
     )
     collection = relationship(
         "DatasetCollection",
-        primaryjoin=(lambda: DatasetCollection.id == DatasetCollectionElement.dataset_collection_id),
+        primaryjoin="DatasetCollection.id == DatasetCollectionElement.dataset_collection_id",
         back_populates="elements",
     )
 
@@ -7441,21 +7379,19 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
     from_path: Mapped[Optional[str]] = mapped_column(TEXT)
     published: Mapped[Optional[bool]] = mapped_column(Boolean, index=True, default=False)
 
-    user = relationship(
-        "User", primaryjoin=(lambda: User.id == StoredWorkflow.user_id), back_populates="stored_workflows"
-    )
+    user = relationship("User", primaryjoin="User.id == StoredWorkflow.user_id", back_populates="stored_workflows")
     workflows = relationship(
         "Workflow",
         back_populates="stored_workflow",
         cascade="all, delete-orphan",
-        primaryjoin=(lambda: StoredWorkflow.id == Workflow.stored_workflow_id),  # type: ignore[has-type]
+        primaryjoin="StoredWorkflow.id == Workflow.stored_workflow_id",
         order_by=lambda: -Workflow.id,  # type: ignore[has-type]
         cascade_backrefs=False,
     )
     latest_workflow = relationship(
         "Workflow",
         post_update=True,
-        primaryjoin=(lambda: StoredWorkflow.latest_workflow_id == Workflow.id),  # type: ignore[has-type]
+        primaryjoin="StoredWorkflow.latest_workflow_id == Workflow.id",
         lazy=False,
     )
     tags: Mapped[List["StoredWorkflowTagAssociation"]] = relationship(
@@ -7465,12 +7401,7 @@ class StoredWorkflow(Base, HasTags, Dictifiable, RepresentById):
     )
     owner_tags: Mapped[List["StoredWorkflowTagAssociation"]] = relationship(
         "StoredWorkflowTagAssociation",
-        primaryjoin=(
-            lambda: and_(
-                StoredWorkflow.id == StoredWorkflowTagAssociation.stored_workflow_id,
-                StoredWorkflow.user_id == StoredWorkflowTagAssociation.user_id,
-            )
-        ),
+        primaryjoin="and_(StoredWorkflow.id == StoredWorkflowTagAssociation.stored_workflow_id, StoredWorkflow.user_id == StoredWorkflowTagAssociation.user_id)",
         viewonly=True,
         order_by=lambda: StoredWorkflowTagAssociation.id,
     )
@@ -7607,7 +7538,7 @@ class Workflow(Base, Dictifiable, RepresentById):
     steps = relationship(
         "WorkflowStep",
         back_populates="workflow",
-        primaryjoin=(lambda: Workflow.id == WorkflowStep.workflow_id),  # type: ignore[has-type]
+        primaryjoin="Workflow.id == WorkflowStep.workflow_id",
         order_by=lambda: asc(WorkflowStep.order_index),  # type: ignore[has-type]
         cascade="all, delete-orphan",
         lazy=False,
@@ -7615,19 +7546,19 @@ class Workflow(Base, Dictifiable, RepresentById):
     comments = relationship(
         "WorkflowComment",
         back_populates="workflow",
-        primaryjoin=(lambda: Workflow.id == WorkflowComment.workflow_id),  # type: ignore[has-type]
+        primaryjoin="Workflow.id == WorkflowComment.workflow_id",
         cascade="all, delete-orphan",
         lazy=False,
     )
     parent_workflow_steps = relationship(
         "WorkflowStep",
-        primaryjoin=(lambda: Workflow.id == WorkflowStep.subworkflow_id),  # type: ignore[has-type]
+        primaryjoin="Workflow.id == WorkflowStep.subworkflow_id",
         back_populates="subworkflow",
         cascade_backrefs=False,
     )
     stored_workflow = relationship(
         "StoredWorkflow",
-        primaryjoin=(lambda: StoredWorkflow.id == Workflow.stored_workflow_id),
+        primaryjoin="StoredWorkflow.id == Workflow.stored_workflow_id",
         back_populates="workflows",
     )
 
@@ -7796,16 +7727,16 @@ class WorkflowStep(Base, RepresentById):
 
     parent_comment = relationship(
         "WorkflowComment",
-        primaryjoin=(lambda: WorkflowComment.id == WorkflowStep.parent_comment_id),
+        primaryjoin="WorkflowComment.id == WorkflowStep.parent_comment_id",
         back_populates="child_steps",
     )
 
     subworkflow = relationship(
         "Workflow",
-        primaryjoin=(lambda: Workflow.id == WorkflowStep.subworkflow_id),
+        primaryjoin="Workflow.id == WorkflowStep.subworkflow_id",
         back_populates="parent_workflow_steps",
     )
-    dynamic_tool = relationship("DynamicTool", primaryjoin=(lambda: DynamicTool.id == WorkflowStep.dynamic_tool_id))
+    dynamic_tool = (relationship("DynamicTool", primaryjoin="DynamicTool.id == WorkflowStep.dynamic_tool_id"),)
     tags: Mapped[List["WorkflowStepTagAssociation"]] = relationship(
         "WorkflowStepTagAssociation", order_by=lambda: WorkflowStepTagAssociation.id, back_populates="workflow_step"
     )
@@ -7818,11 +7749,11 @@ class WorkflowStep(Base, RepresentById):
     inputs = relationship("WorkflowStepInput", back_populates="workflow_step")
     workflow_outputs = relationship("WorkflowOutput", back_populates="workflow_step", cascade_backrefs=False)
     output_connections = relationship(
-        "WorkflowStepConnection", primaryjoin=(lambda: WorkflowStepConnection.output_step_id == WorkflowStep.id)
+        "WorkflowStepConnection", primaryjoin="WorkflowStepConnection.output_step_id == WorkflowStep.id"
     )
     workflow = relationship(
         "Workflow",
-        primaryjoin=(lambda: Workflow.id == WorkflowStep.workflow_id),
+        primaryjoin="Workflow.id == WorkflowStep.workflow_id",
         back_populates="steps",
         cascade_backrefs=False,
     )
@@ -8105,12 +8036,12 @@ class WorkflowStepInput(Base, RepresentById):
         "WorkflowStep",
         back_populates="inputs",
         cascade="all",
-        primaryjoin=(lambda: WorkflowStepInput.workflow_step_id == WorkflowStep.id),
+        primaryjoin="WorkflowStepInput.workflow_step_id == WorkflowStep.id",
     )
     connections = relationship(
         "WorkflowStepConnection",
         back_populates="input_step_input",
-        primaryjoin=(lambda: WorkflowStepConnection.input_step_input_id == WorkflowStepInput.id),
+        primaryjoin="WorkflowStepConnection.input_step_input_id == WorkflowStepInput.id",
         cascade_backrefs=False,
     )
 
@@ -8148,16 +8079,17 @@ class WorkflowStepConnection(Base, RepresentById):
         "WorkflowStepInput",
         back_populates="connections",
         cascade="all",
-        primaryjoin=(lambda: WorkflowStepConnection.input_step_input_id == WorkflowStepInput.id),
+        primaryjoin="WorkflowStepConnection.input_step_input_id == WorkflowStepInput.id",
     )
     input_subworkflow_step = relationship(
-        "WorkflowStep", primaryjoin=(lambda: WorkflowStepConnection.input_subworkflow_step_id == WorkflowStep.id)
+        "WorkflowStep",
+        primaryjoin="WorkflowStepConnection.input_subworkflow_step_id == WorkflowStep.id",
     )
     output_step = relationship(
         "WorkflowStep",
         back_populates="output_connections",
         cascade="all",
-        primaryjoin=(lambda: WorkflowStepConnection.output_step_id == WorkflowStep.id),
+        primaryjoin="WorkflowStepConnection.output_step_id == WorkflowStep.id",
     )
 
     # Constant used in lieu of output_name and input_name to indicate an
@@ -8202,7 +8134,7 @@ class WorkflowOutput(Base, Serializable):
     workflow_step = relationship(
         "WorkflowStep",
         back_populates="workflow_outputs",
-        primaryjoin=(lambda: WorkflowStep.id == WorkflowOutput.workflow_step_id),
+        primaryjoin="WorkflowStep.id == WorkflowOutput.workflow_step_id",
     )
 
     def __init__(self, workflow_step, output_name=None, label=None, uuid=None):
@@ -8247,26 +8179,26 @@ class WorkflowComment(Base, RepresentById):
 
     workflow = relationship(
         "Workflow",
-        primaryjoin=(lambda: Workflow.id == WorkflowComment.workflow_id),
+        primaryjoin="Workflow.id == WorkflowComment.workflow_id",
         back_populates="comments",
     )
 
     child_steps = relationship(
         "WorkflowStep",
-        primaryjoin=(lambda: WorkflowStep.parent_comment_id == WorkflowComment.id),
+        primaryjoin="WorkflowStep.parent_comment_id == WorkflowComment.id",
         back_populates="parent_comment",
     )
 
     parent_comment = relationship(
         "WorkflowComment",
-        primaryjoin=(lambda: WorkflowComment.id == WorkflowComment.parent_comment_id),
+        primaryjoin="WorkflowComment.id == WorkflowComment.parent_comment_id",
         back_populates="child_comments",
         remote_side=[id],
     )
 
     child_comments = relationship(
         "WorkflowComment",
-        primaryjoin=(lambda: WorkflowComment.parent_comment_id == WorkflowComment.id),
+        primaryjoin="WorkflowComment.parent_comment_id == WorkflowComment.id",
         back_populates="parent_comment",
     )
 
@@ -8326,9 +8258,9 @@ class StoredWorkflowMenuEntry(Base, RepresentById):
         "User",
         back_populates="stored_workflow_menu_entries",
         primaryjoin=(
-            lambda: (StoredWorkflowMenuEntry.user_id == User.id)
-            & (StoredWorkflowMenuEntry.stored_workflow_id == StoredWorkflow.id)
-            & not_(StoredWorkflow.deleted)
+            "(StoredWorkflowMenuEntry.user_id == User.id)"
+            "& (StoredWorkflowMenuEntry.stored_workflow_id == StoredWorkflow.id)"
+            "& not_(StoredWorkflow.deleted)"
         ),
     )
 
@@ -8364,9 +8296,7 @@ class WorkflowInvocation(Base, UsesCreateAndUpdateTime, Dictifiable, Serializabl
     )
     subworkflow_invocations = relationship(
         "WorkflowInvocationToSubworkflowInvocationAssociation",
-        primaryjoin=(
-            lambda: WorkflowInvocationToSubworkflowInvocationAssociation.workflow_invocation_id == WorkflowInvocation.id
-        ),
+        primaryjoin="WorkflowInvocationToSubworkflowInvocationAssociation.workflow_invocation_id == WorkflowInvocation.id",
         back_populates="parent_workflow_invocation",
         uselist=True,
     )
@@ -8893,18 +8823,13 @@ class WorkflowInvocationToSubworkflowInvocationAssociation(Base, Dictifiable, Re
 
     subworkflow_invocation = relationship(
         "WorkflowInvocation",
-        primaryjoin=(
-            lambda: WorkflowInvocationToSubworkflowInvocationAssociation.subworkflow_invocation_id
-            == WorkflowInvocation.id
-        ),
+        primaryjoin="WorkflowInvocationToSubworkflowInvocationAssociation.subworkflow_invocation_id == WorkflowInvocation.id",
         uselist=False,
     )
     workflow_step = relationship("WorkflowStep")
     parent_workflow_invocation = relationship(
         "WorkflowInvocation",
-        primaryjoin=(
-            lambda: WorkflowInvocationToSubworkflowInvocationAssociation.workflow_invocation_id == WorkflowInvocation.id
-        ),
+        primaryjoin="WorkflowInvocationToSubworkflowInvocationAssociation.workflow_invocation_id == WorkflowInvocation.id",
         back_populates="subworkflow_invocations",
         uselist=False,
     )
@@ -9025,10 +8950,10 @@ class WorkflowInvocationStep(Base, Dictifiable, Serializable):
         "WorkflowInvocationOutputValue",
         foreign_keys="[WorkflowInvocationStep.workflow_invocation_id, WorkflowInvocationStep.workflow_step_id]",
         primaryjoin=(
-            lambda: and_(
-                WorkflowInvocationStep.workflow_invocation_id == WorkflowInvocationOutputValue.workflow_invocation_id,
-                WorkflowInvocationStep.workflow_step_id == WorkflowInvocationOutputValue.workflow_step_id,
-            )
+            "and_("
+            "WorkflowInvocationStep.workflow_invocation_id == WorkflowInvocationOutputValue.workflow_invocation_id,"
+            "WorkflowInvocationStep.workflow_step_id == WorkflowInvocationOutputValue.workflow_step_id,"
+            ")"
         ),
         back_populates="workflow_invocation_step",
         viewonly=True,
@@ -9421,10 +9346,10 @@ class WorkflowInvocationOutputValue(Base, Dictifiable, Serializable):
         "WorkflowInvocationStep",
         foreign_keys="[WorkflowInvocationStep.workflow_invocation_id, WorkflowInvocationStep.workflow_step_id]",
         primaryjoin=(
-            lambda: and_(
-                WorkflowInvocationStep.workflow_invocation_id == WorkflowInvocationOutputValue.workflow_invocation_id,
-                WorkflowInvocationStep.workflow_step_id == WorkflowInvocationOutputValue.workflow_step_id,
-            )
+            "and_("
+            "WorkflowInvocationStep.workflow_invocation_id == WorkflowInvocationOutputValue.workflow_invocation_id,"
+            "WorkflowInvocationStep.workflow_step_id == WorkflowInvocationOutputValue.workflow_step_id,"
+            ")"
         ),
         back_populates="output_value",
         viewonly=True,
@@ -9586,7 +9511,7 @@ class FormDefinition(Base, Dictifiable, RepresentById):
     form_definition_current = relationship(
         "FormDefinitionCurrent",
         back_populates="forms",
-        primaryjoin=(lambda: FormDefinitionCurrent.id == FormDefinition.form_definition_current_id),  # type: ignore[has-type]
+        primaryjoin="FormDefinitionCurrent.id == FormDefinition.form_definition_current_id",
     )
 
     # The following form_builder classes are supported by the FormDefinition class.
@@ -9653,12 +9578,12 @@ class FormDefinitionCurrent(Base, RepresentById):
         "FormDefinition",
         back_populates="form_definition_current",
         cascade="all, delete-orphan",
-        primaryjoin=(lambda: FormDefinitionCurrent.id == FormDefinition.form_definition_current_id),
+        primaryjoin="FormDefinitionCurrent.id == FormDefinition.form_definition_current_id",
     )
     latest_form = relationship(
         "FormDefinition",
         post_update=True,
-        primaryjoin=(lambda: FormDefinitionCurrent.latest_form_id == FormDefinition.id),
+        primaryjoin="FormDefinitionCurrent.latest_form_id == FormDefinition.id",
     )
 
     def __init__(self, form_definition=None):
@@ -9673,9 +9598,7 @@ class FormValues(Base, RepresentById):
     update_time: Mapped[datetime] = mapped_column(DateTime, default=now, onupdate=now, nullable=True)
     form_definition_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("form_definition.id"), index=True)
     content: Mapped[Optional[bytes]] = mapped_column(MutableJSONType)
-    form_definition = relationship(
-        "FormDefinition", primaryjoin=(lambda: FormValues.form_definition_id == FormDefinition.id)
-    )
+    form_definition = relationship("FormDefinition", primaryjoin="FormValues.form_definition_id == FormDefinition.id")
 
     def __init__(self, form_def=None, content=None):
         self.form_definition = form_def
@@ -10050,13 +9973,13 @@ class Page(Base, HasTags, Dictifiable, RepresentById):
     revisions = relationship(
         "PageRevision",
         cascade="all, delete-orphan",
-        primaryjoin=(lambda: Page.id == PageRevision.page_id),  # type: ignore[has-type]
+        primaryjoin="Page.id == PageRevision.page_id",
         back_populates="page",
     )
     latest_revision = relationship(
         "PageRevision",
         post_update=True,
-        primaryjoin=(lambda: Page.latest_revision_id == PageRevision.id),  # type: ignore[has-type]
+        primaryjoin="Page.latest_revision_id == PageRevision.id",
         lazy=False,
     )
     tags: Mapped[List["PageTagAssociation"]] = relationship(
@@ -10122,7 +10045,7 @@ class PageRevision(Base, Dictifiable, RepresentById):
     title: Mapped[Optional[str]] = mapped_column(TEXT)
     content: Mapped[Optional[str]] = mapped_column(TEXT)
     content_format: Mapped[Optional[str]] = mapped_column(TrimmedString(32))
-    page = relationship("Page", primaryjoin=(lambda: Page.id == PageRevision.page_id))
+    page = relationship("Page", primaryjoin="Page.id == PageRevision.page_id")
     DEFAULT_CONTENT_FORMAT = "html"
     dict_element_visible_keys = ["id", "page_id", "title", "content", "content_format"]
 
@@ -10175,13 +10098,13 @@ class Visualization(Base, HasTags, Dictifiable, RepresentById):
         "VisualizationRevision",
         back_populates="visualization",
         cascade="all, delete-orphan",
-        primaryjoin=(lambda: Visualization.id == VisualizationRevision.visualization_id),
+        primaryjoin="Visualization.id == VisualizationRevision.visualization_id",
         cascade_backrefs=False,
     )
     latest_revision = relationship(
         "VisualizationRevision",
         post_update=True,
-        primaryjoin=(lambda: Visualization.latest_revision_id == VisualizationRevision.id),
+        primaryjoin="Visualization.latest_revision_id == VisualizationRevision.id",
         lazy=False,
     )
     tags: Mapped[List["VisualizationTagAssociation"]] = relationship(
@@ -10277,7 +10200,7 @@ class VisualizationRevision(Base, RepresentById):
     visualization = relationship(
         "Visualization",
         back_populates="revisions",
-        primaryjoin=(lambda: Visualization.id == VisualizationRevision.visualization_id),
+        primaryjoin="Visualization.id == VisualizationRevision.visualization_id",
     )
 
     def copy(self, visualization=None):
@@ -11044,42 +10967,30 @@ mapper_registry.map_imperatively(
     properties=dict(
         dataset=relationship(
             Dataset,
-            primaryjoin=(lambda: Dataset.id == HistoryDatasetAssociation.table.c.dataset_id),
+            primaryjoin="Dataset.id == HistoryDatasetAssociation.table.c.dataset_id",
             lazy="joined",
             back_populates="history_associations",
         ),
         copied_from_history_dataset_association=relationship(
             HistoryDatasetAssociation,
-            primaryjoin=(
-                HistoryDatasetAssociation.table.c.copied_from_history_dataset_association_id
-                == HistoryDatasetAssociation.table.c.id
-            ),
+            primaryjoin="HistoryDatasetAssociation.table.c.copied_from_history_dataset_association_id == HistoryDatasetAssociation.table.c.id",
             remote_side=[HistoryDatasetAssociation.table.c.id],
             uselist=False,
             back_populates="copied_to_history_dataset_associations",
         ),
         copied_from_library_dataset_dataset_association=relationship(
             LibraryDatasetDatasetAssociation,
-            primaryjoin=(
-                LibraryDatasetDatasetAssociation.table.c.id
-                == HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id
-            ),
+            primaryjoin="LibraryDatasetDatasetAssociation.table.c.id == HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id",
             back_populates="copied_to_history_dataset_associations",
         ),
         copied_to_history_dataset_associations=relationship(
             HistoryDatasetAssociation,
-            primaryjoin=(
-                HistoryDatasetAssociation.table.c.copied_from_history_dataset_association_id
-                == HistoryDatasetAssociation.table.c.id
-            ),
+            primaryjoin="HistoryDatasetAssociation.table.c.copied_from_history_dataset_association_id == HistoryDatasetAssociation.table.c.id",
             back_populates="copied_from_history_dataset_association",
         ),
         copied_to_library_dataset_dataset_associations=relationship(
             LibraryDatasetDatasetAssociation,
-            primaryjoin=(
-                HistoryDatasetAssociation.table.c.id
-                == LibraryDatasetDatasetAssociation.table.c.copied_from_history_dataset_association_id
-            ),
+            primaryjoin="HistoryDatasetAssociation.table.c.id == LibraryDatasetDatasetAssociation.table.c.copied_from_history_dataset_association_id",
             back_populates="copied_from_history_dataset_association",
         ),
         tags=relationship(
@@ -11099,14 +11010,11 @@ mapper_registry.map_imperatively(
         ),
         extended_metadata=relationship(
             ExtendedMetadata,
-            primaryjoin=(HistoryDatasetAssociation.table.c.extended_metadata_id == ExtendedMetadata.id),
+            primaryjoin="HistoryDatasetAssociation.table.c.extended_metadata_id == ExtendedMetadata.id",
         ),
         hidden_beneath_collection_instance=relationship(
             HistoryDatasetCollectionAssociation,
-            primaryjoin=(
-                HistoryDatasetAssociation.table.c.hidden_beneath_collection_instance_id
-                == HistoryDatasetCollectionAssociation.id
-            ),
+            primaryjoin="HistoryDatasetAssociation.table.c.hidden_beneath_collection_instance_id == HistoryDatasetCollectionAssociation.id",
             uselist=False,
         ),
         _metadata=deferred(HistoryDatasetAssociation.table.c._metadata),
@@ -11115,12 +11023,12 @@ mapper_registry.map_imperatively(
         history=relationship(History, back_populates="datasets", cascade_backrefs=False),
         implicitly_converted_datasets=relationship(
             ImplicitlyConvertedDatasetAssociation,
-            primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.hda_parent_id == HistoryDatasetAssociation.id),
+            primaryjoin="ImplicitlyConvertedDatasetAssociation.hda_parent_id == HistoryDatasetAssociation.id",
             back_populates="parent_hda",
         ),
         implicitly_converted_parent_datasets=relationship(
             ImplicitlyConvertedDatasetAssociation,
-            primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.hda_id == HistoryDatasetAssociation.id),
+            primaryjoin="ImplicitlyConvertedDatasetAssociation.hda_id == HistoryDatasetAssociation.id",
             back_populates="dataset",
         ),
     ),
@@ -11132,7 +11040,7 @@ mapper_registry.map_imperatively(
     properties=dict(
         dataset=relationship(
             Dataset,
-            primaryjoin=(lambda: LibraryDatasetDatasetAssociation.table.c.dataset_id == Dataset.id),
+            primaryjoin="LibraryDatasetDatasetAssociation.table.c.dataset_id == Dataset.id",
             back_populates="library_associations",
         ),
         library_dataset=relationship(
@@ -11141,35 +11049,24 @@ mapper_registry.map_imperatively(
         user=relationship(User),
         copied_from_library_dataset_dataset_association=relationship(
             LibraryDatasetDatasetAssociation,
-            primaryjoin=(
-                LibraryDatasetDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id
-                == LibraryDatasetDatasetAssociation.table.c.id
-            ),
+            primaryjoin="LibraryDatasetDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id == LibraryDatasetDatasetAssociation.table.c.id",
             remote_side=[LibraryDatasetDatasetAssociation.table.c.id],
             uselist=False,
             back_populates="copied_to_library_dataset_dataset_associations",
         ),
         copied_to_library_dataset_dataset_associations=relationship(
             LibraryDatasetDatasetAssociation,
-            primaryjoin=(
-                LibraryDatasetDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id
-                == LibraryDatasetDatasetAssociation.table.c.id
-            ),
+            primaryjoin="LibraryDatasetDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id == LibraryDatasetDatasetAssociation.table.c.id",
             back_populates="copied_from_library_dataset_dataset_association",
         ),
         copied_to_history_dataset_associations=relationship(
             HistoryDatasetAssociation,
-            primaryjoin=(
-                LibraryDatasetDatasetAssociation.table.c.id
-                == HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id
-            ),
+            primaryjoin="LibraryDatasetDatasetAssociation.table.c.id == HistoryDatasetAssociation.table.c.copied_from_library_dataset_dataset_association_id",
             back_populates="copied_from_library_dataset_dataset_association",
         ),
         implicitly_converted_datasets=relationship(
             ImplicitlyConvertedDatasetAssociation,
-            primaryjoin=(
-                ImplicitlyConvertedDatasetAssociation.ldda_parent_id == LibraryDatasetDatasetAssociation.table.c.id
-            ),
+            primaryjoin="ImplicitlyConvertedDatasetAssociation.ldda_parent_id == LibraryDatasetDatasetAssociation.table.c.id",
             back_populates="parent_ldda",
         ),
         tags=relationship(
@@ -11179,7 +11076,7 @@ mapper_registry.map_imperatively(
         ),
         extended_metadata=relationship(
             ExtendedMetadata,
-            primaryjoin=(LibraryDatasetDatasetAssociation.table.c.extended_metadata_id == ExtendedMetadata.id),
+            primaryjoin="LibraryDatasetDatasetAssociation.table.c.extended_metadata_id == ExtendedMetadata.id",
         ),
         _metadata=deferred(LibraryDatasetDatasetAssociation.table.c._metadata),
         actions=relationship(
@@ -11189,15 +11086,12 @@ mapper_registry.map_imperatively(
         creating_job_associations=relationship(JobToOutputLibraryDatasetAssociation, back_populates="dataset"),
         implicitly_converted_parent_datasets=relationship(
             ImplicitlyConvertedDatasetAssociation,
-            primaryjoin=(lambda: ImplicitlyConvertedDatasetAssociation.ldda_id == LibraryDatasetDatasetAssociation.id),
+            primaryjoin="ImplicitlyConvertedDatasetAssociation.ldda_id == LibraryDatasetDatasetAssociation.id",
             back_populates="dataset_ldda",
         ),
         copied_from_history_dataset_association=relationship(
             HistoryDatasetAssociation,
-            primaryjoin=(
-                HistoryDatasetAssociation.table.c.id
-                == LibraryDatasetDatasetAssociation.table.c.copied_from_history_dataset_association_id
-            ),
+            primaryjoin="HistoryDatasetAssociation.table.c.id == LibraryDatasetDatasetAssociation.table.c.copied_from_history_dataset_association_id",
             back_populates="copied_to_library_dataset_dataset_associations",
         ),
     ),
