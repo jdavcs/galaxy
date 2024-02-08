@@ -3043,7 +3043,7 @@ class History(Base, HasTags, Dictifiable, UsesAnnotations, HasName, Serializable
             lambda: and_(
                 HistoryDatasetCollectionAssociation.history_id == History.id,  # type: ignore[has-type]
                 not_(HistoryDatasetCollectionAssociation.deleted),  # type: ignore[has-type, arg-type]
-                HistoryDatasetCollectionAssociation.visible,  # type: ignore[has-type]
+                HistoryDatasetCollectionAssociation.visible,  # type: ignore[has-type, arg-type]
             )
         ),
         order_by=lambda: asc(HistoryDatasetCollectionAssociation.hid),  # type: ignore[has-type]
@@ -6037,8 +6037,9 @@ class LibraryInfoAssociation(Base, RepresentById):
         "Library",
         primaryjoin=(
             lambda: and_(
-                LibraryInfoAssociation.library_id == Library.id, not_(LibraryInfoAssociation.deleted)
-            )  # type:ignore[arg-type]
+                LibraryInfoAssociation.library_id == Library.id,
+                not_(LibraryInfoAssociation.deleted),  # type:ignore[arg-type]
+            )
         ),
     )
     template = relationship(
