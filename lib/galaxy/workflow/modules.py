@@ -2421,6 +2421,7 @@ class WorkflowModuleFactory:
         Return module initialized from the WorkflowStep object `step`.
         """
         type = step.type
+        assert type
         return self.module_types[type].from_workflow_step(trans, step, **kwargs)
 
 
