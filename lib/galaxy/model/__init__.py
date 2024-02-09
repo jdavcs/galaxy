@@ -57,7 +57,6 @@ from social_core.storage import (
     UserMixin,
 )
 from sqlalchemy import (
-    alias,
     and_,
     asc,
     BigInteger,
@@ -6307,10 +6306,10 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
         dataset_permission_attributes = dataset_permission_attributes or ()
         return_entities = return_entities or ()
         dataset_collection = self
-        dc = alias(DatasetCollection)
-        dce = alias(DatasetCollectionElement)
+        dc = aliased(DatasetCollection)
+        dce = aliased(DatasetCollectionElement)
         depth_collection_type = dataset_collection.collection_type
-        order_by_columns = [dce.c.element_index]
+        order_by_columns = [dce.__table__.c.element_index]
         nesting_level = 0
 
         def attribute_columns(column_collection, attributes, nesting_level=None):
@@ -6319,31 +6318,35 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
 
         q = (
             select(
-                *attribute_columns(dce.c, element_attributes, nesting_level),
-                *attribute_columns(dc.c, collection_attributes, nesting_level),
+                *attribute_columns(dce.__table__.c, element_attributes, nesting_level),
+                *attribute_columns(dc.__table__.c, collection_attributes, nesting_level),
             )
             .select_from(dce, dc)
-            .join(dce, dce.c.dataset_collection_id == dc.c.id)
-            .filter(dc.c.id == dataset_collection.id)
+            .join(dce, dce.__table__.c.dataset_collection_id == dc.__table__.c.id)
+            .filter(dc.__table__.c.id == dataset_collection.id)
         )
 
         while ":" in depth_collection_type:
             nesting_level += 1
-            inner_dc = alias(DatasetCollection)
-            inner_dce = alias(DatasetCollectionElement)
-            order_by_columns.append(inner_dce.c.element_index)
+            inner_dc = aliased(DatasetCollection)
+            inner_dce = aliased(DatasetCollectionElement)
+            order_by_columns.append(inner_dce.__table__.c.element_index)
             q = q.join(
-                inner_dc, and_(inner_dc.c.id == dce.c.child_collection_id, dce.c.dataset_collection_id == dc.c.id)
-            ).outerjoin(inner_dce, inner_dce.c.dataset_collection_id == inner_dc.c.id)
+                inner_dc,
+                and_(
+                    inner_dc.__table__.c.id == dce.__table__.c.child_collection_id,
+                    dce.__table__.c.dataset_collection_id == dc.__table__.c.id,
+                ),
+            ).outerjoin(inner_dce, inner_dce.__table__.c.dataset_collection_id == inner_dc.__table__.c.id)
             q = q.add_columns(
-                *attribute_columns(inner_dce.c, element_attributes, nesting_level),
-                *attribute_columns(inner_dc.c, collection_attributes, nesting_level),
+                *attribute_columns(inner_dce.__table__.c, element_attributes, nesting_level),
+                *attribute_columns(inner_dc.__table__.c, collection_attributes, nesting_level),
             )
             dce = inner_dce
             dc = inner_dc
             depth_collection_type = depth_collection_type.split(":", 1)[1]
         if inner_filter:
-            q = q.filter(inner_filter.produce_filter(dc.c))
+            q = q.filter(inner_filter.produce_filter(dc.__table__.c))
 
         if (
             hda_attributes
@@ -6363,7 +6366,7 @@ class DatasetCollection(Base, Dictifiable, UsesAnnotations, Serializable):
         for entity in return_entities:
             q = q.add_columns(entity)
             if entity == DatasetCollectionElement:
-                q = q.filter(entity.id == dce.c.id)  # type:ignore[arg-type]
+                q = q.filter(entity.id == dce.__table__.c.id)  # type:ignore[arg-type]
 
         q = q.order_by(*order_by_columns)
         return q
