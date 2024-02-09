@@ -4817,7 +4817,9 @@ class DatasetInstance(RepresentById, UsesCreateAndUpdateTime, _HasTable):
         self, accepted_formats: List[str], **kwd
     ) -> Tuple[bool, Optional[str], Optional["DatasetInstance"]]:
         """Returns ( target_ext, existing converted dataset )"""
-        return self.datatype.find_conversion_destination(self, accepted_formats, _get_datatypes_registry(), **kwd)
+        return self.datatype.find_conversion_destination(
+            self, accepted_formats, _get_datatypes_registry(), **kwd  # type:ignore[arg-type]
+        )
 
     def add_validation_error(self, validation_error):
         self.validation_errors.append(validation_error)
@@ -6859,7 +6861,7 @@ class HistoryDatasetCollectionAssociation(
                 col = func.sum(case((column(state_label) == state, 1), else_=0)).label(state)
                 stm = stm.add_columns(col)
             # Add aggregate column for all jobs
-            col = func.count("*").label("all_jobs")
+            col = func.count().label("all_jobs")
             stm = stm.add_columns(col)
             return stm
 
@@ -11279,7 +11281,7 @@ WorkflowInvocationStep.subworkflow_invocation_id = column_property(  # type:igno
 
 # Set up proxy so that this syntax is possible:
 # <user_obj>.preferences[pref_name] = pref_value
-User.preferences = association_proxy("_preferences", "value", creator=UserPreference)
+User.preferences = association_proxy("_preferences", "value", creator=UserPreference)  # type:ignore[assignment]
 
 # Optimized version of getting the current Galaxy session.
 # See https://github.com/sqlalchemy/sqlalchemy/discussions/7638 for approach

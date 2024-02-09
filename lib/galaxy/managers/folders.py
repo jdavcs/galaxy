@@ -536,7 +536,7 @@ class FolderManager:
 
     def build_folder_path(
         self, sa_session: galaxy_scoped_session, folder: model.LibraryFolder
-    ) -> List[Tuple[str, str]]:
+    ) -> List[Tuple[int, Optional[str]]]:
         """
         Returns the folder path from root to the given folder.
 
