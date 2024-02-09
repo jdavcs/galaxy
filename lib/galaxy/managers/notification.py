@@ -127,7 +127,7 @@ class NotificationManager:
     def _send_to_users(self, notification: Notification, users: List[User]):
         # TODO: Move this potentially expensive operation to a task?
         for user in users:
-            if self._user_is_subscribed_to_notification(user, notification.category):
+            if self._user_is_subscribed_to_notification(user, notification.category):  # type:ignore[arg-type]
                 user_notification_association = UserNotificationAssociation(user, notification)
                 self.sa_session.add(user_notification_association)
 
