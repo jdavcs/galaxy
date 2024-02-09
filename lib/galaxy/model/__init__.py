@@ -28,6 +28,7 @@ from secrets import token_hex
 from string import Template
 from typing import (
     Any,
+    cast,
     Dict,
     Iterable,
     List,
@@ -4200,7 +4201,7 @@ class Dataset(Base, StorableObject, Serializable):
             if nice_size:
                 return galaxy.util.nice_size(self.file_size)
             else:
-                return self.file_size
+                return cast(int, self.file_size)
         elif calculate_size:
             # Hopefully we only reach this branch in sessionless mode
             if nice_size:
@@ -4208,7 +4209,7 @@ class Dataset(Base, StorableObject, Serializable):
             else:
                 return self._calculate_size()
         else:
-            return self.file_size or 0
+            return cast(int, self.file_size) or 0
 
     def set_size(self, no_extra_files=False):
         """Sets the size of the data on disk.
