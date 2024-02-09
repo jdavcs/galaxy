@@ -103,7 +103,7 @@ class GalaxyTaskBeforeStartUserRateLimitPostgres(GalaxyTaskBeforeStartUserRateLi
             result = sa_session.execute(
                 self._update_stmt, {"userid": user_id, "interval": task_interval_secs, "now": now}
             )
-            if result.rowcount == 0:
+            if result.rowcount == 0:  # type:ignore[attr-defined]
                 sched_time = now + datetime.timedelta(seconds=task_interval_secs)
                 result = sa_session.execute(
                     self._upsert_stmt, {"userid": user_id, "now": now, "sched_time": sched_time}
