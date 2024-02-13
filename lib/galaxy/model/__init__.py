@@ -228,9 +228,8 @@ if TYPE_CHECKING:
         pass
 
     from galaxy.datatypes.data import Data
-
-    # from galaxy.tools import DefaultToolState
-    # from galaxy.workflow.modules import WorkflowModule
+    from galaxy.tools import DefaultToolState
+    from galaxy.workflow.modules import WorkflowModule
 
     class _HasTable:
         table: Table
@@ -7884,12 +7883,6 @@ class WorkflowStep(Base, RepresentById):
         cascade_backrefs=False,
     )
 
-    # Injected attributes
-    # TODO: code using these should be refactored to not depend on these non-persistent fields
-    module = None
-    state = None
-    upgrade_messages = None
-
     STEP_TYPE_TO_INPUT_TYPE = {
         "data_input": "dataset",
         "data_collection_input": "dataset_collection",
@@ -7901,6 +7894,11 @@ class WorkflowStep(Base, RepresentById):
         self.uuid = uuid4()
         self._input_connections_by_name = None
         self._inputs_by_name = None
+        # Injected attributes
+        # TODO: code using these should be refactored to not depend on these non-persistent fields
+        self.module: Optional["WorkflowModule"]
+        self.state: Optional["DefaultToolState"]
+        self.upgrade_messages: Optional[Dict]
 
     @reconstructor
     def init_on_load(self):
