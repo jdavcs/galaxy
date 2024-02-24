@@ -11263,3 +11263,11 @@ def receive_init(target, args, kwargs):
 
 
 JobStateSummary = NamedTuple("JobStateSummary", [(value, int) for value in enum_values(Job.states)] + [("all_jobs", int)])  # type: ignore[misc]  # Ref https://github.com/python/mypy/issues/848#issuecomment-255237167
+
+class Foo(Base):
+    __tablename__ = "foo"
+
+    id = Column(Integer, primary_key=True)
+    a = Column(String)
+    b = Column(String)
+    c = Column(String)
