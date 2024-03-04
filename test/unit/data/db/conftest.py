@@ -96,8 +96,7 @@ def make_dataset_collection(session):
 @pytest.fixture
 def make_dataset_collection_element(session, make_hda):
     def f(**kwd):
-        if "element" not in kwd:
-            kwd["element"] = make_hda()
+        kwd["element"] = kwd.get("element", make_hda())
         dce = m.DatasetCollectionElement(**kwd)
         with transaction(session):
             session.add(dce)
@@ -122,8 +121,7 @@ def make_dataset_permissions(session):
 @pytest.fixture
 def make_history(session, make_user):
     def f(**kwd):
-        if "user" not in kwd:
-            kwd["user"] = make_user()
+        kwd["user"] = kwd.get("user", make_user())
         history = m.History(**kwd)
         with transaction(session):
             session.add(history)
@@ -136,8 +134,7 @@ def make_history(session, make_user):
 @pytest.fixture
 def make_hda(session, make_history):
     def f(**kwd):
-        if "history" not in kwd:
-            kwd["history"] = make_history()
+        kwd["history"] = kwd.get("history", make_history())
         hda = m.HistoryDatasetAssociation(**kwd)
         with transaction(session):
             session.add(hda)
@@ -198,9 +195,9 @@ def make_library_folder(session):
 @pytest.fixture
 def make_library_permissions(session, make_library, make_role):
     def f(**kwd):
-        action = kwd.get("action") or random_str()
-        library = kwd.get("library") or make_library()
-        role = kwd.get("role") or make_role()
+        action = kwd.get("action", random_str())
+        library = kwd.get("library", make_library())
+        role = kwd.get("role", make_role())
         lp = m.LibraryPermissions(action, library, role)
         with transaction(session):
             session.add(lp)
@@ -213,8 +210,7 @@ def make_library_permissions(session, make_library, make_role):
 @pytest.fixture
 def make_page(session, make_user):
     def f(**kwd):
-        if "user" not in kwd:
-            kwd["user"] = make_user()
+        kwd["user"] = kwd.get("user", make_user())
         page = m.Page(**kwd)
         with transaction(session):
             session.add(page)
@@ -239,8 +235,7 @@ def make_role(session):
 @pytest.fixture
 def make_stored_workflow(session, make_user):
     def f(**kwd):
-        if "user" not in kwd:
-            kwd["user"] = make_user()
+        kwd["user"] = kwd.get("user", make_user())
         sw = m.StoredWorkflow(**kwd)
         with transaction(session):
             session.add(sw)
@@ -253,12 +248,9 @@ def make_stored_workflow(session, make_user):
 @pytest.fixture
 def make_user(session):
     def f(**kwd):
-        if "username" not in kwd:
-            kwd["username"] = random_email()
-        if "email" not in kwd:
-            kwd["email"] = random_email()
-        if "password" not in kwd:
-            kwd["password"] = random_str()
+        kwd["username"] = kwd.get("username", random_str())
+        kwd["email"] = kwd.get("email", random_email())
+        kwd["password"] = kwd.get("password", random_str())
         user = m.User(**kwd)
         with transaction(session):
             session.add(user)
@@ -295,8 +287,7 @@ def make_user_role_association(session):
 @pytest.fixture
 def make_visualization(session, make_user):
     def f(**kwd):
-        if "user" not in kwd:
-            kwd["user"] = make_user()
+        kwd["user"] = kwd.get("user", make_user())
         vis = m.Visualization(**kwd)
         with transaction(session):
             session.add(vis)
