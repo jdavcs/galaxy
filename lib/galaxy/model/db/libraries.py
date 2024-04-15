@@ -50,3 +50,8 @@ def get_libraries_for_nonadmins(session, restricted_library_ids, accessible_rest
     )
     stmt = stmt.order_by(asc(func.lower(Library.name)))
     return session.scalars(stmt)
+
+
+def get_libraries_by_name(session, name):
+    stmt = select(Library).where(Library.deleted == false()).where(Library.name == name)
+    return session.scalars(stmt)

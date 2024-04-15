@@ -10,10 +10,6 @@ from typing import (
     Tuple,
 )
 
-from sqlalchemy import (
-    false,
-    select,
-)
 from sqlalchemy.exc import (
     MultipleResultsFound,
     NoResultFound,
@@ -28,6 +24,7 @@ from galaxy.model import (
 )
 from galaxy.model.base import transaction
 from galaxy.model.db.libraries import (
+    get_libraries_by_name,
     get_libraries_for_admins,
     get_libraries_for_nonadmins,
     get_library_ids,
@@ -358,8 +355,7 @@ def get_containing_library_from_library_dataset(trans, library_dataset) -> Optio
     while folder.parent:
         folder = folder.parent
     # We have folder set to the library's root folder, which has the same name as the library
-    stmt = select(Library).where(Library.deleted == false()).where(Library.name == folder.name)
-    for library in trans.sa_session.scalars(stmt):
+    for library in get_libraries_by_name(trans.sa_session, folder.name):
         # Just to double-check
         if library.root_folder == folder:
             return library

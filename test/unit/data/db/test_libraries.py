@@ -1,4 +1,5 @@
 from galaxy.model.db.libraries import (
+    get_libraries_by_name,
     get_libraries_for_admins,
     get_libraries_for_nonadmins,
     get_library_ids,
@@ -87,3 +88,13 @@ def test_get_libraries_for_admins_non_admins__ordering(session, make_library):
     assert libs == expected
     libs = get_libraries_for_nonadmins(session, [], []).all()
     assert libs == expected
+
+
+def test_get_libraries_by_name(session, make_library):
+    make_library(name="a")
+    l2 = make_library(name="b")
+    l3 = make_library(name="b")  # intentional duplicate
+    l3.deleted = True  # should not be returned
+
+    libs = get_libraries_by_name(session, "b").all()
+    assert libs == [l2]
