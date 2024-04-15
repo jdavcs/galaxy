@@ -11,13 +11,8 @@ from typing import (
 )
 
 from sqlalchemy import (
-    asc,
     false,
-    func,
-    not_,
-    or_,
     select,
-    true,
 )
 from sqlalchemy.exc import (
     MultipleResultsFound,
@@ -29,10 +24,15 @@ from galaxy import exceptions
 from galaxy.managers.folders import FolderManager
 from galaxy.model import (
     Library,
-    LibraryPermissions,
     Role,
 )
 from galaxy.model.base import transaction
+from galaxy.model.db.libraries import (
+    get_libraries_for_admins,
+    get_libraries_for_nonadmins,
+    get_library_ids,
+    get_library_permissions_by_role,
+)
 from galaxy.util import (
     pretty_print_time_interval,
     unicodify,
@@ -369,41 +369,3 @@ def get_containing_library_from_library_dataset(trans, library_dataset) -> Optio
 def get_library(session, library_id):
     stmt = select(Library).where(Library.id == library_id)
     return session.execute(stmt).scalar_one()
-
-
-def get_library_ids(session, library_access_action):
-    stmt = select(LibraryPermissions.library_id).where(LibraryPermissions.action == library_access_action).distinct()
-    return session.scalars(stmt)
-
-
-def get_library_permissions_by_role(session, role_ids):
-    stmt = select(LibraryPermissions).where(LibraryPermissions.role_id.in_(role_ids))
-    return session.scalars(stmt)
-
-
-def get_libraries_for_admins(session, deleted):
-    stmt = select(Library)
-    if deleted is None:
-        #  Flag is not specified, do not filter on it.
-        pass
-    elif deleted:
-        stmt = stmt.where(Library.deleted == true())
-    else:
-        stmt = stmt.where(Library.deleted == false())
-    stmt = stmt.order_by(asc(func.lower(Library.name)))
-    return session.scalars(stmt)
-
-
-def get_libraries_for_nonadmins(session, restricted_library_ids, accessible_restricted_library_ids):
-    stmt = (
-        select(Library)
-        .where(Library.deleted == false())
-        .where(
-            or_(
-                not_(Library.id.in_(restricted_library_ids)),
-                Library.id.in_(accessible_restricted_library_ids),
-            )
-        )
-    )
-    stmt = stmt.order_by(asc(func.lower(Library.name)))
-    return session.scalars(stmt)
