@@ -217,8 +217,8 @@ TRANSFORM_ACTIONS = List[TransformAction]
 
 mapper_registry = registry(
     type_annotation_map={
-        Optional[STR_TO_STR_DICT]: JSONType,
-        Optional[TRANSFORM_ACTIONS]: MutableJSONType,
+        STR_TO_STR_DICT: JSONType,
+        TRANSFORM_ACTIONS: MutableJSONType,
     },
 )
 
