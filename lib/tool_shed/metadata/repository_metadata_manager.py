@@ -14,6 +14,7 @@ from sqlalchemy import (
 
 from galaxy import util
 from galaxy.model.base import transaction
+from galaxy.model.db.user import get_user_by_username
 from galaxy.tool_shed.metadata.metadata_generator import (
     BaseMetadataGenerator,
     HandleResultT,
@@ -153,7 +154,7 @@ class ToolShedMetadataGenerator(BaseMetadataGenerator):
 
         if suc.tool_shed_is_this_tool_shed(toolshed, trans=self.trans):
             try:
-                user = get_user_by_username(self.sa_session, owner)
+                user = get_user_by_username(self.sa_session, owner, model_class=User)
             except Exception:
                 error_message = (
                     f"Ignoring repository dependency definition for tool shed {toolshed}, name {name}, owner {owner}, "
@@ -1065,11 +1066,6 @@ def _get_changeset_revisions_that_contain_tools(app: "ToolShedApp", repo, reposi
                 if metadata.get("tools", None):
                     changeset_revisions_that_contain_tools.append(changeset_revision)
     return changeset_revisions_that_contain_tools
-
-
-def get_user_by_username(session, username):
-    stmt = select(User).where(User.username == username)
-    return session.execute(stmt).scalar_one()
 
 
 def get_repository(session, name, user_id):
