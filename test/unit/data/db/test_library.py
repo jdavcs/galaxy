@@ -1,4 +1,4 @@
-from galaxy.model.db.libraries import (
+from galaxy.model.db.library import (
     get_libraries_by_name,
     get_libraries_for_admins,
     get_libraries_for_nonadmins,
