@@ -4,20 +4,31 @@ from datetime import (
     datetime,
     timedelta,
 )
-from typing import List
+from typing import (
+    List,
+    Optional,
+)
 
+from psycopg2.errors import (
+    ForeignKeyViolation,
+    UniqueViolation,
+)
 from sqlalchemy import (
     and_,
+    delete,
     false,
     func,
+    insert,
     not_,
     or_,
     select,
 )
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import text
 
 import galaxy.model
+from galaxy.exceptions import RequestParameterInvalidException
 from galaxy.model import (
     Dataset,
     DatasetPermissions,
@@ -1447,6 +1458,91 @@ WHERE history.user_id != :user_id and history_dataset_association.dataset_id = :
                 self.get_showable_folders(user, roles, folder, actions_to_check, showable_folders=showable_folders)
         return showable_folders
 
+    #    def set_user_group_and_role_associations(
+    #        self, user_id: int, group_ids: Optional[List[int]] = None, role_ids: Optional[List[int]] = None
+    #    ) -> None:
+    #        """ Set user groups and user roles, replacing current associations."""
+    #            self._set_user_groups(user_id, group_ids or [])
+    #            self._set_user_roles(user_id, role_ids or [])
+    #            self.sa_session.commit()
+    #
+    def set_group_user_and_role_associations(
+        # TODO set group type
+        self,
+        group,
+        *,
+        user_ids: Optional[List[int]] = None,
+        role_ids: Optional[List[int]] = None,
+    ) -> None:
+        """Set group users and group roles, replacing current associations."""
+        self._ensure_model_instance_has_id(group)
+        self._set_group_users(group.id, user_ids or [])
+        self._set_group_roles(group.id, role_ids or [])
+
+    #
+    #    def set_role_user_and_group_associations(
+    #        self, role_id: int, user_ids: Optional[List[int]] = None, group_ids: Optional[List[int]] = None
+    #    ) -> None:
+    #        """ Set role users and role groups, replacing current associations."""
+    #            self._set_group_users(role_id, user_ids or [])
+    #            self._set_group_roles(role_id, grour_ids or [])
+    #            self.sa_session.commit()
+    #
+    #    def _set_user_groups(self, user, groups):
+    #        delete_stmt = delete(UserGroupAssociation).where(UserGroupAssociation.user_id == user.id)
+    #        insert_values = [{"user_id": user.id, "group_id": group_id} for group_id in groups]
+    #        self._set_associations(UserGroupAssociation, delete_stmt, insert_values)
+    #
+
+    def _ensure_model_instance_has_id(self, model_instance):
+        # If model_instance is new, it may have not been assigned a database id yet, which is required
+        # for creating association records. Flush if that's the case.
+        if model_instance.id is None:
+            self.sa_session.flush([model_instance])
+
+    def _set_group_users(self, group_id, users):
+        delete_stmt = delete(UserGroupAssociation).where(UserGroupAssociation.group_id == group_id)
+        insert_values = [{"group_id": group_id, "user_id": user_id} for user_id in users]
+        self._set_associations(UserGroupAssociation, delete_stmt, insert_values)
+
+    #    def _set_user_roles(self, user, roles):
+    #        delete_stmt = delete(UserRoleAssociation).where(UserRoleAssociation.user_id == user.id)
+    #        insert_values = [{"user_id": user.id, "role_id": role_id} for role_id in roles]
+    #        self._set_associations(UserRoleAssociation, delete_stmt, insert_values)
+    #
+    #    def _set_role_users(self, role, users):
+    #        delete_stmt = delete(UserRoleAssociation).where(UserRoleAssociation.role_id == role.id)
+    #        insert_values = [{"role_id": role.id, "user_id": user_id} for user_id in users]
+    #        self._set_associations(UserRoleAssociation, delete_stmt, insert_values)
+    #
+    def _set_group_roles(self, group_id, roles):
+        delete_stmt = delete(GroupRoleAssociation).where(GroupRoleAssociation.group_id == group_id)
+        insert_values = [{"group_id": group_id, "role_id": role_id} for role_id in roles]
+        self._set_associations(GroupRoleAssociation, delete_stmt, insert_values)
+
+    #    def _set_role_groups(self, role, groups):
+    #        delete_stmt = delete(GroupRoleAssociation).where(GroupRoleAssociation.role_id == role.id)
+    #        insert_values = [{"role_id": role.id, "group_id": group_id} for group_id in groups]
+    #        self._set_associations(GroupRoleAssociation, delete_stmt, insert_values)
+
+    def _set_associations(self, assoc_model, delete_stmt, insert_values):
+        # Ensure parent model has a database-assigned id
+        if assoc_model.id is None:
+            self.sa_session.flush(assoc_model)
+        # Delete current associations
+        self.sa_session.execute(delete_stmt)
+        # Create new associations
+        try:
+            self.sa_session.execute(insert(assoc_model), insert_values)
+        except IntegrityError as ie:
+            if isinstance(ie, UniqueViolation):
+                log.warning("Attempting to add a duplicate %s record(%s)", assoc_model, insert_values)
+                pass
+            elif isinstance(ie, ForeignKeyViolation):
+                raise RequestParameterInvalidException(ie)
+            else:
+                raise
+
     def set_entity_user_associations(self, users=None, roles=None, groups=None, delete_existing_assocs=True):
         users = users or []
         roles = roles or []
@@ -1467,24 +1563,6 @@ WHERE history.user_id != :user_id and history_dataset_association.dataset_id = :
                     self.associate_components(user=user, role=role)
             for group in groups:
                 self.associate_components(user=user, group=group)
-
-    def set_entity_group_associations(self, groups=None, users=None, roles=None, delete_existing_assocs=True):
-        users = users or []
-        roles = roles or []
-        groups = groups or []
-        for group in groups:
-            if delete_existing_assocs:
-                flush_needed = False
-                for a in group.roles + group.users:
-                    self.sa_session.delete(a)
-                    flush_needed = True
-                if flush_needed:
-                    with transaction(self.sa_session):
-                        self.sa_session.commit()
-            for role in roles:
-                self.associate_components(group=group, role=role)
-            for user in users:
-                self.associate_components(group=group, user=user)
 
     def set_entity_role_associations(self, roles=None, users=None, groups=None, delete_existing_assocs=True):
         users = users or []

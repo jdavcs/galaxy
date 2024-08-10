@@ -13,7 +13,10 @@ from galaxy import (
     util,
     web,
 )
-from galaxy.exceptions import ActionInputError
+from galaxy.exceptions import (
+    ActionInputError,
+    RequestParameterInvalidException,
+)
 from galaxy.managers.quotas import QuotaManager
 from galaxy.model.base import transaction
 from galaxy.model.index_filter_util import (
@@ -912,21 +915,21 @@ class AdminGalaxy(controller.JSAppLauncher):
                 ],
             }
         else:
-            in_users = [
-                trans.sa_session.query(trans.app.model.User).get(trans.security.decode_id(x))
-                for x in util.listify(payload.get("in_users"))
-            ]
-            in_roles = [
-                trans.sa_session.query(trans.app.model.Role).get(trans.security.decode_id(x))
-                for x in util.listify(payload.get("in_roles"))
-            ]
-            if None in in_users or None in in_roles:
+            user_ids = [trans.security.decode_id(id) for id in util.listify(payload.get("in_users"))]
+            role_ids = [trans.security.decode_id(id) for id in util.listify(payload.get("in_roles"))]
+            try:
+                trans.app.security_agent.set_group_user_and_role_associations(
+                    group, user_ids=user_ids, role_ids=role_ids
+                )
+                with transaction(trans.sa_session):
+                    trans.sa_session.commit()
+
+                trans.sa_session.refresh(group)
+                return {
+                    "message": f"Group '{group.name}' has been updated with {len(user_ids)} associated users and {len(role_ids)} associated roles."
+                }
+            except RequestParameterInvalidException:
                 return self.message_exception(trans, "One or more invalid user/role id has been provided.")
-            trans.app.security_agent.set_entity_group_associations(groups=[group], users=in_users, roles=in_roles)
-            trans.sa_session.refresh(group)
-            return {
-                "message": f"Group '{group.name}' has been updated with {len(in_users)} associated users and {len(in_roles)} associated roles."
-            }
 
     @web.legacy_expose_api
     @web.require_admin
