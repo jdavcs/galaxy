@@ -834,7 +834,13 @@ class AdminGalaxy(controller.JSAppLauncher):
                                 trans.sa_session.delete(dhp)
                     with transaction(trans.sa_session):
                         trans.sa_session.commit()
-            trans.app.security_agent.set_entity_role_associations(roles=[role], users=in_users, groups=in_groups)
+
+
+            trans.app.security_agent.set_role_user_and_group_associations(
+                role, user_ids=user_ids, group_ids=group_ids
+
+            with transaction(trans.sa_session):
+                trans.sa_session.commit()
             trans.sa_session.refresh(role)
             return {
                 "message": f"Role '{role.name}' has been updated with {len(in_users)} associated users and {len(in_groups)} associated groups."
@@ -923,7 +929,6 @@ class AdminGalaxy(controller.JSAppLauncher):
                 )
                 with transaction(trans.sa_session):
                     trans.sa_session.commit()
-
                 trans.sa_session.refresh(group)
                 return {
                     "message": f"Group '{group.name}' has been updated with {len(user_ids)} associated users and {len(role_ids)} associated roles."

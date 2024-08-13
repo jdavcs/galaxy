@@ -150,6 +150,16 @@ def make_galaxy_session_to_history_association(session, make_history, make_galax
 
 
 @pytest.fixture
+def make_group(session):
+    def f(**kwd):
+        model = m.Group(**kwd)
+        write_to_db(session, model)
+        return model
+
+    return f
+
+
+@pytest.fixture
 def make_hda(session, make_history):
     def f(**kwd):
         kwd["history"] = kwd.get("history") or make_history()
