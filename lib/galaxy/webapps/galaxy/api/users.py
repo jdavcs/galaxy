@@ -937,13 +937,9 @@ class UserAPIController(BaseGalaxyAPIController, UsesTagsMixin, BaseUIController
             if message:
                 raise exceptions.RequestParameterInvalidException(message)
             if user.email != email:
-                # Update user email and user's private role name which must match
-                private_role = trans.app.security_agent.get_private_user_role(user)
-                private_role.name = email
-                private_role.description = f"Private role for {email}"
+                # Update user email
                 user.email = email
                 trans.sa_session.add(user)
-                trans.sa_session.add(private_role)
                 with transaction(trans.sa_session):
                     trans.sa_session.commit()
                 if trans.app.config.user_activation_on:
