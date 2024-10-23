@@ -3758,6 +3758,7 @@ class Role(Base, Dictifiable, RepresentById):
     dict_collection_visible_keys = ["id", "name"]
     dict_element_visible_keys = ["id", "name", "description", "type"]
     private_id = None
+    private_role_name_prefix = "private role for "
 
     class types(str, Enum):
         PRIVATE = "private"
