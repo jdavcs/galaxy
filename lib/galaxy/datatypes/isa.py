@@ -19,21 +19,6 @@ from typing import (
 
 logger = logging.getLogger(__name__)
 
-# Imports isatab after turning off warnings inside logger settings to avoid pandas warning making uploads fail.
-try:
-    logging.getLogger("isatools.isatab").setLevel(logging.ERROR)
-    from isatools import (
-        isajson,
-        isatab_meta,
-    )
-
-    if TYPE_CHECKING:
-        from isatools.model import Investigation
-except ModuleNotFoundError as e:
-    logger.exception(
-        "Please install the missing isatools dependency from `isa-rwval @ git+https://github.com/nsoranzo/isa-rwval.git@master`"
-    )
-    raise e
 
 from markupsafe import escape
 
@@ -47,6 +32,10 @@ from galaxy.datatypes.protocols import (
 )
 from galaxy.util.compression_utils import CompressedFile
 from galaxy.util.sanitize_html import sanitize_html
+
+if TYPE_CHECKING:
+    from isatools.model import Investigation
+
 
 # CONSTANTS {{{1
 ################################################################
@@ -81,11 +70,27 @@ class _Isa(Data):
     ################################################################
 
     def __init__(self, main_file_regex: re.Pattern, **kwd) -> None:
+        self._import_dependencies()
         super().__init__(**kwd)
         self._main_file_regex = main_file_regex
 
         # Add the archive file as the only composite file
         self.add_composite_file(ISA_ARCHIVE_NAME, is_binary=True, optional=True)
+
+    def _import_dependencies(self):
+        # This should be called during class instantiation; otherwise the data package cannot pass tests.
+        # A pip-installed data package (v24.2.0+) requires manual installation of isatools: https://github.com/galaxyproject/galaxy/pull/19582
+        try:
+            # Imports isatab after turning off warnings inside logger settings to avoid pandas warning making uploads fail.
+            logging.getLogger("isatools.isatab").setLevel(logging.ERROR)
+            from isatools import isajson  # noqa: F401
+            from isatools import isatab_meta  # noqa: F401
+
+        except ModuleNotFoundError as e:
+            logger.exception(
+                "Please install the missing isatools dependency from `isa-rwval @ git+https://github.com/nsoranzo/isa-rwval.git@master`"
+            )
+            raise e
 
     # Get ISA folder path {{{2
     ################################################################
@@ -347,15 +352,15 @@ class IsaTab(_Isa):
 
     def _make_investigation_instance(self, filename: str) -> "Investigation":
         # Parse ISA-Tab investigation file
-        parser = isatab_meta.InvestigationParser()
+        parser = isatab_meta.InvestigationParser()  # type:ignore[name-defined]  # noqa: F821
         isa_dir = os.path.dirname(filename)
         with open(filename, newline="", encoding="utf8") as fp:
             parser.parse(fp)
         for study in parser.isa.studies:
-            s_parser = isatab_meta.LazyStudySampleTableParser(parser.isa)
+            s_parser = isatab_meta.LazyStudySampleTableParser(parser.isa)  # type:ignore[name-defined]   # noqa: F821
             s_parser.parse(os.path.join(isa_dir, study.filename))
             for assay in study.assays:
-                a_parser = isatab_meta.LazyAssayTableParser(parser.isa)
+                a_parser = isatab_meta.LazyAssayTableParser(parser.isa)  # type:ignore[name-defined]   # noqa: F821
                 a_parser.parse(os.path.join(isa_dir, assay.filename))
         isa = parser.isa
 
@@ -381,6 +386,6 @@ class IsaJson(_Isa):
     def _make_investigation_instance(self, filename: str) -> "Investigation":
         # Parse JSON file
         with open(filename, newline="", encoding="utf8") as fp:
-            isa = isajson.load(fp)
+            isa = isajson.load(fp)  # type:ignore[name-defined]   # noqa: F821
 
         return isa
