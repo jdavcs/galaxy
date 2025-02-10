@@ -17,12 +17,24 @@ from typing import (
     TYPE_CHECKING,
 )
 
+logger = logging.getLogger(__name__)
+
 # Imports isatab after turning off warnings inside logger settings to avoid pandas warning making uploads fail.
-logging.getLogger("isatools.isatab").setLevel(logging.ERROR)
-from isatools import (
-    isajson,
-    isatab_meta,
-)
+try:
+    logging.getLogger("isatools.isatab").setLevel(logging.ERROR)
+    from isatools import (
+        isajson,
+        isatab_meta,
+    )
+
+    if TYPE_CHECKING:
+        from isatools.model import Investigation
+except ModuleNotFoundError as e:
+    logger.exception(
+        "Please install the missing isatools dependency from `isa-rwval @ git+https://github.com/nsoranzo/isa-rwval.git@master`"
+    )
+    raise e
+
 from markupsafe import escape
 
 from galaxy import util
@@ -36,9 +48,6 @@ from galaxy.datatypes.protocols import (
 from galaxy.util.compression_utils import CompressedFile
 from galaxy.util.sanitize_html import sanitize_html
 
-if TYPE_CHECKING:
-    from isatools.model import Investigation
-
 # CONSTANTS {{{1
 ################################################################
 
@@ -51,15 +60,6 @@ ISA_ARCHIVE_NAME = "archive"
 
 # Set max number of lines of the history peek
 _MAX_LINES_HISTORY_PEEK = 11
-
-# Configure logger {{{1
-################################################################
-
-logger = logging.getLogger(__name__)
-
-# Function for opening correctly a CSV file for csv.reader() for both Python 2 and 3 {{{1
-################################################################
-
 
 # ISA class {{{1
 ################################################################
