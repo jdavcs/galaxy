@@ -23,6 +23,7 @@ from typing import (
 import yaml
 
 import galaxy.util
+from galaxy.datatypes.isa import ISA_MISSING_MODULE_MESSAGE
 from galaxy.datatypes.protocols import DatasetProtocol
 from galaxy.tool_util.edam_util import load_edam_tree
 from galaxy.util import (
@@ -267,7 +268,14 @@ class Registry:
                             if upload_warning_template is not None:
                                 raise NotImplementedError("Multiple upload_warnings not implemented")
                             upload_warning_template = Template(upload_warning_el.text or "")
-                        datatype_instance = datatype_class()
+
+                        try:
+                            datatype_instance = datatype_class()
+                        except ModuleNotFoundError as e:
+                            if issubclass(datatype_class, galaxy.datatypes.isa._Isa):
+                                # See isa.py module for details on this
+                                self.log.exception(ISA_MISSING_MODULE_MESSAGE)
+
                         self.datatypes_by_extension[extension] = datatype_instance
                         if mimetype is None:
                             # Use default mimetype per datatype specification.

@@ -50,6 +50,8 @@ ISA_ARCHIVE_NAME = "archive"
 # Set max number of lines of the history peek
 _MAX_LINES_HISTORY_PEEK = 11
 
+ISA_MISSING_MODULE_MESSAGE = "Please install the missing isatools dependency from `isa-rwval @ git+https://github.com/nsoranzo/isa-rwval.git@master`"
+
 # ISA class {{{1
 ################################################################
 
@@ -87,9 +89,7 @@ class _Isa(Data):
             from isatools import isatab_meta  # noqa: F401
 
         except ModuleNotFoundError as e:
-            logger.exception(
-                "Please install the missing isatools dependency from `isa-rwval @ git+https://github.com/nsoranzo/isa-rwval.git@master`"
-            )
+            logger.exception(ISA_MISSING_MODULE_MESSAGE)
             raise e
 
     # Get ISA folder path {{{2
