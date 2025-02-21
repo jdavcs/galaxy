@@ -109,7 +109,6 @@ from sqlalchemy.ext.associationproxy import (
     association_proxy,
     AssociationProxy,
 )
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.orm import (
     aliased,
@@ -3798,7 +3797,7 @@ class Role(Base, Dictifiable, RepresentById):
     id: Mapped[int] = mapped_column(primary_key=True)
     create_time: Mapped[datetime] = mapped_column(default=now, nullable=True)
     update_time: Mapped[datetime] = mapped_column(default=now, onupdate=now, nullable=True)
-    _name: Mapped[str] = mapped_column("name", String(255), index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
     description: Mapped[Optional[str]] = mapped_column(TEXT)
     type: Mapped[Optional[str]] = mapped_column(String(40), index=True)
     deleted: Mapped[Optional[bool]] = mapped_column(index=True, default=False)
@@ -3809,6 +3808,11 @@ class Role(Base, Dictifiable, RepresentById):
     dict_collection_visible_keys = ["id", "name"]
     dict_element_visible_keys = ["id", "name", "description", "type"]
     private_id = None
+
+    # In a list of roles, for roles with generic names, we may want to display
+    # a more descriptive name, derived from role associations and generated at
+    # runtime. This value is not persisted.
+    _displayed_name = None
 
     class types(str, Enum):
         PRIVATE = "private"
@@ -3821,18 +3825,13 @@ class Role(Base, Dictifiable, RepresentById):
     def default_name(role_type):
         return f"{role_type.value} role"
 
-    @hybrid_property
-    def name(self):
-        if self.type == Role.types.PRIVATE:
-            user_assocs = self.users
-            assert len(user_assocs) == 1, f"Did not find exactly one user for private role {self}"
-            return user_assocs[0].user.email
-        else:
-            return self._name
+    @property
+    def displayed_name(self):
+        return self._displayed_name or self.name
 
-    @name.setter  # type:ignore[no-redef]  # property setter
-    def name(self, name):
-        self._name = name
+    @displayed_name.setter
+    def displayed_name(self, value):
+        self._displayed_name = value
 
     def __init__(self, name=None, description=None, type=types.SYSTEM, deleted=False):
         self.name = name or Role.default_name(type)

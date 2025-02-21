@@ -6,6 +6,7 @@ import logging
 from typing import List
 
 from sqlalchemy import (
+    and_,
     false,
     select,
 )
@@ -71,10 +72,22 @@ class RoleManager(base.ModelManager[model.Role]):
 
     def list_displayable_roles(self, trans: ProvidesUserContext) -> List[Role]:
         roles = []
-        stmt = select(Role).where(Role.deleted == false())
-        for role in trans.sa_session.scalars(stmt):
+        stmt = (
+            select(Role, model.User.email)
+            .outerjoin(
+                model.UserRoleAssociation,
+                and_(Role.id == model.UserRoleAssociation.role_id, Role.type == Role.types.PRIVATE),
+            )
+            .outerjoin(model.User)
+            .where(Role.deleted == false())
+        )
+
+        for role, user_email in trans.sa_session.execute(stmt):
             if trans.user_is_admin or trans.app.security_agent.ok_to_display(trans.user, role):
                 roles.append(role)
+                if role.type == Role.types.PRIVATE:
+                    assert user_email, "Did not find user for private role {role}"
+                    role.displayed_name = user_email
         return roles
 
     def create_role(self, trans: ProvidesUserContext, role_definition_model: RoleDefinitionModel) -> model.Role:
@@ -83,11 +96,7 @@ class RoleManager(base.ModelManager[model.Role]):
         user_ids = role_definition_model.user_ids or []
         group_ids = role_definition_model.group_ids or []
 
-        stmt = (
-            select(Role)
-            .where(Role.name == name)  # type:ignore[arg-type,comparison-overlap]  # Role.name is a SA hybrid property
-            .limit(1)
-        )
+        stmt = select(Role).where(Role.name == name).limit(1)
         if trans.sa_session.scalars(stmt).first():
             raise Conflict(f"A role with that name already exists [{name}]")
 
