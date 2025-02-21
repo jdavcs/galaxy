@@ -6298,6 +6298,11 @@ export interface components {
         /** BasicRoleModel */
         BasicRoleModel: {
             /**
+             * Dispalyed name
+             * @description Displayed name of the role
+             */
+            displayed_name: string;
+            /**
              * ID
              * @description Encoded ID of the role
              * @example 0123456789ABCDEF
@@ -15677,6 +15682,11 @@ export interface components {
         RoleModelResponse: {
             /** Description */
             description: string | null;
+            /**
+             * Dispalyed name
+             * @description Displayed name of the role
+             */
+            displayed_name: string;
             /**
              * ID
              * @description Encoded ID of the role
