@@ -2680,12 +2680,14 @@ class WorkflowToExport(Model):
 RoleIdField = Annotated[EncodedDatabaseIdField, Field(title="ID", description="Encoded ID of the role")]
 RoleNameField = Annotated[str, Field(title="Name", description="Name of the role")]
 RoleDescriptionField = Annotated[str, Field(title="Description", description="Description of the role")]
+RoleDisplayedNameField = Annotated[str, Field(title="Dispalyed name", description="Displayed name of the role")]
 
 
 class BasicRoleModel(Model):
     id: RoleIdField
     name: RoleNameField
     type: str = Field(title="Type", description="Type or category of the role")
+    displayed_name: RoleDisplayedNameField
 
 
 class RoleModelResponse(BasicRoleModel, WithModelClass):
