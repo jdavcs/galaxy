@@ -5,11 +5,7 @@ Manager and Serializer for Roles.
 import logging
 from typing import List
 
-from sqlalchemy import (
-    and_,
-    false,
-    select,
-)
+from sqlalchemy import select
 from sqlalchemy.exc import (
     MultipleResultsFound,
     NoResultFound,
@@ -26,6 +22,7 @@ from galaxy.exceptions import (
 from galaxy.managers import base
 from galaxy.managers.context import ProvidesUserContext
 from galaxy.model import Role
+from galaxy.model.db.role import get_displayable_roles
 from galaxy.schema.schema import RoleDefinitionModel
 from galaxy.util import unicodify
 
@@ -71,24 +68,7 @@ class RoleManager(base.ModelManager[model.Role]):
         return role
 
     def list_displayable_roles(self, trans: ProvidesUserContext) -> List[Role]:
-        roles = []
-        stmt = (
-            select(Role, model.User.email)
-            .outerjoin(
-                model.UserRoleAssociation,
-                and_(Role.id == model.UserRoleAssociation.role_id, Role.type == Role.types.PRIVATE),
-            )
-            .outerjoin(model.User)
-            .where(Role.deleted == false())
-        )
-
-        for role, user_email in trans.sa_session.execute(stmt):
-            if trans.user_is_admin or trans.app.security_agent.ok_to_display(trans.user, role):
-                roles.append(role)
-                if role.type == Role.types.PRIVATE:
-                    assert user_email, "Did not find user for private role {role}"
-                    role.displayed_name = user_email
-        return roles
+        return get_displayable_roles(trans.sa_session, trans.user, trans.user_is_admin, trans.app.security_agent)
 
     def create_role(self, trans: ProvidesUserContext, role_definition_model: RoleDefinitionModel) -> model.Role:
         name = role_definition_model.name

@@ -6,6 +6,7 @@ from sqlalchemy import (
 
 from galaxy.model import (
     Role,
+    User,
     UserRoleAssociation,
 )
 from galaxy.model.scoped_session import galaxy_scoped_session
@@ -41,3 +42,24 @@ def get_private_user_role(user, session):
 def get_roles_by_ids(session: galaxy_scoped_session, role_ids):
     stmt = select(Role).where(Role.id.in_(role_ids))
     return session.scalars(stmt).all()
+
+
+def get_displayable_roles(session, trans_user, user_is_admin, security_agent):
+    roles = []
+    stmt = (
+        select(Role, User.email)
+        .outerjoin(
+            UserRoleAssociation,
+            and_(Role.id == UserRoleAssociation.role_id, Role.type == Role.types.PRIVATE),
+        )
+        .outerjoin(User)
+        .where(Role.deleted == false())
+    )
+
+    for role, user_email in session.execute(stmt):
+        if user_is_admin or security_agent.ok_to_display(trans_user, role):
+            roles.append(role)
+            if role.type == Role.types.PRIVATE:
+                assert user_email, "Did not find user for private role {role}"
+                role.displayed_name = user_email
+    return roles
