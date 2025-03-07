@@ -15708,6 +15708,11 @@ export interface components {
             /** Description */
             description: string | null;
             /**
+             * Displayed Role Name
+             * @description Disambiguates generic role names: use `name` for non-private roles; for private roles, use associated user's email address.
+             */
+            displayed_name: string | null;
+            /**
              * ID
              * @description Encoded ID of the role
              * @example 0123456789ABCDEF
