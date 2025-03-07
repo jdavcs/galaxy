@@ -2664,6 +2664,13 @@ class WorkflowToExport(Model):
 RoleIdField = Annotated[EncodedDatabaseIdField, Field(title="ID", description="Encoded ID of the role")]
 RoleNameField = Annotated[str, Field(title="Name", description="Name of the role")]
 RoleDescriptionField = Annotated[str, Field(title="Description", description="Description of the role")]
+RoleDisplayedNameField = Field(
+    title="Displayed Role Name",
+    description=(
+        "Disambiguates generic role names: use `name` for non-private roles; "
+        "for private roles, use associated user's email address."
+    ),
+)
 
 
 class BasicRoleModel(Model):
@@ -2675,6 +2682,7 @@ class BasicRoleModel(Model):
 class RoleModelResponse(BasicRoleModel, WithModelClass):
     description: Optional[RoleDescriptionField]
     url: RelativeUrlField
+    displayed_name: Optional[str] = RoleDisplayedNameField
     model_class: Literal["Role"] = ModelClassField(Literal["Role"])
 
 
