@@ -10,6 +10,10 @@ const props = withDefaults(defineProps<Props>(), {
     itemName: "item",
 });
 
+const emit = defineEmits<{
+    (e: "onItems", doi: Array): void;
+}>();
+
 const items = ref([]);
 const editIndex = ref(null);
 const showForm = ref(false);
@@ -28,7 +32,7 @@ function onEdit(index) {
 
 function onRemove(index) {
     items.value.splice(index, 1);
-    this.$emit("onItems", items.value);
+    emit("onItems", items.value);
 }
 
 function onSave() {
@@ -39,7 +43,7 @@ function onSave() {
             items.value[editIndex.value] = currentItem.value;
         }
         resetForm();
-        this.$emit("onItems", items.value);
+        emit("onItems", items.value);
     }
 }
 
