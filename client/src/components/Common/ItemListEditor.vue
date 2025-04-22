@@ -1,63 +1,79 @@
 <script setup lang="ts">
+/**
+* Editable list of items: add/edit/remove (no duplictes/empty values)
+*/
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import type { ComputedRef } from "vue";
 
 interface Props {
-    itemName?: String;
+    itemName?: string;
+    items?: string[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
     itemName: "item",
+    items: [],
 });
 
 const emit = defineEmits<{
-    (e: "onItems", doi: Array): void;
+    (e: "onItems", items: string[]): void;
 }>();
 
-const items = ref([]);
-const editIndex = ref(null);
+const itemsCurrent: ComputedRef<string[]> = computed(() => props.items);
 const showForm = ref(false);
+const editIndex = ref(null);
 const currentItem = ref(null);
 const currentItemError = ref(null);
 
+/** Start adding a new item. */
 function onAdd() {
     showForm.value = true;
 }
 
+/** Start editing an item. */
 function onEdit(index) {
     showForm.value = true;
     editIndex.value = index;
-    currentItem.value = items.value[index];
+    currentItem.value = itemsCurrent.value[index];
 }
 
+/** Remove an item. */
 function onRemove(index) {
-    items.value.splice(index, 1);
-    emit("onItems", items.value);
+    const itms = [...itemsCurrent.value];
+    itms.splice(index, 1);
+    emit("onItems", itms);
 }
 
+/** Save a new or existing item. */
 function onSave() {
     if (validate()) {
+        const itms = [...itemsCurrent.value];
         if (isNewItem()) {
-            items.value.push(currentItem.value);
+            itms.push(currentItem.value);
         } else {
-            items.value[editIndex.value] = currentItem.value;
+            itms[editIndex.value] = currentItem.value;
         }
         resetForm();
-        emit("onItems", items.value);
+        emit("onItems", itms);
     }
 }
 
+/** Cancel editing. */
 function onReset() {
     resetForm();
 }
 
+/** Validate an item. */
 function validate() {
+    // Check if item is not empty.
     const item = currentItem.value;
     if (!item) {
         currentItemError.value = "Please provide a value";
         return false;
     }
-    const foundIndex = items.value.indexOf(item);
+    // Check if item is unique.
+    const foundIndex = itemsCurrent.value.indexOf(item);
     if (foundIndex > -1) {
         if (isNewItem() || (!isNewItem() && foundIndex != editIndex.value)) {
             currentItemError.value = `This ${props.itemName} has already been added`;
@@ -67,14 +83,17 @@ function validate() {
     return true;
 }
 
+/** Are we adding a new item or editing an existing item. */
 function isNewItem() {
     return editIndex.value === null;
 }
 
+/** Clear error message from current item. */
 function removeErrorMessage() {
     currentItemError.value = null;
 }
 
+/** Reset and hide form.  */
 function resetForm() {
     removeErrorMessage();
     editIndex.value = null;
@@ -93,8 +112,8 @@ function resetForm() {
             <b-button variant="danger" @click="onReset">Cancel</b-button>
         </div>
         <div v-else>
-            <div v-if="items.length > 0">
-                <div v-for="(item, index) in items" :key="index">
+            <div v-if="itemsCurrent.length > 0">
+                <div v-for="(item, index) in itemsCurrent" :key="index">
                     {{ item }}
                     <b-button
                         v-b-tooltip.hover

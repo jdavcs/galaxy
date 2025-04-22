@@ -90,7 +90,7 @@
 
         <div id="workflow-doi-area" class="mt-2">
             <b>Digital Object Identifier (DOI)</b>
-            <ItemListEditor items="doiAsList" item-name="DOI" @onItems="onDoi" />
+            <ItemListEditor :items="doiAsList" item-name="DOI" @onItems="onDoi" />
         </div>
 
         <div class="mt-2">
@@ -263,13 +263,13 @@ export default {
             return creator;
         },
         doiAsList() {
-            let doi = this.doi;
-            if (!doi) {
-                doi = [];
-            } else if (!(doi instanceof Array)) {
-                doi = [doi];
+            let doiList = this.doi;
+            if (!doiList) {
+                doiList = [];
+            } else if (!(doiList instanceof Array)) {
+                doiList = [doiList];
             }
-            return doi;
+            return doiList;
         },
         hasParameters() {
             return this.parameters && this.parameters.parameters.length > 0;
@@ -331,15 +331,6 @@ export default {
                 creator = [creator];
             }
             this.creatorCurrent = creator;
-        },
-        doi() {
-            let doi = this.doi;
-            if (!doi) {
-                doi = [];
-            } else if (!(doi instanceof Array)) {
-                doi = [doi];
-            }
-            this.doiCurrent = doi;
         },
         annotation() {
             this.showAnnotationHightlight = false;
@@ -416,8 +407,8 @@ export default {
         onCreator(creator) {
             this.$emit("creator", creator);
         },
-        onDoi(doi) {
-            this.$emit("doi", doi);
+        onDoi(doiItems) {
+            this.$emit("doi", doiItems);
         },
         onError(error) {
             this.message = error;
