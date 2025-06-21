@@ -818,6 +818,15 @@ class UserObjectstoreUsage(BaseModel):
     total_disk_usage: float
 
 
+class UserFavoriteDatatype(Base, RepresentById):
+    __tablename__ = "user_favorite_datatype"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("galaxy_user.id"))
+    datatype: Mapped[str] = mapped_column(String(255))
+    user: Mapped["User"] = relationship(back_populates="favorite_datatypes")
+
+
 class User(Base, Dictifiable, RepresentById):
     """
     Data for a Galaxy user or admin and relations to their
@@ -846,6 +855,8 @@ class User(Base, Dictifiable, RepresentById):
     # Column("person_metadata", JSONType),  # TODO: add persistent, configurable metadata rep for workflow creator
     active: Mapped[bool] = mapped_column(index=True, default=True)
     activation_token: Mapped[Optional[str]] = mapped_column(TrimmedString(64), index=True)
+
+    favorite_datatypes: Mapped[List["UserFavoriteDatatype"]] = relationship(back_populates="user")
 
     addresses: Mapped[List["UserAddress"]] = relationship(
         back_populates="user", order_by=lambda: desc(UserAddress.update_time)
