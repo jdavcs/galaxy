@@ -372,3 +372,38 @@ class TestUsersApi(ApiTestCase):
         user_roles = response.json()
         assert len(user_roles) == 1
         assert user_roles[0]["type"] == PRIVATE_ROLE_TYPE
+
+    def test_favorite_datatypes(self):
+        # verify no datatypes
+        index_response = self._get("users/current/favorite_datatypes")
+        index_response.raise_for_status()
+        index = index_response.json()
+        assert isinstance(index, list)
+        assert len(index) == 0
+
+        # add datatypes
+        create_response = self._post("users/current/favorite_datatypes/fasta")
+        create_response.raise_for_status()
+        create_response = self._post("users/current/favorite_datatypes/fastq")
+        create_response.raise_for_status()
+
+        # verify added
+        index_response = self._get("users/current/favorite_datatypes")
+        index_response.raise_for_status()
+        index = index_response.json()
+        assert isinstance(index, list)
+        assert len(index) == 2
+        assert "fasta" in index
+        assert "fastq" in index
+
+        # delete datatype
+        delete_response = self._delete("users/current/favorite_datatypes/fasta")
+        delete_response.raise_for_status()
+
+        # verify deleted
+        index_response = self._get("users/current/favorite_datatypes")
+        index_response.raise_for_status()
+        index = index_response.json()
+        assert isinstance(index, list)
+        assert len(index) == 1
+        assert "fastq" in index
