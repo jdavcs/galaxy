@@ -96,6 +96,8 @@ import WorkflowRerun from "@/components/Workflow/Run/WorkflowRerun.vue";
 import WorkflowRun from "@/components/Workflow/Run/WorkflowRun.vue";
 import WorkflowInvocationState from "@/components/WorkflowInvocationState/WorkflowInvocationState.vue";
 
+import UserFavoriteDatatypes from "@/components/User/UserFavoriteDatatypes.vue";
+
 Vue.use(VueRouter);
 
 // Async component for CustomToolEditor to reduce bundle size
@@ -806,6 +808,10 @@ export function getRouter(Galaxy) {
                             regularFileCount: Number(route.params.regularFileCount),
                         }),
                         redirect: redirectAnon(),
+                    },
+                    {
+                        path: "user_favorite_datatypes",
+                        component: UserFavoriteDatatypes,
                     },
                 ],
             },
