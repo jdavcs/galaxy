@@ -18,6 +18,7 @@ from typing import (
 from markupsafe import escape
 from sqlalchemy import (
     and_,
+    delete,
     exc,
     func,
     select,
@@ -91,6 +92,20 @@ class UserManager(base.ModelManager, deletable.PurgableManagerMixin):
         self.model_class = app.model.User
         self.app_type = app_type
         super().__init__(app)
+
+    def get_favorite_datatypes(self, user):
+        return [fd.datatype for fd in user.favorite_datatypes]
+
+    def add_favorite_datatype(self, user, datatype):
+        fd = model.UserFavoriteDatatype(datatype=datatype)
+        user.favorite_datatypes.append(fd)
+        self.session().add(user)
+        self.session().commit()
+
+    def delete_favorite_datatype(self, user, datatype):
+        stmt = delete(model.UserFavoriteDatatype).where(model.UserFavoriteDatatype.datatype == datatype)
+        self.session().execute(stmt)
+        self.session().commit()
 
     def register(self, trans, email=None, username=None, password=None, confirm=None, subscribe=False):
         """
