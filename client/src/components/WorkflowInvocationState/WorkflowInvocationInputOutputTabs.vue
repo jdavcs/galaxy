@@ -20,6 +20,7 @@ const props = defineProps<{
     invocation: WorkflowInvocationElementView;
     tab?: "steps" | "inputs" | "outputs" | "report" | "export" | "metrics" | "debug";
     terminal?: boolean;
+    tabsNotLazy?: boolean;
 }>();
 
 // Fetching full workflow to get the workflow output labels (for when invocation is not terminal)
@@ -64,6 +65,7 @@ const outputs = computed(() => {
 const parameters = computed(() => Object.values(props.invocation.input_step_parameters));
 </script>
 <template>
+<<<<<<< HEAD
     <div v-if="props.tab === 'inputs'">
         <div v-if="parameters.length || inputData.length">
             <WorkflowInvocationInputs :invocation="props.invocation" />
@@ -97,6 +99,27 @@ const parameters = computed(() => Object.values(props.invocation.input_step_para
                 <BAlert v-else class="m-1 py-2" show variant="danger">
                     <LoadingSpan message="Output not available" />
                 </BAlert>
+=======
+    <span>
+        <BTab title="Inputs" :lazy="!props.tabsNotLazy">
+            <div v-if="parameters.length || inputData.length">
+                <WorkflowInvocationInputs :invocation="props.invocation" />
+            </div>
+            <BAlert v-else show variant="info"> No input data was provided for this workflow invocation. </BAlert>
+        </BTab>
+        <BTab title="Outputs" :lazy="!props.tabsNotLazy">
+            <div v-if="outputs.length">
+                <div
+                    v-for="([key, output], index) in outputs"
+                    :key="index"
+                    data-description="terminal invocation output">
+                    <Heading size="text" bold separator>{{ key }}</Heading>
+                    <GenericHistoryItem
+                        :item-id="output.id"
+                        :item-src="output.src"
+                        data-description="terminal invocation output item" />
+                </div>
+>>>>>>> release_25.0
             </div>
         </div>
         <BAlert v-else show variant="info">
