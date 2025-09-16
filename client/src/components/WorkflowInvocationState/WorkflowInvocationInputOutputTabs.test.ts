@@ -99,7 +99,11 @@ async function mountWorkflowInvocationInputOutputTabs(
         propsData: {
             invocation,
             terminal,
+<<<<<<< HEAD
             tab,
+=======
+            tabsNotLazy: true,
+>>>>>>> release_25.0
         },
         stubs: {
             ContentItem: true,
