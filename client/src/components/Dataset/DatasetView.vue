@@ -55,7 +55,11 @@ const showError = computed(
     () => dataset.value && (dataset.value.state === "error" || dataset.value.state === "failed_metadata"),
 );
 const isAutoDownloadType = computed(
+<<<<<<< HEAD
     () => dataset.value && datatypeStore.isDatatypeAutoDownload(dataset.value.file_ext),
+=======
+    () => dataset.value && datatypeStore.isDatatypeAutoDownload(dataset.value.file_ext)
+>>>>>>> release_25.0
 );
 const downloadUrl = computed(() => withPrefix(`/datasets/${props.datasetId}/display`));
 const preferredVisualization = computed(
