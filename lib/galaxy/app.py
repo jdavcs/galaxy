@@ -687,7 +687,7 @@ class GalaxyManagerApplication(MinimalManagerApp, MinimalGalaxyApplication):
         )
         self._register_singleton(Registry, self.datatypes_registry)
         galaxy.model.set_datatypes_registry(self.datatypes_registry)
-        self.configure_sentry_client()
+        self.application_stack.register_postfork_function(self.configure_sentry_client)  # try this to fix the thread already started error on main/test
         # Load dbkey / genome build manager
         self._configure_genome_builds(data_table_name="__dbkeys__", load_old_style=True)
         # Tool Data Tables
