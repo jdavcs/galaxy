@@ -552,6 +552,7 @@ class WorkerProcess(Base, UsesCreateAndUpdateTime):
     hostname: Mapped[Optional[str]] = mapped_column(String(255))
     pid: Mapped[Optional[int]]
     update_time: Mapped[Optional[datetime]] = mapped_column(default=now, onupdate=now)
+    is_webapp: Mapped[Optional[bool]]
 
 
 def cached_id(galaxy_model_object):
