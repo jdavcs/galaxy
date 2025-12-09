@@ -378,6 +378,7 @@ class GalaxyQueueWorker(ConsumerProducerMixin, threading.Thread):
         self.exchange_queue, self.direct_queue = galaxy.queues.control_queues_from_config(self.app.config)
         self.control_queues = [self.exchange_queue, self.direct_queue]
         self.epoch = time.time()
+
         if not self.is_alive():
             self.start()
 
